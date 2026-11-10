@@ -1,3 +1,4 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Simulador de VMNI</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -277,10 +278,11 @@ footer{color:var(--muted);font-size:.8rem;border-top:1px solid var(--line);paddi
     <h2>Asincronías: cuando paciente y equipo no van a la vez</h2>
     <div class="rule">Regla rápida: <b>FR que cuentas &gt; FR del monitor</b> → esfuerzos ineficaces · <b>FR del monitor &gt; FR que cuentas</b> → autodisparo.</div>
     <div class="g4">
-      <div class="as"><b>Esfuerzo ineficaz</b><p>El paciente intenta inspirar pero el aire atrapado (auto-PEEP) impide que el equipo lo note.</p><p class="fx">Sube PEEP 1–2 y acorta la inspiración.</p><button class="btn sm" data-goto-case="c1">Practicar: caso 1</button></div>
-      <div class="as"><b>Autodisparo</b><p>El equipo da respiraciones que nadie pidió, casi siempre por fuga.</p><p class="fx">Recoloca la mascarilla y sube el trigger a 2–3.</p><button class="btn sm" data-goto-case="c2">Practicar: caso 2</button></div>
+      <div class="as"><b>Esfuerzo ineficaz</b><p>El paciente intenta inspirar y el equipo no lo nota: fuga, trigger poco sensible, exceso de soporte, auto-PEEP o agotamiento.</p><p class="fx">Por orden: revisa la fuga → baja el trigger (vigila el doble disparo) → acorta la inspiración → sube la PEEP solo si ves auto-PEEP en la curva de flujo.</p><button class="btn sm" data-goto-case="c1">Practicar: caso 1</button></div>
+      <div class="as"><b>Autodisparo</b><p>El equipo da respiraciones que nadie pidió, casi siempre por fuga.</p><p class="fx">Recoloca la mascarilla y sube el trigger un punto (en el bellavista, sin pasar de 1,5–2 L/min).</p><button class="btn sm" data-goto-case="c2">Practicar: caso 2</button></div>
       <div class="as"><b>Ciclado tardío</b><p>El equipo sigue empujando cuando el paciente ya quiere espirar: punta final de presión.</p><p class="fx">Sube Exp Trig o baja Ti máx.</p><button class="btn sm" data-goto-case="c4">Practicar: tu paciente</button></div>
       <div class="as"><b>Doble disparo</b><p>El equipo corta antes de tiempo y el paciente vuelve a disparar.</p><p class="fx">Baja Exp Trig o sube Ti máx.</p></div>
+      <div class="as"><b>A-C con T insp largo</b><p>En A-C el tiempo inspiratorio lo pone la máquina. El bellavista trae 1,7 s: el paciente quiere espirar y no puede.</p><p class="fx">Adáptalo: EPOC 0,8–1,2 s; restrictivo (obeso, neuromuscular) 1–1,4 s.</p><button class="btn sm" data-goto-case="c18">Practicar</button></div>
     </div>
   </section>
 
@@ -433,22 +435,22 @@ const N=750, GAP=14, SR=0.02;
 
 const PATIENTS={
  normal:{label:'Pulmón normal',C:.05,Ri:5,Re:5,Pcrit:0,rrRest:12,rrMax:16,pRest:3,pMax:5,tiFrac:.4,vdA:.15,vdF:.1,vco2:200,hco3:24,pco2Init:40,pco2Tgt:40,vq:1,shunt:()=>.03,sv:.7,ibw:70,expPush:.5,hyper:false},
- epoc:{label:'EPOC agudizado',C:.09,Ri:7,Re:24,Pcrit:8,rrRest:16,rrMax:28,pRest:5,pMax:8,tiFrac:.33,vdA:.12,vdF:.3,vco2:230,hco3:30,pco2Init:70,pco2Tgt:50,vq:.4,shunt:()=>.08,sv:.6,ibw:68,expPush:1,hyper:true},
- eap:{label:'Edema agudo de pulmón',C:.025,Ri:8,Re:8,Pcrit:0,rrRest:16,rrMax:34,pRest:4,pMax:13,tiFrac:.38,vdA:.15,vdF:.1,vco2:220,hco3:22,pco2Init:50,pco2Tgt:38,vq:.9,shunt:p=>clamp(.40-.03*(p-5),.08,.5),sv:.55,ibw:62,expPush:.5,hyper:false},
- icc:{label:'ICC + EPOC',C:.035,Ri:12,Re:18,Pcrit:5,rrRest:16,rrMax:28,pRest:4,pMax:10,tiFrac:.35,vdA:.13,vdF:.28,vco2:220,hco3:27,pco2Init:62,pco2Tgt:46,vq:.65,shunt:p=>clamp(.2-.02*(p-5),.06,.3),sv:.6,ibw:52,expPush:.8,hyper:true}
+ epoc:{label:'EPOC agudizado',tiMax:1,weak:.04,C:.065,Ri:7,Re:22,Pcrit:5,rrRest:16,rrMax:28,pRest:5,pMax:8,tiFrac:.33,vdA:.12,vdF:.3,vco2:230,hco3:30,pco2Init:70,pco2Tgt:50,vq:.4,shunt:()=>.08,sv:.6,ibw:68,expPush:1,hyper:true},
+ eap:{label:'Edema agudo de pulmón',tiMax:1,C:.025,Ri:8,Re:8,Pcrit:0,rrRest:16,rrMax:34,pRest:4,pMax:13,tiFrac:.38,vdA:.15,vdF:.1,vco2:220,hco3:22,pco2Init:50,pco2Tgt:38,vq:.9,shunt:p=>clamp(.40-.03*(p-5),.08,.5),sv:.55,ibw:62,expPush:.5,hyper:false},
+ icc:{label:'ICC + EPOC',tiMax:1.1,C:.035,Ri:12,Re:18,Pcrit:5,rrRest:16,rrMax:28,pRest:4,pMax:10,tiFrac:.35,vdA:.13,vdF:.28,vco2:220,hco3:27,pco2Init:62,pco2Tgt:46,vq:.65,shunt:p=>clamp(.2-.02*(p-5),.06,.3),sv:.6,ibw:52,expPush:.8,hyper:true}
 };
 
 const HEMO={normal:[125,80,0],epoc:[145,108,0],eap:[210,118,.3],icc:[160,102,1]};
 const DRUGS={ntg:{h:3,ec50:300,on:2},furo:{h:90,ec50:20,on:15},salb:{h:180,ec50:.5,on:8},cort:{h:600,ec50:20,on:240},morf:{h:150,ec50:4,on:6},dex:{h:120,ec50:120,on:15},nor:{h:2.5,ec50:.4,on:2}};
 const CASES={
- c1:{lvl:'Casos del curso',title:'Caso 1 · EPOC con esfuerzos ineficaces',pat:'epoc',leak:10,
-   set:{mode:'PSV',peep:5,ps:10,rise:.3,trig:2,exp:25,timax:1.5,rate:12,backup:false,fio2:40},
+ c1:{lvl:'Casos del curso',title:'Caso 1 · EPOC con esfuerzos ineficaces',pat:'epoc',leak:30,
+   set:{mode:'PSV',peep:5,ps:10,rise:.3,trig:3,exp:25,timax:1.5,rate:12,backup:false,fio2:40},
    goal:'Hombre de 70 años, 172 cm. La FR que cuentas es mayor que la del monitor y la pCO₂ sube. Consigue que todos los esfuerzos disparen el equipo y que la pCO₂ baje.',
-   hint:'Sube la PEEP a 7–8, la PS a 12–14, acorta la rampa a unos 150 ms, sube el Exp Trig al 40–50 %, baja el Ti máx a 1,0 s y activa el backup.'},
+   hint:'Sigue este orden: 1) recoloca la mascarilla (fuga por debajo de 25); 2) baja el trigger a 1–1,5 L/min (en el bellavista no más de 2) y mira que no haga doble disparo; 3) acorta la inspiración (Exp Trig 40–50 %, Ti máx 1,0 s, rampa 150 ms) y ajusta la PS a 12–14 para Vt 6–8 mL/kg; 4) mira la curva de flujo: solo si no llega a cero, sube la PEEP 1–2; 5) activa el backup.'},
  c2:{lvl:'Casos del curso',title:'Caso 2 · ICC + EPOC con fuga',pat:'icc',leak:55,
    set:{mode:'PSV',peep:5,ps:16,rise:.15,trig:1,exp:25,timax:1.8,rate:12,backup:true,fio2:60},
    goal:'Mujer de 74 años, 160 cm. El monitor marca más FR que la paciente y el Vt parece enorme. Encuentra la causa y corrígela.',
-   hint:'Recoloca la mascarilla (fuga por debajo de 25), sube el trigger a 2–3 L/min, baja la PS a 12–14, sube la PEEP a 7–8, Exp Trig 30–40 % y Ti máx 1,0–1,2 s.'},
+   hint:'Recoloca la mascarilla (fuga por debajo de 25), sube el trigger a 1,5–2 L/min, baja la PS a 12–14, sube la PEEP a 7–8, Exp Trig 30–40 % y Ti máx 1,0–1,2 s.'},
  c3:{lvl:'Casos del curso',title:'Caso 3 · EAP que se agota en CPAP',pat:'eap',leak:12,
    set:{mode:'CPAP',peep:10,ps:0,rise:.15,trig:2,exp:25,timax:1.2,rate:14,backup:true,fio2:100},
    goal:'Hombre de 66 años sin EPOC, TA 210/115. Solo ha recibido una dosis de nitroglicerina sublingual. Vt pequeños, FR alta y la pCO₂ subiendo pese a la CPAP. Decide modo, ajustes y fármacos.',
@@ -472,7 +474,7 @@ const CASES={
  c8:{lvl:'Intermedio',title:'Mascarilla grande con fuga',pat:'epoc',pco2Init:62,leak:72,
    set:{mode:'PSV',peep:7,ps:14,rise:.15,trig:1,exp:40,timax:1.2,rate:12,backup:true,fio2:35},
    goal:'Los ajustes parecen correctos, pero suenan alarmas, el Vt es enorme y la FR del monitor no cuadra con la del paciente.',
-   hint:'Recoloca o cambia la mascarilla (fuga por debajo de 25–30 L/min) y sube el trigger a 2–3 L/min. Después revisa el Vt real.'},
+   hint:'Recoloca o cambia la mascarilla (fuga por debajo de 25–30 L/min) y sube el trigger a 1,5–2 L/min. Después revisa el Vt real.'},
  c9:{lvl:'Intermedio',title:'Doble disparo',pat:'eap',leak:10,tas0:150,init:{sev:.7},
    set:{mode:'PSV',peep:10,ps:8,rise:.05,trig:2,exp:70,timax:.35,rate:12,backup:true,fio2:60},
    goal:'Paciente con edema pulmonar y mucha hambre de aire. Alguien ha dejado una inspiración muy corta: Vt pequeños y el monitor cuenta más respiraciones de las reales.',
@@ -481,6 +483,10 @@ const CASES={
    set:{mode:'PSV',peep:7,ps:13,rise:.15,trig:2,exp:40,timax:1.0,rate:12,backup:false,fio2:30},
    goal:'Por fin descansa tras horas de VMNI y se queda dormido. Mira qué pasa con la respiración y la pCO₂.',
    hint:'Activa el backup a 12–14 rpm (en equipos tipo Weinmann, modo S/T). Las pausas del sueño desaparecen y la pCO₂ deja de subir.'},
+ c18:{lvl:'Intermedio',title:'A-C con el T insp por defecto',pat:'epoc',pco2Init:80,leak:12,sleep:40,
+   set:{mode:'PAC',peep:6,ps:14,rise:.2,trig:2,exp:30,timax:1.7,rate:14,backup:true,fio2:35},
+   goal:'EPOC somnoliento (Glasgow 13, despierta a la voz y maneja secreciones). Lo han dejado en P-A/C con el T insp que trae el bellavista (1,7 s). Lucha con el equipo.',
+   hint:'Baja el T insp a 0,8–1,2 s, ajusta la presión para Vt 6–8 mL/kg y pon la frecuencia algo por debajo de la del paciente. Cuando despierte, vuelve a PSV con backup. Si la conciencia empeora: IOT.'},
  c11:{lvl:'Intermedio',title:'Modo temporizado mal elegido',pat:'epoc',dev:'weinmann',pco2Init:66,leak:10,
    set:{mode:'T',peep:6,ps:10,rise:.2,trig:2,exp:30,timax:1.6,rate:12,backup:true,fio2:35},
    goal:'Equipo tipo Weinmann en modo T a 12 rpm. El paciente respira a casi 30 y lucha con el ventilador.',
@@ -543,7 +549,7 @@ function resetSim(){
  S={t:0,V:Math.max(cfg.peep,P.Pcrit)*P.C+.05,Paw:cfg.peep,Q:0,Qm:0,Vm:0,noise:0,pexp:0,mpaw:cfg.peep,drive:.5,
    pat:{next:.6,ts:-10,tin:1,pmax:P.pMax,open:false,id:0,trigCount:0,midChecked:false,midPhase:'exp',rr:P.rrMax},
    vent:{phase:'exp',tb:0,tc:0,peakQm:0,ppk:0,trigHold:0,rec:null},
-   breaths:[],efforts:[],ies:[],infl:[],vin:0,inInfl:false,
+   breaths:[],efforts:[],effFlow:[],ies:[],infl:[],vin:0,inInfl:false,
    pco2:p0,pco2Ref:p0,vaE:0.863*P.vco2/p0,spo2:.9,trend:[],acc:0,sacc:0,tacc:0,uacc:0,aacc:0,
    buf:{p:new Float32Array(N),f:new Float32Array(N),v:new Float32Array(N),m:new Float32Array(N),ev:new Int8Array(N),ie:new Int8Array(N)},
    w:0,filled:false,evNext:0,ieNext:0,vmax:1000,alarms:[],
@@ -593,7 +599,9 @@ function startEffort(){
  const rr=clamp(P.rrRest*(sleep?0.7:1)+(P.rrMax-P.rrRest)*drive,6,42);
  let pm=(P.pRest+(P.pMax-P.pRest)*drive)*(1+(Math.random()-.5)*.24);
  if(cfg.mode!=='CPAP') pm*=(1-0.3*clamp(cfg.ps/15,0,1));
- pt.ts=S.t; pt.tin=P.tiFrac*60/rr; pt.pmax=clamp(pm,1.5,20); pt.rr=rr; pt.id++; pt.open=true; pt.trigCount=0; pt.midChecked=false; pt.midPhase='exp';
+ if(P.weak&&Math.random()<P.weak) pm*=.45;
+ S.effFlow.push({t:S.t,f:S.Qm*60});
+ pt.ts=S.t; pt.tin=Math.min(P.tiFrac*60/rr,P.tiMax||1.3); pt.pmax=clamp(pm,1.5,20); pt.rr=rr; pt.id++; pt.open=true; pt.trigCount=0; pt.midChecked=false; pt.midPhase='exp';
  pt.next=S.t+60/rr*(1+(Math.random()-.5)*.16);
  S.efforts.push(S.t);
 }
@@ -646,7 +654,7 @@ function step(dt){
  const M=S.mech; const palv=S.V/M.C-pmus+S.pexp+S.coughP;
  let Q;
  if(S.Paw>=palv) Q=(S.Paw-palv)/M.Ri;
- else { const down=Math.max(S.Paw,M.Pcrit); Q= palv>down ? -(palv-down)/M.Re : -(palv-S.Paw)*0.15/M.Re; }
+ else { const down=Math.max(S.Paw,M.Pcrit); Q= palv>down ? -(palv-down)/M.Re : -(palv-S.Paw)*0.5/M.Re; }
  S.V+=Q*dt; S.Q=Q;
 
  const sig=0.2+Math.max(0,leak-15)*0.12+leak*0.02;
@@ -665,7 +673,7 @@ function step(dt){
    else { v.ppk=Math.max(v.ppk,S.Paw); if(S.Qm<0&&S.t-v.tb>0.15) cycle('pat'); }
  } else if(v.phase==='exp'){
    let trig=null;
-   if(m!=='T'&&S.t-v.tc>0.15){ if(S.Qm*60>cfg.trig){ v.trigHold+=dt; if(v.trigHold>=0.04) trig=pt.open?'pat':'auto'; } else v.trigHold=0; }
+   if(m!=='T'&&S.t-v.tc>0.15){ const mask=clamp((leak-20)/80,0,.6), qt=S.Q>0?S.Qm-S.Q*(1-(1-mask)*0.25):S.Qm; if(qt*60>cfg.trig){ v.trigHold+=dt; if(v.trigHold>=0.04) trig=pt.open?'pat':'auto'; } else v.trigHold=0; }
    const rate=(m==='PAC'||m==='T'||(m==='PSV'&&cfg.backup))?cfg.rate:0;
    if(!trig&&rate>0&&S.t-v.tb>=60/rate) trig='time';
    if(trig) startBreath(trig);
@@ -688,7 +696,7 @@ function step(dt){
 function slow(){
  updateMech(0.125);
  const P=PATIENTS[patKey], t=S.t, W=Math.min(30,Math.max(t,3));
- const cut=t-60; S.infl=S.infl.filter(e=>e.t>cut); S.efforts=S.efforts.filter(e=>e>cut); S.ies=S.ies.filter(e=>e>cut);
+ const cut=t-60; S.infl=S.infl.filter(e=>e.t>cut); S.efforts=S.efforts.filter(e=>e>cut); S.ies=S.ies.filter(e=>e>cut); S.effFlow=S.effFlow.filter(e=>e.t>cut);
  let va=0; for(const e of S.infl) if(e.t>t-W) va+=e.va;
  const VA=va*60/W;
  if(t>8) S.vaE+=(VA-S.vaE)*.25/12;
@@ -715,7 +723,8 @@ function updateMonitor(){
  const leakNow=leak*Math.sqrt(Math.max(S.mpaw,0)/10);
  const ap=done.slice(-4); const autoP=ap.length?ap.reduce((a,b)=>a+b.autoPEEP,0)/ap.length:0;
  const ie=S.ies.filter(e=>e>t-W).length;
- MON={W,B:done.length,E,frm,frr,mv,vtR,vtM,leakNow,autoP,ie,last,
+ const EF=S.effFlow.filter(e=>e.t>t-W), efFlow=EF.length?EF.reduce((a,e)=>a+e.f,0)/EF.length:0;
+ MON={W,B:done.length,E,frm,frr,mv,vtR,vtM,leakNow,autoP,ie,last,efFlow,
   auto:done.filter(b=>b.type==='auto').length, dbl:done.filter(b=>b.dbl).length, late:done.filter(b=>b.late).length,
   prem:done.filter(b=>b.prem).length, timax:done.filter(b=>b.cycle==='timax').length, trap:done.filter(b=>b.trap).length,
   vtkg:vtM*1000/P.ibw, rsbi: vtR>0? frr/vtR : 0};
@@ -803,12 +812,25 @@ function renderTiles(){
 function renderAsync(){
  const M=MON, P=PATIENTS[patKey], lab=L(cfg), n=k=>lab[k]?lab[k][0]:k, out=[];
  const B=Math.max(M.B,1), E=Math.max(M.E,1);
- if(cfg.mode!=='CPAP'&&M.ie/E>0.12) out.push(['bad', cfg.mode==='T'?'Esfuerzos no sincronizados':'Esfuerzos ineficaces',
+ const isAC=cfg.mode==='PAC'||cfg.mode==='T', bv=devKey==='bellavista', trapV=M.efFlow<-10;
+ if(cfg.mode!=='CPAP'&&M.ie/E>0.12){
+  const st=[];
+  if(M.leakNow>25) st.push(`Fuga de ${fmt(M.leakNow)} L/min: revisa tubuladura e interfase y recoloca la mascarilla.`); else st.push('Revisa que no haya fuga (tubuladura e interfase).');
+  if(cfg.mode==='T') st.push('El modo T no responde a la paciente: cambia a S/T.');
+  else st.push(`Baja ${n('trig')} (ahora ${fmt(cfg.trig,1)} L/min${bv?'; en el bellavista no más de 1,5–2, puedes llegar al mínimo':''}) quedándote a ver que no haga doble disparo ni autodisparo.`);
+  if(isAC&&cfg.timax>1.2) st.push(`${n('timax')} de ${fmt(cfg.timax,1)} s: demasiado largo. Bájalo a 0,8–1,2 s (EPOC).`);
+  if(isAC&&cfg.rate>M.frr+1) st.push(`${n('rate')} programada (${fmt(cfg.rate)}) por encima de la FR del paciente (${fmt(M.frr)}): sus esfuerzos caen en la espiración de la máquina. Bájala o, si está más despierto, PSV con backup.`);
+  if(M.vtkg>9) st.push(`Vt ${fmt(M.vtkg,1)} mL/kg: el exceso de soporte también da esfuerzos ineficaces. Baja ${n(devKey==='weinmann'?'ipap':'ps')}.`);
+  if(!isAC&&M.late/B>0.2) st.push(`Inspiración larga: sube ${n('exp')} o baja ${n('timax')}.`);
+  st.push(trapV?`Auto-PEEP visible (el flujo espiratorio no llega a cero, ≈ ${fmt(M.efFlow)} L/min al empezar el esfuerzo): sube ${n('peep')} 1–2 y alarga la espiración.`:`Compruébalo en la curva de flujo: si llega a cero, subir ${n('peep')} no es lo principal.`);
+  st.push('Si persiste: puede estar agotada y sin fuerza para disparar. Valora la A-C y la IOT.');
+  out.push(['bad', cfg.mode==='T'?'Esfuerzos no sincronizados':'Esfuerzos ineficaces',
    `${M.ie} de ${M.E} esfuerzos no disparan el equipo: FR real ${fmt(M.frr)} frente a ${fmt(M.frm)} del monitor.`,
-   cfg.mode==='T'?'El modo T no responde a la paciente: cambia a S/T.':`Sube ${n('peep')} 1–2 y acorta la inspiración (${n('exp')} más alto o ${n('timax')} más bajo).`]);
- if(cfg.mode!=='CPAP'&&M.auto>=2&&M.auto/B>0.15) out.push(['bad','Autodisparo',`${M.auto} respiraciones sin esfuerzo de la paciente: el monitor cuenta más FR de la real.`,`Corrige la fuga y sube ${n('trig')} a 2–3 L/min.`]);
+   'Por orden: '+st.map((x,i)=>`${i+1}) ${x}`).join(' ')]);
+ }
+ if(cfg.mode!=='CPAP'&&M.auto>=2&&M.auto/B>0.15) out.push(['bad','Autodisparo',`${M.auto} respiraciones sin esfuerzo de la paciente: el monitor cuenta más FR de la real.`,`Corrige la fuga y sube ${n('trig')} un punto${devKey==='bellavista'?' (en el bellavista sin pasar de 2 L/min)':' (2–3 L/min)'}.`]);
  if(M.dbl>=2&&M.dbl/B>0.06) out.push(['warn','Doble disparo','Dos ciclos seguidos dentro del mismo esfuerzo: la inspiración se queda corta.',`Baja ${n('exp')} o sube ${n('timax')} 0,1–0,2 s.`]);
- if(cfg.mode!=='CPAP'&&M.late/B>0.3) out.push(['warn','Ciclado tardío','El equipo sigue empujando cuando la paciente ya quiere espirar (punta final de presión).',`Sube ${n('exp')} (30–50 % en EPOC) o baja ${n('timax')}.`]);
+ if(cfg.mode!=='CPAP'&&M.late/B>0.3) out.push(['warn',isAC?(cfg.timax>1.2?'T insp demasiado largo':'Respiraciones desfasadas'):'Ciclado tardío','El equipo sigue empujando cuando la paciente ya quiere espirar (punta final de presión).',isAC&&cfg.timax<=1.2?`El T insp ya es corto: las respiraciones por tiempo caen fuera de fase con el paciente. Pon ${n('rate')} algo por debajo de su FR para que dispare él; si está más despierto, pasa a PSV con backup.`:isAC?`En A-C adapta ${n('timax')} al paciente: EPOC 0,8–1,2 s; restrictivo (obeso, neuromuscular) 1–1,4 s. El 1,7 s por defecto es una tortura.`:`Sube ${n('exp')} (30–50 % en EPOC) o baja ${n('timax')}.`]);
  if(cfg.mode==='PSV'&&M.timax/B>0.4) out.push(['warn','Ciclado por Ti máx','La inspiración termina por tiempo, no por flujo.',M.leakNow>30?'Hay fuga: corrige la mascarilla antes de tocar el ventilador.':`Sube ${n('exp')}.`]);
  if(M.trap/B>0.4) out.push(['warn','Atrapamiento aéreo',`El flujo espiratorio no llega a 0 antes del siguiente ciclo (auto-PEEP ≈ ${fmt(M.autoP,1)}).`,'Alarga la espiración (inspiración más corta) y optimiza broncodilatadores.']);
  if(M.leakNow>30) out.push(['bad','Fuga alta',`Fuga de ${fmt(M.leakNow)} L/min: el Vt y el VM medidos están inflados.`,'Recoloca o cambia la mascarilla (objetivo por debajo de 25–30 L/min).']);
@@ -949,6 +971,7 @@ $('#pauseBtn').addEventListener('click',e=>{ paused=!paused; e.target.setAttribu
 document.querySelectorAll('#simSeg [data-speed]').forEach(b=>b.addEventListener('click',()=>{ speed=+b.dataset.speed; document.querySelectorAll('#simSeg [data-speed]').forEach(o=>o.setAttribute('aria-pressed',o===b)); }));
 $('#devSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; devKey=b.dataset.dev; fitMode(cfg); fitMode(pend); renderDev(); });
 $('#modes').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const md=DEVICES[devKey].modes[+b.dataset.i];
+ if(md.m==='PAC'&&pend.mode!=='PAC'&&devKey==='bellavista') pend.timax=1.7;
  pend.mode=md.m; if(md.b!==undefined) pend.backup=md.b; if(md.m==='PSV'&&pend.ps<4) pend.ps=8; renderModes(); renderSliders(); });
 $('#sliders').addEventListener('input',e=>{
  const t=e.target;
@@ -975,10 +998,11 @@ function frame(now){
  if(!paused){ const sim=dt*speed, n=Math.max(1,Math.ceil(sim/.004)); for(let i=0;i<n;i++) step(sim/n); }
  draw(); requestAnimationFrame(frame);
 }
+window.__sim={get S(){return S;},get MON(){return MON;},setCfg:o=>{cfg={...cfg,...o};pend={...cfg};},setLeak:v=>{leak=v;},load:k=>loadCase(k),fast:sec=>{for(let i=0;i<sec/.004;i++) step(.004);}};
 loadCase('c1');
 const QUIZ=[
  {q:'En PSV con PEEP 6 y PS 14, ¿qué presión pico esperas?',o:['14','20','8'],a:1,e:'Ppico ≈ PEEP + PS = 6 + 14 = 20.'},
- {q:'Cuentas FR 30 y el monitor marca 18. ¿Qué sospechas?',o:['Autodisparo por fuga','Esfuerzos ineficaces por auto-PEEP','Todo correcto'],a:1,e:'Si cuentas más de lo que ve el equipo, hay esfuerzos que no disparan: sube PEEP y acorta la inspiración.'},
+ {q:'Cuentas FR 30 y el monitor marca 18. ¿Qué sospechas?',o:['Autodisparo por fuga','Esfuerzos ineficaces','Todo correcto'],a:1,e:'Hay esfuerzos que no disparan. Por orden: revisa la fuga, baja el trigger vigilando el doble disparo, acorta la inspiración y mira si hay auto-PEEP en la curva de flujo antes de subir la PEEP. Si persiste, piensa en agotamiento.'},
  {q:'El flujo espiratorio no llega a 0 antes de la siguiente respiración. ¿Qué cambio ayuda en un EPOC?',o:['Bajar el Exp Trig al 10 %','Subir el Ti máx a 2 s','Subir el Exp Trig al 40 %'],a:2,e:'Un Exp Trig más alto corta antes la inspiración y deja más tiempo para espirar.'},
  {q:'Paciente con EAP hipertensivo, TA 210/115. ¿Cuál es el fármaco clave?',o:['Furosemida a dosis tope','Nitroglicerina a dosis alta','Morfina'],a:1,e:'Los nitratos bajan poscarga y precarga; el diurético es secundario y la morfina se desaconseja.'},
  {q:'En un equipo con IPAP absoluta subes la EPAP de 6 a 8 sin tocar la IPAP (20). ¿Qué pasa con la presión de soporte?',o:['Sube a 16','Se queda en 14','Baja a 12'],a:2,e:'PS = IPAP − EPAP = 20 − 8 = 12. En equipos que programan PS sobre PEEP, la PS no cambiaría.'}

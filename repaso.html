@@ -1,0 +1,433 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Repaso de VMNI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una lección por pantalla; arriba el recorrido (10 pasos), en medio idea clave + comparación + laboratorio interactivo, abajo una pregunta y la navegación. Rojo = oxígeno, azul = CO₂ */
+:root{
+  --bg:#eef3f7; --surface:#ffffff; --ink:#18222d; --muted:#566573; --line:#d4dde5;
+  --accent:#12806b; --o2:#d0433f; --co2:#3567d1; --warn:#b67a00; --ok:#24875a; --bad:#c43a2f; --soft:#e4f2ee;
+  --display:"Lexend",system-ui,sans-serif; --body:"Atkinson Hyperlegible",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f151b; --surface:#17212a; --ink:#e6edf3; --muted:#9aa8b5; --line:#2a3642;
+  --accent:#3fc4a5; --o2:#f07a6f; --co2:#7aa2f5; --warn:#e3b341; --ok:#4cc584; --bad:#ef6b5b; --soft:#18332d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151b; --surface:#17212a; --ink:#e6edf3; --muted:#9aa8b5; --line:#2a3642;
+  --accent:#3fc4a5; --o2:#f07a6f; --co2:#7aa2f5; --warn:#e3b341; --ok:#4cc584; --bad:#ef6b5b; --soft:#18332d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55;
+ padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+main{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(1.8rem,5vw,2.6rem)} h2{font-size:clamp(1.4rem,4vw,1.9rem)} h3{font-size:1.1rem}
+p{margin:0;max-width:68ch}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.eyebrow{font-family:var(--mono);font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+header{display:flex;flex-direction:column;gap:6px}
+header p{color:var(--muted)}
+.track{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pills a{min-width:38px;height:38px;border-radius:19px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;text-decoration:none;color:var(--ink);font-family:var(--display);font-weight:600;padding:0 10px;background:var(--bg);font-size:.92rem}
+.pills a.done{border-color:var(--accent);color:var(--accent)}
+.pills a[aria-current="step"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.lesson{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.key{background:var(--soft);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.key b{font-family:var(--display);color:var(--accent)}
+.analogy{display:flex;gap:12px;align-items:flex-start;border:1px dashed var(--line);border-radius:12px;padding:12px 14px}
+.analogy .ic{font-family:var(--display);font-weight:700;color:var(--o2);font-size:1.2rem;flex:0 0 auto}
+.lab{border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){.lab{grid-template-columns:1fr}}
+.lab h3{grid-column:1/-1;display:flex;align-items:center;gap:8px}
+.lab h3 span{font-family:var(--mono);font-size:.7rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--accent);padding:2px 8px;border-radius:10px}
+.viz{min-width:0}
+.viz svg,.viz canvas{width:100%;height:auto;display:block}
+.ctrls{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ctl{display:flex;flex-direction:column;gap:4px}
+.ctl label{display:flex;justify-content:space-between;gap:8px;font-size:.95rem}
+.ctl label b{font-family:var(--mono);font-weight:500}
+.ctl input[type=range]{width:100%;accent-color:var(--accent);height:28px}
+.tog{display:flex;gap:8px;align-items:center;font-size:.95rem}
+.tog input{width:22px;height:22px;accent-color:var(--accent)}
+.read{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.read div{background:var(--bg);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column}
+.read span{font-size:.78rem;color:var(--muted)}
+.read b{font-family:var(--display);font-size:1.45rem;font-variant-numeric:tabular-nums}
+.msg{border-radius:10px;padding:10px 12px;font-size:.95rem;background:var(--bg);border-left:4px solid var(--muted)}
+.msg.ok{border-left-color:var(--ok)}.msg.warn{border-left-color:var(--warn)}.msg.bad{border-left-color:var(--bad)}
+.good{color:var(--ok)}.mid{color:var(--warn)}.badc{color:var(--bad)}
+.info{background:var(--bg);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-height:150px}
+.info b{font-family:var(--display);font-size:1.1rem}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:6px 12px;cursor:pointer;font-size:.9rem}
+.chips button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.check{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:8px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opts button{text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.opts button.right{border-color:var(--ok);box-shadow:inset 4px 0 0 var(--ok)}
+.opts button.wrong{border-color:var(--bad);box-shadow:inset 4px 0 0 var(--bad)}
+.exp{font-size:.95rem;color:var(--muted)}
+.nav{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 18px;cursor:pointer;text-decoration:none;color:var(--ink);font-family:var(--display);font-weight:600}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn[aria-disabled="true"]{opacity:.4;pointer-events:none}
+.form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--muted)}
+.form input{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--bg);font-family:var(--mono);font-size:1.1rem;width:100%}
+.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
+svg text{font-family:var(--body)}
+.part{cursor:pointer}.part:hover .shape,.part.on .shape{stroke:var(--accent);stroke-width:4}
+footer{color:var(--muted);font-size:.82rem;max-width:90ch}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+
+<main>
+<header>
+  <span class="eyebrow">Repaso interactivo · fisiología respiratoria y VMNI</span>
+  <h1>Repaso de VMNI</h1>
+  <p>Diez lecciones cortas, de lo más básico a la ventilación. En cada una: una idea clave, una comparación de la vida diaria y un laboratorio para tocar y ver qué pasa.</p>
+</header>
+<nav class="track" aria-label="Recorrido"><div class="bar"><i id="prog"></i></div><div class="pills" id="pills"></div></nav>
+<article class="lesson" id="lesson" aria-live="polite"></article>
+<div class="nav"><a class="btn" id="prev" href="#">← Anterior</a><a class="btn primary" id="next" href="#">Siguiente →</a></div>
+<footer>Material docente simplificado. Las cifras de los laboratorios son modelos aproximados para entender conceptos, no para tomar decisiones clínicas.</footer>
+</main>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const fmt=(x,d=0)=>(isFinite(x)?x:0).toFixed(d).replace('.',',');
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let raf=null, answered={};
+const stopAnim=()=>{ if(raf) cancelAnimationFrame(raf); raf=null; };
+function loop(fn){ stopAnim(); let last=performance.now(); const f=now=>{ const dt=clamp((now-last)/1000,0,.05); last=now; fn(dt,now/1000); raf=requestAnimationFrame(f); }; raf=requestAnimationFrame(f); }
+function slider(id,label,min,max,step,val,unit=''){ return `<div class="ctl"><label for="${id}">${label} <b id="${id}v">${val}${unit}</b></label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}"></div>`; }
+function bindAll(ids,fn){ ids.forEach(i=>$('#'+i).addEventListener('input',fn)); fn(); }
+const val=id=>parseFloat($('#'+id).value);
+const setv=(id,t)=>{ const e=$('#'+id+'v'); if(e) e.textContent=t; };
+function canvasSetup(c,h){ const dpr=window.devicePixelRatio||1, w=c.clientWidth||500; if(c.width!==Math.round(w*dpr)){ c.width=Math.round(w*dpr); c.height=Math.round(h*dpr);} c.style.height=h+'px'; const x=c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,w,h); return [x,w,h]; }
+const pco2From=(vt,fr,vd=150)=>{ const va=Math.max(.3,(vt-vd)*fr/1000); return clamp(0.863*200/va,18,130); };
+const phFrom=(pco2,hco3=24)=>6.1+Math.log10(hco3/(0.03*pco2));
+
+/* ======================= LECCIONES ======================= */
+const L=[];
+
+/* 1 · El viaje del aire */
+L.push({t:'El viaje del aire',
+ key:'El aire entra por la nariz o la boca, baja por un tubo (la tráquea), se reparte por tubos cada vez más finos (los bronquios) y llega a millones de saquitos (los alvéolos). Solo en los alvéolos el oxígeno pasa a la sangre.',
+ an:['Un árbol al revés','La tráquea es el tronco, los bronquios las ramas y los alvéolos las hojas. Las hojas son las que trabajan.'],
+ lab:`<h3><span>Toca</span>Pulsa cada parte del aparato respiratorio</h3>
+ <div class="viz"><svg viewBox="0 0 360 380" role="img" aria-label="Esquema del aparato respiratorio con partes pulsables">
+  <g class="part" data-p="nariz"><ellipse class="shape" cx="180" cy="32" rx="46" ry="24" fill="var(--soft)" stroke="var(--line)" stroke-width="2"/><text x="180" y="37" text-anchor="middle" font-size="13" fill="var(--ink)">Nariz y boca</text></g>
+  <g class="part" data-p="traquea"><rect class="shape" x="168" y="58" width="24" height="92" rx="8" fill="var(--soft)" stroke="var(--line)" stroke-width="2"/></g>
+  <g class="part" data-p="pulmones"><ellipse class="shape" cx="105" cy="235" rx="78" ry="105" fill="none" stroke="var(--line)" stroke-width="2"/><ellipse class="shape" cx="255" cy="235" rx="78" ry="105" fill="none" stroke="var(--line)" stroke-width="2"/></g>
+  <g class="part" data-p="bronquios"><path class="shape" d="M180 150 L120 195 L95 240 M120 195 L140 245 M180 150 L240 195 L265 240 M240 195 L220 245" fill="none" stroke="var(--muted)" stroke-width="7" stroke-linecap="round"/></g>
+  <g class="part" data-p="alveolos">${[[88,252],[100,262],[80,265],[134,258],[146,265],[258,252],[272,262],[250,266],[214,258],[226,267],[95,275],[262,277]].map(([x,y])=>`<circle class="shape" cx="${x}" cy="${y}" r="8" fill="var(--o2)" fill-opacity=".35" stroke="var(--o2)" stroke-width="1.5"/>`).join('')}</g>
+  <g class="part" data-p="diafragma"><path class="shape" d="M25 352 Q180 290 335 352" fill="none" stroke="var(--o2)" stroke-width="7" stroke-linecap="round"/><text x="180" y="372" text-anchor="middle" font-size="13" fill="var(--muted)">diafragma</text></g>
+ </svg></div>
+ <div class="ctrls"><div class="info" id="info"><b>Elige una parte</b><p>Pulsa sobre el dibujo: nariz, tráquea, bronquios, alvéolos, pulmones o diafragma.</p></div></div>`,
+ init(){
+  const T={nariz:['Nariz y boca','Calientan y humedecen el aire. Aquí se apoya la mascarilla de la VMNI: si no sella bien, hay fuga.'],
+   traquea:['Tráquea','Un tubo de unos 12 cm. El aire que se queda aquí no llega a los alvéolos: es el espacio muerto (unos 150 mL).'],
+   bronquios:['Bronquios','Tubos cada vez más finos. En el EPOC y el asma se estrechan: el aire entra y, sobre todo, sale con dificultad (más resistencia).'],
+   alveolos:['Alvéolos','Unos 300 millones de saquitos con capilares alrededor. Aquí entra el oxígeno y sale el CO₂. En el edema agudo de pulmón se llenan de líquido.'],
+   pulmones:['Pulmones','Son elásticos como un globo: se estiran al inspirar y vuelven solos a su tamaño al espirar. Esa elasticidad se llama distensibilidad.'],
+   diafragma:['Diafragma','El músculo principal de la respiración. Al contraerse baja y el pulmón se llena. Si trabaja demasiado, se cansa: es la fatiga respiratoria.']};
+  document.querySelectorAll('.part').forEach(g=>g.addEventListener('click',()=>{ document.querySelectorAll('.part').forEach(x=>x.classList.remove('on')); g.classList.add('on'); const [a,b]=T[g.dataset.p]; $('#info').innerHTML=`<b>${a}</b><p>${b}</p>`; }));
+ },
+ q:{q:'¿Dónde pasa realmente el oxígeno a la sangre?',o:['En la tráquea','En los bronquios','En los alvéolos'],a:2,e:'Solo en los alvéolos. Por eso el aire que se queda en tráquea y bronquios es "espacio muerto".'}});
+
+/* 2 · Cómo respiramos */
+L.push({t:'Inspirar cuesta, espirar es gratis',
+ key:'Para inspirar, el diafragma se contrae y "tira" del pulmón: eso gasta energía. Para espirar, el pulmón vuelve solo a su tamaño, como un globo que se desinfla: no gasta energía.',
+ an:['Un globo y una mano','Estirar el globo cuesta (inspirar). Soltarlo no cuesta nada: el globo se vacía solo (espirar).'],
+ lab:`<h3><span>Prueba</span>Cambia la fuerza del diafragma y la rigidez del pulmón</h3>
+ <div class="viz"><svg viewBox="0 0 320 260" role="img" aria-label="Tórax que respira">
+  <rect x="40" y="20" width="240" height="210" rx="40" fill="none" stroke="var(--line)" stroke-width="3"/>
+  <rect x="152" y="10" width="16" height="60" rx="6" fill="var(--soft)" stroke="var(--line)"/>
+  <ellipse id="lL" cx="115" cy="130" rx="55" ry="70" fill="var(--o2)" fill-opacity=".22" stroke="var(--o2)" stroke-width="2"/>
+  <ellipse id="lR" cx="205" cy="130" rx="55" ry="70" fill="var(--o2)" fill-opacity=".22" stroke="var(--o2)" stroke-width="2"/>
+  <path id="dia" d="M50 215 Q160 175 270 215" fill="none" stroke="var(--o2)" stroke-width="6" stroke-linecap="round"/>
+  <text id="phase" x="160" y="252" text-anchor="middle" font-size="14" fill="var(--muted)"></text>
+ </svg></div>
+ <div class="ctrls">${slider('fz','Fuerza del diafragma',2,15,1,8,' cmH₂O')}
+  <label class="tog"><input type="checkbox" id="rig"> Pulmón rígido (como en el edema)</label>
+  <div class="read"><div><span>Volumen por respiración</span><b id="vt">–</b></div><div><span>Distensibilidad</span><b id="cc">–</b></div></div>
+  <div class="msg" id="m2"></div></div>`,
+ init(){
+  let ph=0;
+  const upd=()=>{ const C=$('#rig').checked?20:50, vt=val('fz')*C; setv('fz',val('fz')+' cmH₂O'); $('#vt').textContent=fmt(vt)+' mL'; $('#cc').textContent=C+' mL/cmH₂O';
+   const m=$('#m2'); m.className='msg '+(vt<300?'bad':'ok'); m.textContent=vt<300?'Con un pulmón rígido, el mismo esfuerzo mete muy poco aire: el paciente respirará más rápido y se cansará.':'Volumen suficiente. Fíjate: volumen = fuerza × distensibilidad.'; return vt; };
+  bindAll(['fz','rig'],upd);
+  loop(dt=>{ const vt=val('fz')*($('#rig').checked?20:50); ph=(ph+dt/3.2)%1; let v;
+   if(ph<.4){ v=(1-Math.cos(Math.PI*ph/.4))/2; $('#phase').textContent='Inspira: el diafragma baja (gasta energía)'; }
+   else { v=Math.exp(-(ph-.4)/.12); $('#phase').textContent='Espira: el pulmón se vacía solo'; }
+   const s=1+v*vt/2200; $('#lL').setAttribute('ry',70*s); $('#lR').setAttribute('ry',70*s); $('#lL').setAttribute('rx',55*(1+v*vt/5000)); $('#lR').setAttribute('rx',55*(1+v*vt/5000));
+   const y=215+v*vt/40; $('#dia').setAttribute('d',`M50 ${215+v*vt/90} Q160 ${175+v*vt/18} 270 ${215+v*vt/90}`); });
+ },
+ q:{q:'¿Qué fase de la respiración gasta energía en reposo?',o:['La espiración','La inspiración','Las dos por igual'],a:1,e:'Inspirar es activo (diafragma). Espirar en reposo es pasivo: el pulmón vuelve solo.'}});
+
+/* 3 · Intercambio de gases */
+L.push({t:'Oxígeno dentro, CO₂ fuera',
+ key:'El oxígeno depende sobre todo de cuántos alvéolos están abiertos y del oxígeno que respiras. El CO₂ depende de cuánto aire útil mueves por minuto: si ventilas poco, el CO₂ sube y la sangre se vuelve ácida (baja el pH).',
+ an:['Ventilar una habitación','El CO₂ es como el humo en una habitación: para sacarlo hay que mover aire. Abrir mucho y poco rato no sirve si el aire no llega al fondo.'],
+ lab:`<h3><span>Prueba</span>Cambia la frecuencia y el tamaño de cada respiración</h3>
+ <div class="viz"><svg viewBox="0 0 320 250" role="img" aria-label="Alvéolo con oxígeno entrando y CO2 saliendo">
+  <circle cx="160" cy="100" r="80" fill="var(--soft)" stroke="var(--line)" stroke-width="3"/>
+  <text x="160" y="40" text-anchor="middle" font-size="13" fill="var(--muted)">alvéolo</text>
+  <rect x="40" y="190" width="240" height="34" rx="17" fill="var(--o2)" fill-opacity=".15" stroke="var(--o2)"/>
+  <text x="160" y="245" text-anchor="middle" font-size="12" fill="var(--muted)">capilar (sangre)</text>
+  <g id="parts"></g>
+ </svg>
+ <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px"><span style="font-size:.85rem;color:var(--muted)">Cada respiración: aire útil frente a espacio muerto</span>
+  <div style="display:flex;height:22px;border-radius:6px;overflow:hidden;border:1px solid var(--line)"><div id="useful" style="background:var(--accent)"></div><div id="dead" style="background:var(--line)"></div></div></div></div>
+ <div class="ctrls">${slider('fr3','Frecuencia respiratoria',8,40,1,14,' rpm')}${slider('vt3','Volumen por respiración',150,700,10,500,' mL')}
+  <div class="read"><div><span>Aire útil por minuto</span><b id="va3">–</b></div><div><span>pCO₂</span><b id="pc3">–</b></div><div><span>pH</span><b id="ph3">–</b></div></div>
+  <div class="msg" id="m3"></div></div>`,
+ init(){
+  const g=$('#parts'); const P=[]; for(let i=0;i<18;i++){ const o=i%2===0; const c=document.createElementNS('http://www.w3.org/2000/svg','circle'); c.setAttribute('r',5); c.setAttribute('fill',o?'var(--o2)':'var(--co2)'); g.appendChild(c); P.push({c,o,p:Math.random(),x:110+Math.random()*100}); }
+  let speed=1;
+  const upd=()=>{ const fr=val('fr3'), vt=val('vt3'); setv('fr3',fr+' rpm'); setv('vt3',vt+' mL');
+   const va=Math.max(0,(vt-150)*fr/1000), pc=pco2From(vt,fr), ph=phFrom(pc); speed=clamp(va/4.3,0.05,3);
+   $('#va3').textContent=fmt(va,1)+' L'; const e=$('#pc3'); e.textContent=fmt(pc); e.className=pc>45?'badc':pc<35?'mid':'good';
+   const f=$('#ph3'); f.textContent=fmt(ph,2); f.className=ph<7.35?'badc':ph>7.45?'mid':'good';
+   $('#useful').style.width=Math.max(0,(vt-150)/vt*100)+'%'; $('#dead').style.width=Math.min(100,150/vt*100)+'%';
+   const m=$('#m3');
+   if(vt<=250&&fr>=25){ m.className='msg bad'; m.textContent='Respiración rápida y superficial: casi todo el aire se queda en el espacio muerto y el CO₂ sube aunque respire muy rápido.'; }
+   else if(pc>45){ m.className='msg bad'; m.textContent='Hipoventilación: entra poco aire útil, el CO₂ sube y el pH baja (acidosis respiratoria).'; }
+   else if(pc<35){ m.className='msg warn'; m.textContent='Hiperventilación: sale demasiado CO₂ y el pH sube.'; }
+   else { m.className='msg ok'; m.textContent='Ventilación normal: CO₂ y pH en rango.'; } };
+  bindAll(['fr3','vt3'],upd);
+  loop(dt=>{ P.forEach(q=>{ q.p+=dt*0.35*speed; if(q.p>1){ q.p=0; q.x=110+Math.random()*100; }
+   const y=q.o? 30+q.p*175 : 205-q.p*175; q.c.setAttribute('cx',q.x+Math.sin(q.p*6+q.x)*6); q.c.setAttribute('cy',y); }); });
+ },
+ q:{q:'Un paciente respira a 35 por minuto con volúmenes de 200 mL. ¿Qué le pasa al CO₂?',o:['Baja mucho porque respira rápido','Sube, porque casi todo el aire es espacio muerto','No cambia'],a:1,e:'Con 200 mL solo unos 50 mL llegan al alvéolo en cada respiración. Rápido y superficial ventila muy poco.'}});
+
+/* 4 · Distensibilidad y resistencia */
+L.push({t:'Globos y pajitas',
+ key:'Dos cosas deciden cómo se llena y se vacía el pulmón. La distensibilidad: lo fácil que se estira (un globo blando o uno duro). La resistencia: lo estrechos que son los tubos (una pajita gruesa o una fina). Multiplicadas dan el tiempo que tarda en llenarse y vaciarse.',
+ an:['Soplar por una pajita','Con una pajita fina el globo tarda mucho en vaciarse. Eso le pasa al pulmón del EPOC.'],
+ lab:`<h3><span>Prueba</span>Llena y vacía el pulmón con la misma presión</h3>
+ <div class="viz"><canvas id="cv4" aria-label="Volumen del pulmón en el tiempo"></canvas></div>
+ <div class="ctrls">${slider('c4','Distensibilidad (globo)',20,100,5,50,' mL/cmH₂O')}${slider('r4','Resistencia (pajita)',5,35,1,8,' cmH₂O/L/s')}
+  <div class="read"><div><span>Volumen alcanzado</span><b id="v4">–</b></div><div><span>Tiempo para vaciarse</span><b id="t4">–</b></div></div>
+  <div class="msg" id="m4"></div></div>`,
+ init(){
+  const draw=()=>{ const C=val('c4')/1000, R=val('r4'), tau=R*C; setv('c4',val('c4')+' mL/cmH₂O'); setv('r4',val('r4')+' cmH₂O/L/s');
+   const [x,w,h]=canvasSetup($('#cv4'),220), P=15, Ti=1, T=4, vmax=1.6, X=t=>40+t/T*(w-50), Y=v=>h-28-v/vmax*(h-48);
+   x.strokeStyle=css('--line'); x.lineWidth=1; x.beginPath(); x.moveTo(40,Y(0)); x.lineTo(w-10,Y(0)); x.moveTo(X(Ti),10); x.lineTo(X(Ti),h-28); x.stroke();
+   x.fillStyle=css('--muted'); x.font='12px Atkinson Hyperlegible, sans-serif'; x.fillText('inspira',X(.2),18); x.fillText('espira',X(1.4),18); x.fillText('0 s',36,h-10); x.fillText('4 s',w-26,h-10); x.fillText('1,6 L',2,Y(1.6)+4);
+   x.beginPath(); let v1=0; for(let i=0;i<=200;i++){ const t=i/200*T; let v; if(t<=Ti){ v=C*P*(1-Math.exp(-t/tau)); v1=v; } else v=v1*Math.exp(-(t-Ti)/tau); i?x.lineTo(X(t),Y(v)):x.moveTo(X(t),Y(v)); }
+   x.strokeStyle=css('--accent'); x.lineWidth=3; x.stroke();
+   $('#v4').textContent=fmt(v1*1000)+' mL'; $('#t4').textContent=fmt(3*tau,1)+' s';
+   const m=$('#m4'); if(3*tau>2.5){ m.className='msg bad'; m.textContent='Tarda tanto en vaciarse que, si respira rápido, el siguiente aire entra antes de que salga el anterior: atrapamiento.'; }
+   else if(val('c4')<35){ m.className='msg warn'; m.textContent='Pulmón rígido: se llena y vacía rápido, pero con poco volumen. Respirará rápido y superficial.'; }
+   else { m.className='msg ok'; m.textContent='Llenado y vaciado cómodos. Regla útil: vaciarse del todo lleva unas 3 veces resistencia × distensibilidad.'; } };
+  bindAll(['c4','r4'],draw);
+ },
+ q:{q:'En el EPOC, ¿qué está alto sobre todo?',o:['La resistencia de los bronquios','La distensibilidad está muy baja','Nada, solo falta oxígeno'],a:0,e:'Bronquios estrechos: mucha resistencia, sobre todo para sacar el aire. El vaciado se alarga.'}});
+
+/* 5 · EPOC: aire atrapado */
+L.push({t:'EPOC: el aire que no sale',
+ key:'Si el pulmón tarda en vaciarse y el paciente respira rápido, cada respiración deja un poco de aire dentro. Ese aire se acumula, el pulmón se hincha y queda una presión dentro: el auto-PEEP. Al paciente le cuesta más empezar cada respiración.',
+ an:['Una bañera con el desagüe estrecho','Si abres el grifo antes de que se vacíe, el nivel del agua va subiendo cada vez.'],
+ lab:`<h3><span>Prueba</span>Respira más rápido o estrecha los bronquios</h3>
+ <div class="viz"><canvas id="cv5" aria-label="Volumen pulmonar con atrapamiento"></canvas></div>
+ <div class="ctrls">${slider('fr5','Frecuencia respiratoria',10,35,1,16,' rpm')}${slider('ob5','Obstrucción bronquial',5,35,1,10,'')}
+  <div class="read"><div><span>Tiempo para espirar</span><b id="te5">–</b></div><div><span>Aire atrapado</span><b id="at5">–</b></div><div><span>Auto-PEEP</span><b id="ap5">–</b></div></div>
+  <div class="msg" id="m5"></div></div>`,
+ init(){
+  const draw=()=>{ const fr=val('fr5'), Re=val('ob5'), C=.06, P=15, Ti=1, Te=Math.max(.3,60/fr-Ti), ti=10*C, te=Re*C; setv('fr5',fr+' rpm'); setv('ob5',Re<12?'leve':Re<24?'moderada':'grave');
+   const [x,w,h]=canvasSetup($('#cv5'),230), T=15, vmax=1.6, X=t=>40+t/T*(w-50), Y=v=>h-28-v/vmax*(h-48);
+   x.strokeStyle=css('--line'); x.lineWidth=1; x.beginPath(); x.moveTo(40,Y(0)); x.lineTo(w-10,Y(0)); x.stroke();
+   x.fillStyle=css('--muted'); x.font='12px Atkinson Hyperlegible, sans-serif'; x.fillText('0 s',36,h-10); x.fillText('15 s',w-30,h-10); x.fillText('1,6 L',2,Y(1.6)+4);
+   let t=0, V=0, ends=[]; x.beginPath(); x.moveTo(X(0),Y(0));
+   while(t<T){ const veq=C*P+V*0; for(let s=0;s<=20;s++){ const tt=s/20*Ti; const v=C*P-(C*P-V)*Math.exp(-tt/ti); x.lineTo(X(t+tt),Y(v)); } const vEnd=C*P-(C*P-V)*Math.exp(-Ti/ti);
+     for(let s=0;s<=30;s++){ const tt=s/30*Te; x.lineTo(X(t+Ti+tt),Y(vEnd*Math.exp(-tt/te))); } V=vEnd*Math.exp(-Te/te); ends.push([t+Ti+Te,V]); t+=Ti+Te; }
+   x.strokeStyle=css('--co2'); x.lineWidth=2.5; x.stroke();
+   x.setLineDash([5,4]); x.strokeStyle=css('--o2'); x.beginPath(); ends.forEach(([tt,v],i)=>i?x.lineTo(X(tt),Y(v)):x.moveTo(X(tt),Y(v))); x.stroke(); x.setLineDash([]);
+   x.fillStyle=css('--o2'); x.fillText('aire que se queda dentro',X(.5),Y(Math.max(V,.05))-8);
+   const ap=V/C; $('#te5').textContent=fmt(Te,1)+' s'; $('#at5').textContent=fmt(V*1000)+' mL'; $('#ap5').textContent=fmt(ap,1)+' cmH₂O';
+   const m=$('#m5'); if(ap>5){ m.className='msg bad'; m.textContent='Mucho aire atrapado. Ayuda: alargar la espiración (respirar más lento, inspiración corta en la VMNI), broncodilatadores, y una EPAP que compense parte del auto-PEEP.'; }
+   else if(ap>2){ m.className='msg warn'; m.textContent='Empieza a quedarse aire dentro. Prueba a bajar la frecuencia y mira cómo baja la línea roja.'; }
+   else { m.className='msg ok'; m.textContent='Le da tiempo a vaciarse: casi no queda aire atrapado.'; } };
+  bindAll(['fr5','ob5'],draw);
+ },
+ q:{q:'¿Qué ayuda más a un pulmón con aire atrapado?',o:['Más tiempo para espirar','Respirar más rápido','Más oxígeno'],a:0,e:'El problema es el vaciado: hay que dar más tiempo a la espiración (y abrir bronquios).'}});
+
+/* 6 · EAP: alvéolos encharcados */
+L.push({t:'Edema: alvéolos con agua',
+ key:'En el edema agudo de pulmón los alvéolos se llenan de líquido. Un alvéolo con agua no recibe oxígeno, así que la saturación baja. La EPAP (presión espiratoria) empuja y vuelve a abrir alvéolos. Los nitratos tratan la causa: bajan la tensión y el líquido vuelve a la sangre.',
+ an:['Una esponja mojada','Una esponja empapada no absorbe más. Presionar desde dentro (EPAP) abre huecos para el aire.'],
+ lab:`<h3><span>Prueba</span>Cambia la gravedad, la EPAP y los nitratos</h3>
+ <div class="viz"><svg viewBox="0 0 320 230" role="img" aria-label="Alvéolos abiertos o con líquido"><g id="alv"></g></svg></div>
+ <div class="ctrls">${slider('sv6','Gravedad del edema',0,100,5,70,' %')}${slider('pe6','EPAP / CPAP',0,14,1,0,' cmH₂O')}
+  <label class="tog"><input type="checkbox" id="ni6"> Nitroglicerina a dosis alta</label>
+  <div class="read"><div><span>Alvéolos abiertos</span><b id="ab6">–</b></div><div><span>SpO₂</span><b id="sp6">–</b></div></div>
+  <div class="msg" id="m6"></div></div>`,
+ init(){
+  const g=$('#alv'), cells=[]; for(let r=0;r<5;r++) for(let c=0;c<6;c++){ const e=document.createElementNS('http://www.w3.org/2000/svg','circle'); e.setAttribute('cx',45+c*46); e.setAttribute('cy',30+r*42); e.setAttribute('r',18); e.setAttribute('stroke-width',2); g.appendChild(e); cells.push(e); }
+  const order=cells.map((_,i)=>i).sort(()=>Math.random()-.5);
+  const upd=()=>{ let sev=val('sv6')/100; if($('#ni6').checked) sev*=.55; const pe=val('pe6'); setv('sv6',val('sv6')+' %'); setv('pe6',pe+' cmH₂O');
+   const f=clamp(sev*(1-0.05*pe),0,1), flooded=Math.round(f*30);
+   order.forEach((idx,k)=>{ const e=cells[idx], w=k<flooded; e.setAttribute('fill',w?css('--co2'):css('--surface')); e.setAttribute('fill-opacity',w?.55:1); e.setAttribute('stroke',w?css('--co2'):css('--o2')); });
+   const sh=.03+.45*f, sp=((1-sh)*.99+sh*.6)*100;
+   $('#ab6').textContent=(30-flooded)+' de 30'; const s=$('#sp6'); s.textContent=fmt(sp)+' %'; s.className=sp<90?'badc':sp<94?'mid':'good';
+   const m=$('#m6'); m.className='msg '+(sp<90?'bad':sp<94?'warn':'ok');
+   m.textContent=sp<90?'Muchos alvéolos con agua: poco oxígeno. Sube la EPAP y añade nitratos.':sp<94?'Mejorando. La EPAP abre alvéolos; los nitratos hacen que el agua salga.':'La mayoría de alvéolos están abiertos: buena oxigenación.'; };
+  bindAll(['sv6','pe6','ni6'],upd);
+ },
+ q:{q:'En el edema agudo de pulmón, ¿qué parte de la VMNI mejora más la oxigenación?',o:['La EPAP (presión espiratoria)','La frecuencia de respaldo','La rampa'],a:0,e:'La EPAP mantiene abiertos los alvéolos encharcados. Por eso la CPAP sola funciona tan bien en el EAP.'}});
+
+/* 7 · Qué hace la VMNI */
+L.push({t:'VMNI: un colchón y un empujón',
+ key:'La VMNI da dos presiones. La EPAP es un colchón que se mantiene siempre: abre alvéolos y compensa el aire atrapado. La presión de soporte (PS) es un empujón extra en cada inspiración: mete más aire, saca CO₂ y descansa los músculos. IPAP = EPAP + PS.',
+ an:['Empujar un columpio','El niño se impulsa solo (el paciente), y tú le das un empujón cada vez (la PS). Si está cansado, necesita más empujón.'],
+ lab:`<h3><span>Prueba</span>Programa la VMNI y mira cuánto trabaja el paciente</h3>
+ <div class="viz"><canvas id="cv7" aria-label="Curva de presión de la VMNI"></canvas></div>
+ <div class="ctrls">${slider('ep7','EPAP',3,12,1,5,' cmH₂O')}${slider('ps7','Presión de soporte (PS)',0,20,1,8,' cmH₂O')}
+  <label class="tog"><input type="checkbox" id="ca7" checked> Músculos cansados</label>
+  <div class="read"><div><span>IPAP</span><b id="ip7">–</b></div><div><span>Volumen</span><b id="vt7">–</b></div><div><span>pCO₂</span><b id="pc7">–</b></div></div>
+  <div style="display:flex;flex-direction:column;gap:4px"><span style="font-size:.85rem;color:var(--muted)">¿Quién hace el trabajo?</span>
+   <div style="display:flex;height:22px;border-radius:6px;overflow:hidden;border:1px solid var(--line)"><div id="wp" style="background:var(--o2)"></div><div id="wv" style="background:var(--accent)"></div></div>
+   <span style="font-size:.8rem;color:var(--muted)">Rojo: el paciente · Verde: el ventilador</span></div>
+  <div class="msg" id="m7"></div></div>`,
+ init(){
+  const draw=()=>{ const ep=val('ep7'), ps=val('ps7'), pm=$('#ca7').checked?3:9; setv('ep7',ep+' cmH₂O'); setv('ps7',ps+' cmH₂O');
+   const ip=ep+ps, C=.05, vt=C*(ps+pm)*1000*.9, fr=clamp((pm<5?28:20)-ps*.5,14,34), pc=pco2From(vt,fr,120+0.4*vt);
+   $('#ip7').textContent=ip+' cmH₂O'; $('#vt7').textContent=fmt(vt)+' mL'; const e=$('#pc7'); e.textContent=fmt(pc); e.className=pc>45?'badc':'good';
+   const share=pm/(pm+ps)*100; $('#wp').style.width=share+'%'; $('#wv').style.width=(100-share)+'%';
+   const [x,w,h]=canvasSetup($('#cv7'),200), pmax=30, X=t=>40+t/6*(w-50), Y=p=>h-26-p/pmax*(h-44);
+   x.strokeStyle=css('--line'); x.lineWidth=1; x.beginPath(); x.moveTo(40,Y(0)); x.lineTo(w-10,Y(0)); x.stroke();
+   x.fillStyle=css('--muted'); x.font='12px Atkinson Hyperlegible, sans-serif'; x.fillText('0',26,Y(0)+4); x.fillText('30',20,Y(30)+4);
+   x.beginPath(); x.moveTo(X(0),Y(ep)); [[0,ep],[.5,ep],[.65,ip],[1.5,ip],[1.6,ep],[3,ep],[3.15,ip],[4,ip],[4.1,ep],[6,ep]].forEach(([t,p])=>x.lineTo(X(t),Y(p)));
+   x.strokeStyle=css('--o2'); x.lineWidth=3; x.stroke();
+   x.setLineDash([4,4]); x.strokeStyle=css('--co2'); x.beginPath(); x.moveTo(X(0),Y(ep)); x.lineTo(X(6),Y(ep)); x.stroke(); x.setLineDash([]);
+   x.fillStyle=css('--co2'); x.fillText('EPAP (colchón) = '+ep,X(1.7),Y(ep)+16); x.fillStyle=css('--o2'); x.fillText('IPAP = '+ip+'  (PS = '+ps+')',X(.6),Y(ip)-8);
+   const m=$('#m7');
+   if(ps<4){ m.className='msg bad'; m.textContent='Sin presión de soporte esto es una CPAP: no ayuda a meter aire. Si el paciente está cansado, el CO₂ no baja.'; }
+   else if(pc>45){ m.className='msg warn'; m.textContent='Todavía entra poco aire útil. Sube la PS de 2 en 2 hasta un volumen de 6–8 mL/kg.'; }
+   else if(ip>25){ m.className='msg warn'; m.textContent='IPAP por encima de 25: más fugas y aire al estómago. Revisa si de verdad hace falta tanta presión.'; }
+   else { m.className='msg ok'; m.textContent='Buen equilibrio: el ventilador hace buena parte del trabajo y el CO₂ baja.'; } };
+  bindAll(['ep7','ps7','ca7'],draw);
+ },
+ q:{q:'Programas EPAP 6 y PS 12. ¿Cuál es la IPAP?',o:['12','18','6'],a:1,e:'IPAP = EPAP + PS = 6 + 12 = 18 (en equipos que programan PS sobre la PEEP).'}});
+
+/* 8 · Disparo, rampa y ciclado */
+L.push({t:'Disparo, rampa y ciclado',
+ key:'Cada respiración asistida tiene tres momentos. El disparo: el equipo nota que el paciente quiere inspirar. La rampa: lo rápido que sube la presión. El ciclado: cuándo deja de empujar. Si el equipo corta tarde, el paciente quiere espirar y no puede; si corta pronto, se queda con hambre de aire.',
+ an:['Bailar en pareja','El ventilador tiene que seguir al paciente: empezar cuando él empieza y parar cuando él para. Si no, se pisan.'],
+ lab:`<h3><span>Prueba</span>Ajusta la rampa, el ciclado y el Ti máximo</h3>
+ <div class="viz"><canvas id="cv8" aria-label="Curvas de presión y flujo de una respiración"></canvas></div>
+ <div class="ctrls">${slider('ri8','Rampa (subida)',50,500,25,200,' ms')}${slider('ex8','Ciclado (Exp Trig)',10,70,5,25,' %')}${slider('tm8','Ti máximo',.5,2,.1,1.5,' s')}
+  <label class="tog"><input type="checkbox" id="ep8" checked> Paciente con EPOC (bronquios estrechos)</label>
+  <div class="read"><div><span>Inspiración del equipo</span><b id="ti8">–</b></div><div><span>Inspiración del paciente</span><b>0,8 s</b></div></div>
+  <div class="msg" id="m8"></div></div>`,
+ init(){
+  const draw=()=>{ const rise=val('ri8')/1000, ex=val('ex8')/100, tm=val('tm8'), R=$('#ep8').checked?16:6, C=.06, tau=R*C, PS=12, tn=.8;
+   setv('ri8',val('ri8')+' ms'); setv('ex8',val('ex8')+' %'); setv('tm8',fmt(tm,1)+' s');
+   const [x,w,h]=canvasSetup($('#cv8'),260), T=3, X=t=>40+t/T*(w-50), half=(h-20)/2;
+   const Q=t=>{ if(t<rise) return (PS*t/rise)/R*(1-Math.exp(-t/tau*1.2)); const q0=PS/R*(1-Math.exp(-rise/tau*1.2)); return Math.max(q0*Math.exp(-(t-rise)/tau),0); };
+   let qpk=0, tc=tm; for(let t=0;t<tm;t+=.005){ const q=Q(t); qpk=Math.max(qpk,q); if(t>rise&&q<ex*qpk){ tc=t; break; } }
+   const P=t=> t<rise? PS*t/rise : t<tc? PS : Math.max(0,PS*Math.exp(-(t-tc)/.05));
+   const qs=Math.max(qpk,.3)*1.15; const Yp=p=>10+half-6-p/18*(half-20), Yq=q=>10+half+half/2-q/qs*(half/2-8);
+   x.fillStyle=css('--soft'); x.fillRect(X(0),10,X(tn)-X(0),h-20);
+   x.fillStyle=css('--muted'); x.font='12px Atkinson Hyperlegible, sans-serif'; x.fillText('el paciente inspira',X(.05),24); x.fillText('Presión',2,Yp(14)); x.fillText('Flujo',2,Yq(.9));
+   x.strokeStyle=css('--line'); x.lineWidth=1; x.beginPath(); x.moveTo(40,Yp(0)); x.lineTo(w-10,Yp(0)); x.moveTo(40,Yq(0)); x.lineTo(w-10,Yq(0)); x.stroke();
+   x.beginPath(); for(let i=0;i<=300;i++){ const t=i/300*T; const p=P(t)+((t>tn+.25&&t<tc)?Math.min(3,(t-tn-.25)*8):0); i?x.lineTo(X(t),Yp(p)):x.moveTo(X(t),Yp(p)); } x.strokeStyle=css('--o2'); x.lineWidth=2.5; x.stroke();
+   x.beginPath(); for(let i=0;i<=300;i++){ const t=i/300*T; let q; if(t<tc) q=Q(t); else { const vin=.06*PS*.8; q=-(vin/tau)*Math.exp(-(t-tc)/(R*C*1.4))*.9; } i?x.lineTo(X(t),Yq(q)):x.moveTo(X(t),Yq(q)); } x.strokeStyle=css('--co2'); x.lineWidth=2.5; x.stroke();
+   x.strokeStyle=css('--accent'); x.setLineDash([4,3]); x.beginPath(); x.moveTo(X(tc),10); x.lineTo(X(tc),h-10); x.stroke(); x.setLineDash([]); x.fillStyle=css('--accent'); x.fillText('ciclado',X(tc)+4,h-14);
+   $('#ti8').textContent=fmt(tc,2)+' s';
+   const m=$('#m8');
+   if(tc>tn+.3){ m.className='msg bad'; m.textContent='Ciclado tardío: el equipo sigue empujando cuando el paciente ya quiere espirar (mira la punta en la presión). Sube el ciclado o baja el Ti máximo.'; }
+   else if(tc<tn-.3){ m.className='msg warn'; m.textContent='Corta demasiado pronto: el paciente sigue queriendo aire y puede volver a disparar (doble disparo). Baja el ciclado o sube el Ti máximo.'; }
+   else { m.className='msg ok'; m.textContent='Bien sincronizado: el equipo para más o menos cuando el paciente termina de inspirar.'; }
+   if(rise>.35) m.textContent+=' Además, la rampa es lenta: al paciente con hambre de aire le falta flujo al principio.'; };
+  bindAll(['ri8','ex8','tm8','ep8'],draw);
+ },
+ q:{q:'En un EPOC ves una punta al final de la curva de presión. ¿Qué cambias primero?',o:['Bajar el ciclado al 10 %','Subir el ciclado (Exp Trig) al 30–50 %','Subir la rampa a 500 ms'],a:1,e:'La punta es ciclado tardío. Un Exp Trig más alto corta antes la inspiración y deja más tiempo para espirar.'}});
+
+/* 9 · Gasometría fácil */
+L.push({t:'Leer la gasometría en 3 pasos',
+ key:'Paso 1: mira el pH (menos de 7,35 es ácido; más de 7,45, alcalino). Paso 2: mira quién lo explica: si el CO₂ está alto, es respiratorio; si el bicarbonato está bajo, es metabólico. Paso 3: si es respiratorio, mira el bicarbonato para saber si es agudo o crónico. La VMNI está indicada en la acidosis respiratoria: pH < 7,35 con pCO₂ > 45.',
+ an:['Una balanza','El CO₂ empuja hacia el ácido y el bicarbonato hacia lo básico. El riñón tarda días en compensar: por eso un bicarbonato alto indica que el problema es crónico.'],
+ lab:`<h3><span>Prueba</span>Escribe una gasometría o elige un ejemplo</h3>
+ <div class="viz" style="display:flex;flex-direction:column;gap:10px">
+  <div class="chips" id="pre"><button data-v="7.25,68,30">EPOC agudizado</button><button data-v="7.20,60,23">Acidosis aguda pura</button><button data-v="7.38,55,32">EPOC crónico estable</button><button data-v="7.15,22,8">Cetoacidosis</button><button data-v="7.50,30,23">Hiperventilación</button></div>
+  <div class="form"><label>pH<input id="gph" type="number" step="0.01" value="7.25"></label><label>pCO₂ (mmHg)<input id="gco" type="number" step="1" value="68"></label><label>HCO₃⁻ (mEq/L)<input id="ghc" type="number" step="1" value="30"></label></div>
+ </div>
+ <div class="ctrls"><div class="info" id="ginfo"></div></div>`,
+ init(){
+  const run=()=>{ const ph=parseFloat($('#gph').value), co=parseFloat($('#gco').value), hc=parseFloat($('#ghc').value), out=[]; let cls='ok', vmni=false;
+   if(!(ph>6.6&&ph<7.9)||!(co>5&&co<200)||!(hc>2&&hc<60)){ $('#ginfo').innerHTML='<b>Revisa los valores</b><p>pH entre 6,6 y 7,9, pCO₂ y bicarbonato en rangos posibles.</p>'; return; }
+   if(ph<7.35){ out.push('<b>1. Acidemia</b> (pH '+fmt(ph,2)+').'); cls='bad';
+     if(co>45){ out.push('<b>2. Respiratoria:</b> el CO₂ está alto ('+fmt(co)+').'); const ag=24+(co-40)/10, cr=24+3.5*(co-40)/10;
+       if(hc<22) out.push('<b>3. Mixta:</b> además el bicarbonato está bajo, hay un componente metabólico (lactato, renal…).');
+       else if(Math.abs(hc-ag)<=2) out.push('<b>3. Aguda:</b> el riñón aún no ha compensado (bicarbonato esperado ≈ '+fmt(ag)+').');
+       else if(hc>=cr-2) out.push('<b>3. Crónica agudizada o crónica:</b> el riñón ha retenido bicarbonato (crónica esperada ≈ '+fmt(cr)+'). Probable retenedor.');
+       else out.push('<b>3. Crónica agudizada:</b> bicarbonato entre lo agudo ('+fmt(ag)+') y lo crónico ('+fmt(cr)+').');
+       vmni=true; }
+     else if(hc<22){ const ex=1.5*hc+8; out.push('<b>2. Metabólica:</b> el bicarbonato está bajo ('+fmt(hc)+').'); out.push('<b>3. Compensación:</b> pCO₂ esperada ≈ '+fmt(ex)+' ± 2. '+(co>ex+2?'El CO₂ está más alto de lo esperado: también hay fallo respiratorio.':co<ex-2?'Además hay alcalosis respiratoria.':'Compensación respiratoria adecuada.')); }
+   } else if(ph>7.45){ cls='warn'; out.push('<b>1. Alcalemia</b> (pH '+fmt(ph,2)+').'); out.push(co<35?'<b>2. Respiratoria:</b> CO₂ bajo, está hiperventilando (ansiedad, dolor, hipoxemia…).':hc>26?'<b>2. Metabólica:</b> bicarbonato alto (vómitos, diuréticos, o tras corregir rápido una hipercapnia crónica).':'Revisa los valores.'); }
+   else { out.push('<b>1. pH normal</b> ('+fmt(ph,2)+').'); if(co>45&&hc>28){ out.push('<b>2.</b> CO₂ alto con bicarbonato alto: <b>acidosis respiratoria crónica compensada</b>, típica del EPOC retenedor estable.'); cls='warn'; } else out.push('Sin trastorno ácido-base relevante.'); }
+   if(vmni) out.push(ph<7.25?'<b>VMNI indicada, acidosis grave:</b> manéjala donde se pueda intubar sin demora y repite la gasometría en 1–2 h.':'<b>VMNI indicada:</b> acidosis respiratoria. Repite la gasometría en 1–2 h.');
+   if(cls==='bad'&&!vmni) out.push('La VMNI no corrige un problema metabólico: trata la causa.');
+   $('#ginfo').innerHTML=out.map(s=>`<p>${s}</p>`).join('')+'<p style="font-size:.85rem;color:var(--muted)">En gasometría venosa la pCO₂ suele salir unos 4–8 mmHg más alta y el pH algo más bajo.</p>';
+   $('#ginfo').style.borderLeft='4px solid '+css(cls==='bad'?'--bad':cls==='warn'?'--warn':'--ok'); };
+  ['gph','gco','ghc'].forEach(i=>$('#'+i).addEventListener('input',run));
+  $('#pre').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const [a,c,d]=b.dataset.v.split(','); $('#gph').value=a; $('#gco').value=c; $('#ghc').value=d; document.querySelectorAll('#pre button').forEach(o=>o.setAttribute('aria-pressed',o===b)); run(); });
+  run();
+ },
+ q:{q:'pH 7,30, pCO₂ 65, HCO₃⁻ 31. ¿Qué es?',o:['Acidosis metabólica','Acidosis respiratoria crónica agudizada','Alcalosis respiratoria'],a:1,e:'pH ácido con CO₂ alto (respiratoria) y bicarbonato ya elevado (el riñón ha compensado algo): crónica agudizada.'}});
+
+/* 10 · Repaso final */
+const FINAL=[
+ {q:'¿Qué es el espacio muerto?',o:['Alvéolos con agua','Aire que se queda en tráquea y bronquios sin intercambiar gases','La pausa entre respiraciones'],a:1,e:'Unos 150 mL por respiración no llegan al alvéolo.'},
+ {q:'¿Por qué el EPOC acumula aire dentro?',o:['Porque los bronquios estrechos alargan el vaciado','Porque el pulmón es muy rígido','Porque respira muy lento'],a:0,e:'Mucha resistencia: el aire tarda en salir y, si respira rápido, se queda dentro (auto-PEEP).'},
+ {q:'En la VMNI, ¿qué sirve sobre todo para bajar el CO₂?',o:['La EPAP','La presión de soporte (PS)','La FiO₂'],a:1,e:'La PS aumenta el volumen de cada respiración y descansa los músculos.'},
+ {q:'¿Y qué sirve sobre todo para abrir alvéolos encharcados?',o:['La EPAP','La rampa','El backup'],a:0,e:'La EPAP mantiene presión en la espiración y abre alvéolos.'},
+ {q:'Cuentas FR 30 y el monitor marca 18. ¿Qué piensas?',o:['Autodisparo por fuga','Esfuerzos ineficaces','Que el monitor está roto'],a:1,e:'Hay esfuerzos que el equipo no detecta. Por orden: revisa la fuga, baja el trigger vigilando el doble disparo y acorta la inspiración. Sube la EPAP solo si ves aire atrapado (flujo que no llega a cero). Si persiste, puede estar agotado.'},
+ {q:'Saturación objetivo en un EPOC retenedor:',o:['98–100 %','88–92 %','80–85 %'],a:1,e:'Demasiado oxígeno empeora la retención de CO₂.'},
+ {q:'¿Cuándo es más importante revisar la VMNI con gasometría?',o:['A la 1–2 h de empezar','A las 24 h','Solo si suena una alarma'],a:0,e:'La respuesta en las primeras 1–2 h predice el éxito o el fracaso.'},
+ {q:'Un paciente en VMNI empeora su nivel de conciencia y el pH baja de 7,25. ¿Qué haces?',o:['Esperar otras 6 h','Plantear UCI e intubación sin demora','Subir solo la FiO₂'],a:1,e:'Son criterios de fracaso. Retrasar la intubación empeora el pronóstico.'}
+];
+L.push({t:'Repaso final',final:true,
+ key:'Ocho preguntas para comprobar que tienes las ideas básicas. Si fallas alguna, vuelve a su lección: los laboratorios son la mejor forma de entenderlo.',
+ an:['Resumen en una frase','El pulmón necesita llenarse (fuerza y distensibilidad), vaciarse (resistencia y tiempo) y tener alvéolos abiertos. La VMNI ayuda a lo primero con la PS y a lo último con la EPAP.'],
+ lab:`<h3><span>Test</span>Responde y mira tu resultado</h3><div class="viz" style="grid-column:1/-1;display:flex;flex-direction:column;gap:12px" id="fq"></div><div class="msg" id="fscore" style="grid-column:1/-1">Responde las 8 preguntas.</div>`,
+ init(){
+  let ok=0, done=0;
+  $('#fq').innerHTML=FINAL.map((x,i)=>`<div class="check" data-i="${i}" style="border-top:${i?'1px solid var(--line)':'0'};padding-top:${i?14:0}px"><b>${i+1}. ${x.q}</b><div class="opts">${x.o.map((o,j)=>`<button data-j="${j}">${o}</button>`).join('')}</div><p class="exp" hidden></p></div>`).join('');
+  $('#fq').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const box=b.closest('.check'); if(box.dataset.done) return; box.dataset.done=1; done++;
+   const x=FINAL[+box.dataset.i], j=+b.dataset.j; box.querySelectorAll('button')[x.a].classList.add('right'); if(j===x.a) ok++; else b.classList.add('wrong');
+   const p=box.querySelector('.exp'); p.hidden=false; p.textContent=(j===x.a?'Correcto. ':'No exactamente. ')+x.e;
+   const s=$('#fscore'); if(done===FINAL.length){ s.className='msg '+(ok>=6?'ok':'warn'); s.textContent=`Resultado: ${ok} de ${FINAL.length}. `+(ok>=6?'Tienes la base. Ya puedes practicar en el simulador.':'Repasa las lecciones de las preguntas falladas y vuelve a intentarlo.'); answered[10]=true; renderPills(); } else s.textContent=`Llevas ${done} de ${FINAL.length}.`; });
+ }});
+
+/* ======================= NAVEGACIÓN ======================= */
+let cur=0;
+function renderPills(){
+ $('#pills').innerHTML=L.map((l,i)=>`<a href="#l${i+1}" title="${l.t}" ${i===cur?'aria-current="step"':''} class="${answered[i+1]?'done':''}">${i+1}</a>`).join('');
+ $('#prog').style.width=(Object.keys(answered).length/L.length*100)+'%';
+}
+function render(){
+ stopAnim(); const l=L[cur];
+ $('#lesson').innerHTML=`<span class="eyebrow">Lección ${cur+1} de ${L.length}</span><h2>${l.t}</h2>
+  <div class="key"><b>Idea clave</b><p>${l.key}</p></div>
+  <div class="analogy"><span class="ic">≈</span><div><b>${l.an[0]}</b><p>${l.an[1]}</p></div></div>
+  <section class="lab">${l.lab}</section>
+  ${l.q?`<div class="check" id="chk"><b>Comprueba: ${l.q.q}</b><div class="opts">${l.q.o.map((o,j)=>`<button data-j="${j}">${o}</button>`).join('')}</div><p class="exp" hidden></p></div>`:''}`;
+ l.init();
+ if(l.q){ $('#chk').addEventListener('click',e=>{ const b=e.target.closest('button'); const box=$('#chk'); if(!b||box.dataset.done) return; box.dataset.done=1; const j=+b.dataset.j;
+   box.querySelectorAll('button')[l.q.a].classList.add('right'); if(j!==l.q.a) b.classList.add('wrong'); const p=box.querySelector('.exp'); p.hidden=false; p.textContent=(j===l.q.a?'Correcto. ':'No exactamente. ')+l.q.e; answered[cur+1]=true; renderPills(); }); }
+ $('#prev').href='#l'+Math.max(1,cur); $('#prev').setAttribute('aria-disabled',cur===0);
+ $('#next').href='#l'+Math.min(L.length,cur+2); $('#next').setAttribute('aria-disabled',cur===L.length-1);
+ renderPills();
+}
+function fromHash(){ const m=/^#l(\d+)$/.exec(location.hash); cur=m?clamp(+m[1]-1,0,L.length-1):0; render(); }
+window.addEventListener('hashchange',()=>{ fromHash(); window.scrollTo(0,0); });
+fromHash();
+})();
+</script>

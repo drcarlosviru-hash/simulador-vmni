@@ -1,0 +1,850 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ventiladores en VMNI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;600;700&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: selector de equipo; a la izquierda la pantalla del ventilador elegido (cada uno con su aspecto y su forma de manejo), a la derecha el tutor (caso, misiones, lectura en directo). Debajo, ficha/pasos/alarmas/comparador. */
+:root{
+  --bg:#e9eef3; --surface:#ffffff; --ink:#17212b; --muted:#55626e; --line:#d2dae2;
+  --accent:#1f6fd1; --ok:#22845a; --warn:#b67900; --bad:#c3392d; --soft:#e6effa;
+  --display:"Lexend",system-ui,sans-serif; --body:"Atkinson Hyperlegible",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1318; --surface:#162029; --ink:#e5ebf1; --muted:#99a7b4; --line:#293541; --accent:#6aa6f2; --ok:#4cc485; --warn:#e3b341; --bad:#ee6a5b; --soft:#17283a; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d1318; --surface:#162029; --ink:#e5ebf1; --muted:#99a7b4; --line:#293541; --accent:#6aa6f2; --ok:#4cc485; --warn:#e3b341; --bad:#ee6a5b; --soft:#17283a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 48px}
+main{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.15;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.4rem)} h2{font-size:1.35rem} h3{font-size:1.05rem}
+p{margin:0;max-width:72ch}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)} .small{font-size:.85rem}
+.devs{display:flex;flex-wrap:wrap;gap:8px}
+.devs button{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 14px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;min-width:150px}
+.devs b{font-family:var(--display)} .devs span{font-size:.78rem;color:var(--muted)}
+.devs button[aria-pressed="true"]{border:2px solid var(--accent);background:var(--soft)}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+@media (max-width:1000px){.stage{grid-template-columns:1fr}}
+.monwrap{min-width:0;overflow-x:auto}
+.coach{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:5px 12px;cursor:pointer;font-size:.88rem}
+.chips button[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.case{background:var(--bg);border-radius:10px;padding:10px 12px;font-size:.9rem}
+.miss{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:.9rem}
+.miss li{display:flex;gap:8px;align-items:flex-start}
+.miss li i{flex:0 0 18px;height:18px;border-radius:50%;border:2px solid var(--line);margin-top:2px;font-style:normal;font-size:.7rem;display:flex;align-items:center;justify-content:center;color:#fff}
+.miss li.done i{background:var(--ok);border-color:var(--ok)}
+.miss li.done{color:var(--muted)}
+.live{display:flex;flex-direction:column;gap:6px}
+.lv{border-left:4px solid var(--muted);padding:6px 10px;background:var(--bg);font-size:.86rem;border-radius:0 8px 8px 0}
+.lv.ok{border-left-color:var(--ok)}.lv.warn{border-left-color:var(--warn)}.lv.bad{border-left-color:var(--bad)}
+.lv b{display:block} .lv li b{display:inline}
+.row2{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 14px;cursor:pointer;font-family:var(--display);font-weight:600;color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.rng input{width:100%;accent-color:var(--accent)}
+.tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:9px 12px;cursor:pointer;font-family:var(--display);font-weight:600;color:var(--muted)}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:640px}
+th,td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-family:var(--mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.v{font-family:var(--mono);white-space:nowrap}
+.res .lv{font-size:.88rem}
+footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap:4px;max-width:100ch}
+footer a{color:var(--accent)}
+.modal-bg{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:5;padding:12px}
+canvas.wave{width:100%;display:block}
+/* ===== bellavista ===== */
+.bv{background:#141a3a;border-radius:16px;padding:10px;color:#eef2ff;font-family:"Segoe UI",system-ui,sans-serif;position:relative;min-width:620px}
+.bv-top{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(#3b5df0,#2340c8);border-radius:6px 6px 0 0;padding:6px 10px;min-height:38px;gap:8px}
+.bv-title{color:#ffd9a0;font-weight:600;font-size:1.1rem}
+.bv-alarm{font-weight:600;padding:3px 10px;border-radius:4px;font-size:1rem}
+.bv-alarm.hi{background:#e2412f}.bv-alarm.med{background:#f2d43a;color:#3b3000}.bv-alarm.info{background:transparent;color:#cfe0ff}
+.bv-main{display:grid;grid-template-columns:minmax(0,1fr) 230px;gap:6px;background:#1f2638;padding:6px}
+.bv-tiles{display:grid;grid-template-columns:1fr 1fr;gap:5px;align-content:start}
+.bvt{background:linear-gradient(#6e7783,#4f5864);border-radius:6px;padding:4px 7px;display:flex;flex-direction:column}
+.bvt span{font-size:.72rem}.bvt b{font-family:var(--mono);font-size:1.25rem;text-align:right;font-weight:500}.bvt small{font-size:.62rem;opacity:.8}
+.bvt.warn{background:#f2d43a;color:#3b3000}.bvt.hi{background:#e2412f}
+.bvt.big{grid-column:1/-1;background:linear-gradient(#5d6672,#3d4550);cursor:pointer;border:1px solid #8a94a0}
+.bvt.big b{font-family:inherit;font-size:1.05rem;text-align:center}
+.bv-set{background:#9aa2ad;color:#111;padding:8px;border-radius:0 0 6px 6px;display:flex;flex-direction:column;gap:6px}
+.bv-modehdr{display:flex;justify-content:space-between;align-items:center}
+.bv-modehdr b{font-size:1.3rem}.bv-modehdr .red{color:#c3392d;font-weight:700}
+.bv-params{display:flex;flex-wrap:wrap;gap:5px}
+.bvp{background:linear-gradient(#6f7884,#3f4752);color:#fff;border-radius:6px;padding:4px 8px;min-width:78px;text-align:center;cursor:pointer;border:2px solid transparent}
+.bvp span{display:block;font-size:.68rem;opacity:.85}.bvp b{font-size:1.25rem;font-family:var(--mono);font-weight:500}.bvp small{display:block;font-size:.62rem}
+.bvp.sel{border-color:#fff}.bvp.pend{background:#f2d43a;color:#3b3000}
+.bv-edit{display:flex;gap:8px;align-items:center;background:#2b3240;color:#fff;border-radius:6px;padding:6px 10px;flex-wrap:wrap}
+.bv-edit input{flex:1;min-width:160px;accent-color:#7fb2ff}
+.bv-edit button,.bv-conf button{border-radius:6px;border:1px solid #5a6676;background:#3a4556;color:#fff;padding:5px 12px;cursor:pointer}
+.bv-conf{display:flex;gap:8px;align-items:center}.bv-conf .go{background:#f2d43a;color:#3b3000;border-color:#f2d43a;font-weight:700}
+.bv-bottom{display:flex;justify-content:space-around;background:linear-gradient(#3b5df0,#1f3bbf);margin-top:8px;border-radius:6px;padding:6px 4px;flex-wrap:wrap;gap:4px}
+.bv-bottom button{background:none;border:0;color:#fff;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:.8rem}
+.bv-bottom i{width:38px;height:38px;border-radius:50%;background:radial-gradient(#7d8fff,#3a2f86);border:2px solid #cdd6ff;display:block}
+.bv-modal{background:#9aa2ad;color:#111;border-radius:8px;width:min(420px,100%);overflow:hidden}
+.bv-modal h4{margin:0;background:#2b48e0;color:#fff;padding:8px 12px;font-size:1.1rem}
+.bv-list{display:flex;flex-direction:column;gap:3px;padding:8px}
+.bv-list button{background:linear-gradient(#8b93a0,#6c7480);border:1px solid #555;color:#fff;text-align:left;padding:8px 12px;font-size:1.05rem;cursor:pointer;display:flex;justify-content:space-between}
+.bv-list button[aria-pressed="true"]::after{content:"✔";color:#7dff7a}
+.bv-list button.dis{opacity:.5}
+.bv-mbtns{display:flex;gap:8px;justify-content:flex-end;padding:8px}
+.bv-mbtns button{background:linear-gradient(#4b5360,#2b323c);color:#fff;border:1px solid #777;border-radius:6px;padding:8px 18px;cursor:pointer}
+/* ===== servo ===== */
+.sv{background:#0f1830;border-radius:16px;padding:8px;display:grid;grid-template-columns:96px minmax(0,1fr);gap:6px;color:#e9eef6;font-family:"Segoe UI",system-ui,sans-serif;position:relative;min-width:640px}
+.sv-left{display:flex;flex-direction:column;gap:5px}
+.sv-left button{background:#2a3550;border:0;border-radius:6px;color:#d7e1f2;font-size:.68rem;padding:8px 4px;cursor:pointer;line-height:1.2;text-transform:uppercase}
+.sv-left button.on{outline:2px solid #f2c12e}
+.sv-left button.dis{opacity:.45;cursor:default}
+.sv-status{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.85rem;min-height:30px}
+.sv-alarm{background:#c7372a;padding:3px 10px;border-radius:3px;font-size:.85rem}.sv-alarm.med{background:#d9a514;color:#2a2000}.sv-alarm.info{background:transparent;color:#9fb0c8}
+.sv-mode{background:linear-gradient(90deg,#2b3b66,#5a6a8f 55%,#f0b52b);padding:6px 10px;border-radius:4px;font-size:1.3rem;font-weight:600;display:flex;align-items:center;gap:8px}
+.sv-mode.inv{background:linear-gradient(90deg,#2b3b66,#3c5a9a)}
+.sv-mode.stby{color:#ff6b4a;background:#1c2742}
+.sv-main{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:5px;margin-top:5px}
+.sv-tiles{display:grid;grid-template-columns:1fr 1fr;gap:4px;align-content:start}
+.svt{background:#223050;border-radius:4px;padding:4px 6px;display:flex;flex-direction:column}
+.svt span{font-size:.7rem;color:#c8d4e8}.svt b{font-size:1.4rem;text-align:center;color:#ffd36b;font-weight:500}.svt.g b{color:#79e08a}.svt.c b{color:#7cc4ff}
+.svt.warn{background:#6a5310}.svt.hi{background:#7a2018}
+.sv-params{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.svp{background:#2a3754;border:0;color:#fff;border-radius:4px;padding:4px 6px;min-width:74px;flex:1;cursor:pointer;text-align:center}
+.svp span{display:block;font-size:.64rem;color:#c8d4e8;line-height:1.1;min-height:2.2em}.svp b{font-size:1.4rem;font-weight:500}
+.sv-modal{background:#28344f;border-radius:6px;width:min(560px,100%);color:#fff;box-shadow:0 0 0 1px #4a5a7a}
+.sv-modal h4{margin:0;padding:10px 12px;font-size:1rem;background:#121a2e;display:flex;justify-content:space-between}
+.sv-mbody{padding:12px;display:flex;flex-direction:column;gap:10px}
+.sv-big{display:flex;align-items:center;justify-content:center;gap:14px}
+.sv-big b{font-size:2.6rem;min-width:110px;text-align:center}
+.sv-big button{width:52px;height:52px;border-radius:8px;border:1px solid #5a6a8a;background:#3a4866;color:#fff;font-size:1.6rem;cursor:pointer}
+.sv-mbtns{display:flex;justify-content:flex-end;gap:8px;padding:0 12px 12px}
+.sv-mbtns button{background:#3a4866;border:1px solid #5a6a8a;color:#fff;border-radius:4px;padding:8px 18px;cursor:pointer}
+.sv-mbtns .go{background:#4a8f3a;border-color:#4a8f3a}
+.sv-grid{display:flex;flex-wrap:wrap;gap:8px}
+.sv-grid button{min-width:140px;padding:16px 10px;border-radius:4px;border:0;cursor:pointer;font-weight:600;background:#e4e9f2;color:#1b2333}
+.sv-grid button.niv{background:#f4c52c}
+.sv-grid button.hatch{background:repeating-linear-gradient(45deg,#e8d36a,#e8d36a 6px,#cbb84f 6px,#cbb84f 12px);opacity:.75}
+.sv-grid button.hf{background:#2f7a43;color:#fff}
+.sv-grid button[aria-pressed="true"]{outline:3px solid #fff}
+.sv-type{background:#1b2236;border-radius:4px;padding:10px;cursor:pointer;border:2px solid #4a5a7a;color:#fff;min-width:140px}
+/* ===== hamilton ===== */
+.hm{background:#1d2226;border-radius:16px;padding:10px;color:#e8edf0;font-family:"Segoe UI",system-ui,sans-serif;display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:8px;position:relative;min-width:640px}
+.hm-top{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.hm-top .mode{background:#0f8f8a;color:#fff;border-radius:4px;padding:4px 12px;font-weight:700;font-size:1.1rem}
+.hm-top .grp{background:#33393f;border-radius:4px;padding:4px 10px;font-size:.85rem}
+.hm-alarm{margin-left:auto;padding:4px 10px;border-radius:4px;font-size:.9rem}.hm-alarm.hi{background:#d7322b}.hm-alarm.med{background:#e8b923;color:#2a2000}.hm-alarm.info{color:#9aa6ad}
+.hm-main{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:6px}
+.hm-mon{display:flex;flex-direction:column;gap:4px}
+.hmm{background:#2a3035;border-radius:4px;padding:3px 8px;display:flex;justify-content:space-between;align-items:baseline}
+.hmm span{font-size:.72rem;color:#a9b4ba}.hmm b{font-size:1.2rem;color:#7fe0d8;font-weight:500}
+.hmm.warn{background:#5c4a10}.hmm.hi{background:#6a1e1a}
+.hm-ctrls{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.hmc{background:#33393f;border:2px solid transparent;border-radius:6px;padding:4px 8px;min-width:88px;flex:1;cursor:pointer;color:#fff;text-align:center}
+.hmc span{display:block;font-size:.68rem;color:#b5c0c6}.hmc b{font-size:1.35rem;font-weight:500}
+.hmc.sel{border-color:#19c3b8;background:#204a48}.hmc.cand b{color:#ffd65a}
+.hm-side{display:flex;flex-direction:column;gap:6px;align-items:center}
+.hm-side>button{width:100%;background:#33393f;border:0;border-radius:6px;color:#fff;padding:8px 4px;cursor:pointer;font-size:.8rem}
+.hm-side>button.on{background:#0f8f8a}
+.knob{width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#6c757c,#2a2f33 70%);border:3px solid #0f8f8a;position:relative;display:flex;align-items:center;justify-content:center;margin-top:auto}
+.knob button{position:absolute;width:34px;height:34px;border-radius:50%;border:1px solid #888;background:#40474d;color:#fff;cursor:pointer;font-size:1rem}
+.knob .l{left:-12px;top:30px}.knob .r{right:-12px;top:30px}
+.knob .c{position:static;width:48px;height:48px;font-size:.62rem;background:#0f8f8a;border-color:#7fe0d8}
+.hm-sub{display:flex;gap:4px;margin-top:6px}
+.hm-sub button{background:#2a3035;border:0;color:#cfd8dc;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:.8rem}
+.hm-sub button[aria-pressed="true"]{background:#0f8f8a;color:#fff}
+/* ===== monnal ===== */
+.mn{background:#0e2238;border-radius:16px;padding:10px;color:#eaf2fb;font-family:"Segoe UI",system-ui,sans-serif;position:relative;min-width:640px}
+.mn-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#163a5f;border-radius:6px;padding:5px 10px}
+.mn-top .mode{font-weight:700;font-size:1.15rem}
+.mn-top .niv{background:#ef8a1a;color:#fff;border-radius:12px;padding:1px 10px;font-size:.8rem}
+.mn-alarm{margin-left:auto;padding:3px 10px;border-radius:4px;font-size:.9rem}.mn-alarm.hi{background:#d7322b}.mn-alarm.med{background:#f0b429;color:#2a2000}.mn-alarm.info{color:#9db4cc}
+.mn-main{display:grid;grid-template-columns:minmax(0,1fr) 170px;gap:6px;margin-top:6px}
+.mnm{background:#14304f;border-radius:4px;padding:3px 8px;display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.mnm span{font-size:.72rem;color:#a8c0d8}.mnm b{font-size:1.15rem;color:#ffb05e;font-weight:500}
+.mnm.warn{background:#5c4a10}.mnm.hi{background:#6a1e1a}
+.mn-set{display:flex;gap:5px;margin-top:6px;align-items:stretch}
+.mns{flex:1;background:#1e4f80;border:2px solid transparent;border-radius:8px;color:#fff;padding:6px 4px;cursor:pointer;text-align:center}
+.mns span{display:block;font-size:.72rem;color:#cfe0f2}.mns b{font-size:1.4rem;font-weight:500}.mns small{display:block;font-size:.62rem;color:#a8c0d8}
+.mns.sel{border-color:#ffb05e}
+.mn-arrow{background:#163a5f;border:0;color:#fff;border-radius:8px;width:40px;cursor:pointer;font-size:1.2rem}
+.mn-edit{display:flex;gap:8px;align-items:center;background:#163a5f;border-radius:6px;padding:6px 10px;margin-top:6px;flex-wrap:wrap}
+.mn-edit input{flex:1;min-width:150px;accent-color:#ffb05e}
+.mn-edit button,.mn-keys button{background:#1e4f80;border:1px solid #3d76ad;color:#fff;border-radius:6px;padding:6px 12px;cursor:pointer}
+.mn-edit .go{background:#ef8a1a;border-color:#ef8a1a}
+.mn-keys{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.mn-keys button.on{background:#ef8a1a;border-color:#ef8a1a}
+.mn-modal{background:#163a5f;border-radius:8px;padding:12px;width:min(460px,100%);display:flex;flex-direction:column;gap:8px}
+.mn-modal h4{margin:0}
+.mn-modal .grid{display:flex;flex-wrap:wrap;gap:6px}
+.mn-modal .grid button{background:#1e4f80;border:1px solid #3d76ad;color:#fff;border-radius:6px;padding:10px 14px;cursor:pointer}
+.mn-modal .grid button[aria-pressed="true"]{background:#ef8a1a}
+/* ===== medumat ===== */
+.md{background:linear-gradient(#e8eaec,#c9ced3);border-radius:22px;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) 84px;gap:12px;position:relative;color:#1b2430;min-width:600px;font-family:Arial,system-ui,sans-serif}
+.md-face{background:#2a3550;border-radius:14px;padding:12px 16px 8px}
+.md-brand{display:flex;justify-content:space-between;color:#cfd6e4;font-weight:700;letter-spacing:.06em;margin-bottom:6px;font-size:.9rem}
+.md-scr{background:#f4f6f8;border-radius:6px;min-height:280px;color:#16202c;display:flex;flex-direction:column;overflow:hidden}
+.md-stat{display:flex;align-items:center;gap:8px;padding:4px 8px;font-weight:700}
+.md-stat .o2{background:#1e5ad6;color:#fff;border-radius:4px;padding:2px 6px;font-size:.75rem;line-height:1.1;text-align:center}
+.md-stat .mode{background:#1e5ad6;color:#fff;border-radius:4px;padding:3px 12px;margin-left:auto;font-size:1.1rem}
+.md-alarm{background:#e5432c;color:#fff;font-weight:700;padding:4px 10px;font-size:1rem}
+.md-alarm.med{background:#f0b429;color:#2a2000}
+.md-body{display:grid;grid-template-columns:120px minmax(0,1fr);flex:1}
+.md-vals{border-right:1px solid #c6ccd3;padding:6px;display:flex;flex-direction:column;gap:6px;font-size:.85rem}
+.md-vals b{display:block;font-size:1.25rem;text-align:center}
+.md-area{padding:6px 8px;display:flex;flex-direction:column;gap:4px}
+.md-item{padding:5px 10px;border:2px solid transparent;font-size:1.05rem;font-weight:700;background:#e3e7eb}
+.md-item.sel{border-color:#1e5ad6;background:#fff}
+.md-item.dis{opacity:.45}
+.md-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:auto}
+.md-field{background:#e3e7eb;border:2px solid transparent;padding:4px;text-align:center;font-size:.75rem}
+.md-field b{display:block;font-size:1.35rem}
+.md-field.act{border-color:#1e5ad6;background:#fff}
+.md-knobs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.md-knob{display:flex;align-items:center;justify-content:center;gap:4px}
+.md-knob button{border-radius:50%;border:1px solid #888;background:#3a4256;color:#fff;cursor:pointer}
+.md-knob .t{width:30px;height:30px}
+.md-knob .p{width:52px;height:52px;background:radial-gradient(#f2f3f5,#b9bec5);color:#222;font-size:.62rem;font-weight:700}
+.md-side{display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center}
+.md-side button{width:60px;height:60px;border-radius:50%;border:1px solid #9aa2ab;background:radial-gradient(#ffffff,#d5dade);font-weight:700;font-size:.72rem;cursor:pointer;color:#1b2430}
+.md-side button.on{box-shadow:0 0 0 3px #1e5ad6}
+.md-led{display:flex;gap:6px}.md-led i{width:10px;height:10px;border-radius:50%;background:#7a8a7a;display:block}.md-led i.on{background:#3be05a}
+</style>
+
+<main>
+<header style="display:flex;flex-direction:column;gap:6px">
+  <span class="eyebrow">Simulador por equipo · basado en los manuales del fabricante</span>
+  <h1>Ventiladores en VMNI</h1>
+  <p class="muted">Elige el ventilador. Manéjalo como si lo tuvieras delante: selecciona el tipo de ventilación, el modo, ajusta y confirma como lo hace ese equipo, e inicia. A la derecha, el tutor te dice qué te falta y qué está pasando.</p>
+</header>
+<div class="devs" id="devs" role="group" aria-label="Ventilador"></div>
+<section class="stage">
+  <div class="monwrap" id="mon"></div>
+  <aside class="coach" id="coach" aria-label="Tutor"></aside>
+</section>
+<nav class="tabs" id="tabs" role="tablist">
+  <button data-t="ficha" aria-selected="true">Ficha del equipo</button>
+  <button data-t="pasos" aria-selected="false">Puesta en marcha</button>
+  <button data-t="alarmas" aria-selected="false">Alarmas</button>
+  <button data-t="comparar" aria-selected="false">Comparar equipos</button>
+</nav>
+<section class="panel" id="info"></section>
+<footer>
+  <b>Fuentes</b>
+  <span>Manuales aportados: MEDUMAT Standard² Instructions for use (WM 68011a, 11/2013); MONNAL T60 Manual de instrucciones (YL069000 Rev. 6, SW V2.4.x); HAMILTON-T1 Manual del operador (SW 2.2.x).</span>
+  <span>Consultados en la web: <a href="https://icdn.tradew.com/file/201606/1569362/pdf/7325015.pdf">SERVO-U User's Manual v4.0</a>; <a href="https://usme.com/wp-content/uploads/2022/06/305.077.000_04-ifu-bellavista-1000-us-english-device.pdf">bellavista 1000 IFU (US)</a>.</span>
+  <span>Las pantallas son recreaciones docentes simplificadas, inspiradas en la interfaz de cada equipo; no reproducen su software. El pulmón es un modelo aproximado. Rangos y valores por defecto según los manuales; objetivos de cada caso orientativos.</span>
+</footer>
+</main>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const nf=(x,d)=>{ if(x==null||!isFinite(x)) return '--'; if(d==null) d=Math.abs(x%1)<1e-9?0:(Math.abs((x*10)%1)<1e-6?1:2); return Number(x).toFixed(d).replace('.',','); };
+const sat=P=>1/(1+23400/(P*P*P+150*P));
+
+/* =================== PACIENTES Y CASOS =================== */
+const PAT={
+ epoc:{tiMax:1,C:.065,Ri:7,Re:22,Pcrit:5,weak:.04,rrRest:16,rrMax:28,pRest:5,pMax:8,tiFrac:.33,vdA:.12,vdF:.3,vco2:230,hco3:30,p0:68,ptgt:50,vq:.55,sh:()=>.08,sv:.6,ibw:68,push:1,hyper:true},
+ eap:{tiMax:1,C:.025,Ri:8,Re:8,Pcrit:0,rrRest:16,rrMax:34,pRest:4,pMax:13,tiFrac:.38,vdA:.15,vdF:.1,vco2:220,hco3:22,p0:44,ptgt:38,vq:.9,sh:pe=>clamp(.40-.03*(pe-5),.08,.5),sv:.55,ibw:52,push:.5,hyper:false},
+ som:{tiMax:.95,blunt:.5,pause:.12,C:.065,Ri:7,Re:22,Pcrit:5,weak:.05,rrRest:10,rrMax:20,pRest:4.5,pMax:7.5,tiFrac:.33,vdA:.12,vdF:.3,vco2:230,hco3:33,p0:84,ptgt:55,vq:.55,sh:()=>.08,sv:.6,ibw:66,push:.8,hyper:true},
+ soh:{tiMax:1.25,C:.026,Ri:6,Re:7,Pcrit:0,rrRest:18,rrMax:30,pRest:4,pMax:9,tiFrac:.38,vdA:.12,vdF:.22,vco2:240,hco3:32,p0:72,ptgt:50,vq:.6,sh:pe=>clamp(.24-.02*(pe-6),.06,.3),sv:.6,ibw:50,push:.6,hyper:true},
+ icc:{tiMax:1.1,C:.035,Ri:12,Re:18,Pcrit:5,rrRest:16,rrMax:28,pRest:4,pMax:10,tiFrac:.35,vdA:.13,vdF:.28,vco2:220,hco3:27,p0:62,ptgt:46,vq:.65,sh:pe=>clamp(.2-.02*(pe-5),.06,.3),sv:.6,ibw:50,push:.8,hyper:true}
+};
+const SCEN={
+ epoc:{hd:'Hombre 172 cm',t:'EPOC hipercápnico',d:'Hombre, 70 años, 172 cm (peso ideal 68 kg). pH 7,25 · pCO₂ 68 · FR 30 · SpO₂ 86 %. Consciente, tiraje.'},
+ eap:{hd:'Mujer 160 cm',t:'EAP hipertensivo',d:'Mujer, 76 años, 160 cm (52 kg). TA 210/115 · FR 34 · SpO₂ 82 % · pCO₂ 44. Nitroglicerina en marcha.'},
+ som:{t:'EPOC somnoliento',hd:'Hombre 170 cm',d:'Hombre, 74 años, 170 cm (peso ideal 66 kg). Somnoliento pero despierta a la voz y obedece (Glasgow 13), tose y maneja secreciones. pH 7,21 · pCO₂ 84 · FR 12 con pausas · SpO₂ 85 %. Si el nivel de conciencia empeora: IOT.'},
+ soh:{t:'Obesidad-hipoventilación',hd:'Mujer 158 cm',d:'Mujer, 62 años, 158 cm, IMC 48 (peso ideal 50 kg). Patrón restrictivo. pH 7,28 · pCO₂ 72 · FR 26 superficial · SpO₂ 84 %.'},
+ icc:{hd:'Mujer 158 cm',t:'ICC + EPOC',d:'Mujer, 78 años, 158 cm (50 kg). Ortopnea, sibilancias y crepitantes. pH 7,27 · pCO₂ 62 · SpO₂ 87 %.'}
+};
+const SC5=(e,a,i,so,sh)=>({epoc:e,eap:a,icc:i,som:so,soh:sh});
+const REC={
+ peep:SC5([5,8],[8,10],[7,10],[5,8],[8,12]), ps:SC5([8,16],[0,10],[8,14],[10,16],[12,18]), cpap:SC5([5,8],[8,10],[7,10],[5,8],[8,12]),
+ riseMs:SC5([50,200],[50,200],[50,200],[50,200],[50,200]), riseS:SC5([.05,.2],[.05,.2],[.05,.2],[.05,.2],[.05,.2]), pend:SC5([100,120],[80,120],[100,120],[100,120],[80,120]),
+ exp:SC5([30,50],[20,50],[30,45],[30,50],[20,40]), timax:SC5([.8,1.2],[.8,1.5],[.9,1.3],[.8,1.2],[1,1.4]),
+ trig:SC5([.5,2],[.5,2],[.5,2],[.5,2],[.5,2]), trigH:SC5([1,4],[1,4],[1,4],[1,4],[1,4]), trigM:SC5([.5,3],[.5,3],[.5,3],[.5,3],[.5,3]),
+ fio2:SC5([21,40],[50,100],[28,60],[21,40],[28,50]), backup:SC5([10,15],[10,15],[10,15],[12,16],[12,16]),
+ apnea:SC5([15,20],[15,25],[15,20],[10,15],[15,20]), bpc:SC5([8,14],[5,12],[8,14],[10,16],[12,18]), bie:SC5([2,3],[1.5,3],[2,3],[2,3],[1.5,2.5]), pmax:SC5([18,30],[18,30],[18,30],[18,30],[20,35]),
+ tiac:SC5([.8,1.2],[.8,1.2],[.8,1.2],[.8,1.2],[1,1.4]), acrate:SC5([12,16],[12,16],[12,16],[12,16],[12,16]), pac:SC5([8,16],[0,12],[8,14],[10,16],[12,18])
+};
+const WHY={
+ peep:'EPAP: abre alvéolos; en la EPOC contrarresta el auto-PEEP solo si lo hay (compruébalo en la curva de flujo).', ps:'Presión de soporte: sube el volumen y baja el CO₂ (objetivo Vt 6–8 mL/kg). El exceso también produce esfuerzos ineficaces.', cpap:'Presión continua: trata el edema.',
+ riseMs:'Rampa rápida para el hambre de aire.', riseS:'Subida rápida (0,05–0,20 s).', pend:'Pendiente alta = subida rápida.',
+ exp:'Ciclado: más alto corta antes la inspiración y alarga la espiración.', timax:'Tope de la inspiración, sobre todo si hay fuga.',
+ trig:'En el bellavista no más de 1,5–2 L/min. Ante esfuerzos ineficaces (sin fuga), bájalo, incluso al mínimo, quedándote a ver que no haga doble disparo ni autodisparo.', trigH:'Lo más sensible posible sin autodisparos.', trigM:'Lo más sensible posible sin autodisparos.',
+ fio2:'En retenedores, SpO₂ 88–92 %; en el EAP, alta al inicio.', backup:'Respaldo para pausas o sueño.', apnea:'Tiempo hasta que entra el respaldo.', bpc:'Presión de las respiraciones de respaldo: parecida a la PS.', bie:'Espiración larga en el respaldo.', pmax:'Límite de seguridad: PEEP + 10 a 30.',
+ tiac:'En A-C el T insp lo pone la máquina: si es largo (1,7 s por defecto) el paciente quiere espirar y no puede. EPOC 0,8–1,2 s; restrictivo (obeso, neuromuscular) 1–1,4 s.', acrate:'Algo por debajo de la FR del paciente para que dispare él.', pac:'Presión inspiratoria sobre la PEEP: como la PS.'
+};
+
+/* =================== MOTOR =================== */
+const N=600, SR=0.02; let KS=.25;
+let S, E, scen='epoc';
+function resetSim(){
+ const P=PAT[scen];
+ S={t:0,V:Math.max(P.Pcrit,0)*P.C+.05,Paw:0,Q:0,Qm:0,Vm:0,noise:0,pexp:0,mpaw:0,drive:.6,rrNow:P.rrMax,
+  pat:{next:.5,ts:-9,tin:1,pmax:P.pMax,open:false,id:0,trig:0,midOk:false,mid:'exp'},
+  v:{phase:'exp',tb:0,tc:0,peak:0,ppk:0,hold:0,rec:null,inBk:false,lastPat:0},
+  breaths:[],efforts:[],effFlow:[],ies:[],infl:[],vin:0,inI:false,pco2:P.p0,vaE:0.863*P.vco2/P.p0,spo2:.86,
+  buf:{p:new Float32Array(N),f:new Float32Array(N),v:new Float32Array(N),ev:new Int8Array(N),ie:new Int8Array(N)},w:0,filled:false,evN:0,ieN:0,
+  acc:0,sacc:0,mon:{},bkAlarm:false,onSince:null,syncSince:null};
+}
+function startEffort(){
+ const P=PAT[scen], pt=S.pat;
+ const f=clamp((S.pco2-P.ptgt)/Math.max(8,P.p0-P.ptgt),0,1.4), h=clamp((.93-S.spo2)/.08,0,1.4);
+ if(P.pause&&Math.random()<P.pause){ pt.next=S.t+60/Math.max(8,S.rrNow||12)*1.8; return; }
+ const draw=Math.max(f,h,.25), drive=draw*(P.blunt||1); S.drive=drive;
+ const rr=clamp(P.rrRest+(P.rrMax-P.rrRest)*drive,8,40); S.rrNow=rr;
+ let pm=(P.pRest+(P.pMax-P.pRest)*(P.blunt?draw:drive))*(1+(Math.random()-.5)*.2);
+ if(E.on&&E.mode!=='CPAP') pm*=(1-.3*clamp(E.ps/15,0,1));
+ if(P.weak&&Math.random()<P.weak) pm*=.45;
+ S.effFlow.push({t:S.t,f:S.Qm*60});
+ Object.assign(pt,{ts:S.t,tin:Math.min(P.tiFrac*60/rr,P.tiMax||1.2),pmax:clamp(pm,1.5,20),id:pt.id+1,open:true,trig:0,midOk:false,mid:'exp',next:S.t+60/rr*(1+(Math.random()-.5)*.16)});
+ S.efforts.push(S.t);
+}
+function startBreath(type){
+ const v=S.v, pt=S.pat, P=PAT[scen];
+ if(v.rec&&v.rec.tc!=null) v.rec.te=S.t-v.rec.tc;
+ const rec={tb:S.t,tc:null,type,bk:type==='bk',st:type==='timeST',v0:S.V,peepMeas:S.Paw,flowTrig:S.Q*60,autoPEEP:Math.max(0,S.V/P.C-E.peep),effEnd:pt.open?pt.ts+pt.tin:null,effId:pt.open?pt.id:null,cycle:null,ti:0,vtMeas:0,vtReal:0,ppk:S.Paw,dbl:false,late:false,trap:false};
+ if(type==='pat'){ if(pt.trig>=1) rec.dbl=true; pt.trig++; v.lastPat=S.t; if(v.inBk){ v.inBk=false; S.bkAlarm=false; } }
+ if(E.mode!=='CPAP'&&rec.flowTrig<-5) rec.trap=true;
+ v.rec=rec; S.breaths.push(rec); if(S.breaths.length>80) S.breaths.shift();
+ v.phase='insp'; v.tb=S.t; v.peak=0; v.ppk=S.Paw; v.hold=0; S.Vm=0;
+ S.evN=type==='pat'?1:type==='auto'?2:3;
+}
+function cycle(reason){
+ const v=S.v, r=v.rec;
+ if(r){ r.cycle=reason; r.tc=S.t; r.ti=S.t-r.tb; r.vtMeas=Math.max(0,S.Vm); r.vtReal=Math.max(0,S.V-r.v0); r.ppk=v.ppk; if(E.mode!=='CPAP'&&r.effEnd!=null&&S.t>r.effEnd+.3) r.late=true; }
+ v.phase='exp'; v.tc=S.t;
+}
+function gauss(){ let u=0,w=0; while(!u)u=Math.random(); while(!w)w=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*w); }
+function step(dt){
+ const P=PAT[scen], pt=S.pat, v=S.v, leak=ST.leak;
+ S.t+=dt;
+ if(S.t>=pt.next) startEffort();
+ const x=(S.t-pt.ts)/pt.tin, pmus=(x>=0&&x<1)?pt.pmax*Math.sin(Math.PI*x):0;
+ if(pt.open&&x>=.5&&!pt.midOk){ pt.midOk=true; pt.mid=v.phase; }
+ if(pt.open&&x>=1){ pt.open=false; if(E.on&&E.mode!=='CPAP'&&pt.trig===0&&pt.mid==='exp'){ S.ies.push(S.t); S.ieN=1; } }
+ const endE=pt.ts+pt.tin;
+ if(E.on&&E.mode!=='CPAP'&&v.phase==='insp'&&S.t>endE+.15&&S.t-endE<2.5) S.pexp=Math.min(8,10*(S.t-endE-.15))*P.push; else S.pexp=Math.max(0,S.pexp-dt*40);
+ let target=0;
+ if(E.on){
+  if(E.mode==='CPAP') target=E.peep-2.5*Math.max(S.Q,0)+1.2*Math.max(-S.Q,0);
+  else if(v.phase==='insp'){ const ti=S.t-v.tb, r=E.rise, f=r<=.01?1:Math.min(1,ti/r); const Pi=v.rec&&v.rec.bk?E.bpc:E.ps; target=E.peep+Pi*f+(r<.08&&ti<.15?(.08-r)*15*Math.sin(Math.PI*ti/.15):0)+.45*S.pexp; }
+  else target=E.peep;
+  target-=Math.max(0,leak-45)*.08*(E.niv?1:1.6);
+ }
+ S.Paw+=(target-S.Paw)*Math.min(1,dt/.02);
+ const palv=S.V/P.C-pmus+S.pexp; let Q;
+ if(S.Paw>=palv) Q=(S.Paw-palv)/P.Ri; else { const dn=Math.max(S.Paw,P.Pcrit); Q=palv>dn?-(palv-dn)/P.Re:-(palv-S.Paw)*.5/P.Re; }
+ S.V+=Q*dt; S.Q=Q;
+ const sig=.2+Math.max(0,leak-15)*.12+leak*.02; S.noise+=(-S.noise/.3)*dt+sig*Math.sqrt(2*Math.max(dt,0)/.3)*gauss(); if(!isFinite(S.noise)) S.noise=0;
+ const eff=E.niv?clamp(1-leak/110,.35,.97):clamp(1-leak/60,.15,.9);
+ const resid=(1-eff)*(leak/60)*(Math.sqrt(Math.max(S.Paw,0)/10)-Math.sqrt(Math.max(E.peep||0,0)/10));
+ S.Qm=E.on?Q+Math.max(0,resid)+S.noise/60*(E.niv?1:1.4):0;
+ S.Vm+=S.Qm*dt; S.mpaw+=(S.Paw-S.mpaw)*dt/5;
+ if(Q>0){ S.vin+=Q*dt; S.inI=true; } else if(S.inI){ S.inI=false; if(S.vin>.02) S.infl.push({t:S.t,va:Math.max(0,S.vin-(P.vdA+(P.vdF+(P.hyper?.1*clamp((S.spo2-.93)/.05,0,1):0))*S.vin))}); S.vin=0; }
+ if(E.on) vent(dt);
+ S.sacc+=dt; while(S.sacc>=SR){ S.sacc-=SR; const b=S.buf,i=S.w; b.p[i]=E.on?S.Paw:0; b.f[i]=S.Qm*60; b.v[i]=E.on?S.Vm*1000:0; b.ev[i]=S.evN; b.ie[i]=S.ieN; S.evN=0; S.ieN=0; S.w=(S.w+1)%N; if(!S.w) S.filled=true; }
+ S.acc+=dt; if(S.acc>=.5){ S.acc=0; slow(); }
+}
+function vent(dt){
+ const v=S.v, pt=S.pat;
+ if(E.mode==='CPAP'){ if(v.phase==='exp'){ if(S.Qm>.05&&S.t-v.tc>.2) startBreath(pt.open?'pat':'auto'); } else { v.ppk=Math.max(v.ppk,S.Paw); if(S.Qm<0&&S.t-v.tb>.15) cycle('pat'); } return; }
+ if(v.phase==='exp'){
+  let trig=null; const canPat=E.mode!=='PC'||E.assist, thr=E.trig==null?1.5:E.trig;
+  if(canPat&&S.t-v.tc>.15){ const mask=clamp((ST.leak-20)/80,0,.6), qt=S.Q>0?S.Qm-S.Q*(1-(1-mask)*KS):S.Qm; if(qt*60>thr){ v.hold+=dt; if(v.hold>=.04) trig=pt.open?'pat':'auto'; } else v.hold=0; }
+  if(!trig){
+   if(E.mode==='PC'){ if(S.t-v.tb>=60/E.rate) trig='time'; }
+   else if(E.btype==='rate'&&E.rate>0&&S.t-v.tb>=60/E.rate) trig='time';
+   else if(E.btype==='st'&&E.rate>0&&S.t-v.tb>=60/E.rate) trig='timeST';
+   else if(E.btype==='apnea'){ if(!v.inBk&&S.t-Math.max(v.lastPat,v.tb)>=E.apnea){ v.inBk=true; S.bkAlarm=true; } if(v.inBk&&S.t-v.tb>=60/E.brate) trig='bk'; }
+  }
+  if(trig) startBreath(trig);
+ } else {
+  const ti=S.t-v.tb, r=v.rec; v.peak=Math.max(v.peak,S.Qm); v.ppk=Math.max(v.ppk,S.Paw);
+  if(E.mode==='PC'||r.bk||r.st){ const tset=E.mode==='PC'?E.ti:r.bk?E.bti:E.ti; if(ti>=tset) cycle('time'); }
+  else { if(ti>Math.max(.15,E.rise)&&S.Qm<E.exp/100*v.peak) cycle('flow'); else if(ti>=E.timax) cycle('timax'); }
+ }
+}
+function slow(){
+ const P=PAT[scen], t=S.t, W=Math.min(30,Math.max(t,4));
+ S.infl=S.infl.filter(e=>e.t>t-60); S.effFlow=S.effFlow.filter(e=>e.t>t-60); S.efforts=S.efforts.filter(e=>e>t-60); S.ies=S.ies.filter(e=>e>t-60);
+ let va=0; S.infl.forEach(e=>{ if(e.t>t-W) va+=e.va; }); const VA=va*60/W;
+ if(t>8) S.vaE+=(VA-S.vaE)*.5/12;
+ S.pco2+=(clamp(.863*P.vco2/Math.max(S.vaE,.4),20,130)-S.pco2)*.5/45;
+ const fi=E.on?E.fio2/100:.28, PA=Math.max(20,(fi*713-S.pco2/.8)*P.vq), sh=P.sh(E.on?E.peep:0);
+ S.spo2+=(((1-sh)*sat(PA)+sh*P.sv)-S.spo2)*.5/6;
+ const B=S.breaths.filter(b=>b.tb>t-W), done=B.filter(b=>b.cycle), last=[...S.breaths].reverse().find(b=>b.cycle);
+ const E2=S.efforts.filter(e=>e>t-W&&e<t-.5).length, ie=S.ies.filter(e=>e>t-W).length;
+ const vtR=done.length?done.reduce((a,b)=>a+b.vtReal,0)/done.length:0;
+ const M={on:E.on,W,frm:B.length*60/W,frr:S.efforts.filter(e=>e>t-W).length*60/W,mv:done.reduce((a,b)=>a+b.vtMeas,0)*60/W,vt:last?last.vtMeas*1000:0,vtR:vtR*1000,
+  ppk:last?last.ppk:0,peep:last?last.peepMeas:0,ti:last?last.ti:0,leak:E.on?ST.leak*Math.sqrt(Math.max(S.mpaw,0)/10):0,
+  ie,E:E2,auto:done.filter(b=>b.type==='auto').length,late:done.filter(b=>b.late).length,dbl:done.filter(b=>b.dbl).length,trap:done.filter(b=>b.trap).length,timax:done.filter(b=>b.cycle==='timax').length,B:done.length,
+  spo2:S.spo2*100,pco2:S.pco2,fio2:E.on?E.fio2:28,bk:S.bkAlarm};
+ const EF=S.effFlow.filter(e=>e.t>t-W); M.trapVis=E.on&&EF.length?EF.filter(e=>e.f<-5).length/EF.length:0; M.efFlow=EF.length?EF.reduce((a,e)=>a+e.f,0)/EF.length:0;
+ M.vtkg=M.vt/P.ibw; M.leakp=M.vt>0?clamp(M.leak*.4/(M.mv+M.leak*.4+.01)*100,0,99):0;
+ const sync=E.on&&M.B>=3&&ie/Math.max(E2,1)<.12&&M.auto/Math.max(M.B,1)<.15&&M.late/Math.max(M.B,1)<.3&&M.dbl/Math.max(M.B,1)<.12;
+ if(sync){ if(S.syncSince==null) S.syncSince=t; } else S.syncSince=null;
+ M.syncFor=S.syncSince==null?0:t-S.syncSince;
+ S.mon=M; onMonitor();
+}
+
+/* =================== EQUIPOS =================== */
+const pd=(k,label,unit,min,max,step,def,c,o={})=>({k,label,unit,min,max,step,def,c,...o});
+const DEV={
+ bv:{name:'bellavista 1000',sub:'UCI · pantalla táctil',
+  modes:[
+   {id:'psv',label:'PSV',use:{epoc:'ok',eap:'ok',icc:'ok'},params:[pd('ps','P soporte','mbar',0,95,1,8,'ps'),pd('peep','PEEP','mbar',0,50,1,5,'peep'),pd('timax','T insp máx','s',.5,3,.1,1.5,'timax'),pd('trig','Trig flujo','L/min',.5,20,.5,2,'trig'),pd('exp','Exp Trig','%',5,90,5,25,'exp'),pd('rise','Rampa','ms',0,2000,25,200,'riseMs'),pd('brate','Frecu backup','bpm',0,50,1,0,'backup',{off0:true}),pd('fio2','Oxígeno','%',21,100,1,40,'fio2')],
+    eng:v=>({mode:'PS',ps:v.ps,peep:v.peep,timax:v.timax,trig:v.trig,exp:v.exp,rise:v.rise/1000,btype:v.brate?'rate':'none',rate:v.brate,fio2:v.fio2})},
+   {id:'cpap',label:'CPAP',use:{epoc:'bad',eap:'ok',icc:'warn'},params:[pd('cpap','CPAP','mbar',4,30,1,5,'cpap'),pd('fio2','Oxígeno','%',21,100,1,40,'fio2'),pd('brate','Frecu backup','bpm',0,50,1,0,'backup',{off0:true})],
+    eng:v=>({mode:'CPAP',peep:v.cpap,ps:0,fio2:v.fio2,btype:'none'})},
+   {id:'pac',label:'P-A/C',use:{epoc:'warn',eap:'warn',icc:'warn',som:'ok',soh:'ok'},params:[pd('pinsp','P insp','mbar',0,60,1,12,'pac'),pd('peep','PEEP','mbar',0,50,1,5,'peep'),pd('tinsp','T insp','s',.3,3,.1,1.7,'tiac'),pd('rate','Frecu','bpm',5,50,1,12,'acrate'),pd('rise','Rampa','ms',0,2000,25,200,'riseMs'),pd('trig','Trig flujo','L/min',.5,20,.5,2,'trig'),pd('fio2','Oxígeno','%',21,100,1,40,'fio2')],
+    eng:v=>({mode:'PC',ps:v.pinsp,peep:v.peep,ti:v.tinsp,rate:v.rate,rise:v.rise/1000,trig:v.trig,assist:true,fio2:v.fio2})}
+  ],
+  extraModes:['PCV','PC-SIMV'], usesNiv:true},
+ sv:{name:'Servo-u',sub:'UCI · ventanas y Aceptar',
+  modes:[
+   {id:'nivps',label:'Presión soporte',short:'PS-VNI ⇄ PC-VNI',use:{epoc:'ok',eap:'ok',icc:'ok'},params:[pd('fio2','Conc. de O₂','%',21,100,1,40,'fio2'),pd('peep','PEEP','cmH₂O',1,50,.5,5,'peep'),pd('ps','PS sobre PEEP','cmH₂O',0,60,1,5,'ps'),pd('brate','F. resp. apoyo','rpm',4,100,1,15,'backup'),pd('bpc','PC sobre PEEP apoyo','cmH₂O',5,60,1,5,'bpc'),pd('apnea','Tiempo de apnea','s',15,45,1,20,'apnea'),pd('exp','Fin de inspiración','%',10,70,5,50,'exp'),pd('bie','I:E apoyo','',1,4,.5,2,'bie',{ie:true}),pd('rise','T. subida insp.','s',0,.4,.05,.2,'riseS')],
+    eng:v=>({mode:'PS',ps:v.ps,peep:v.peep,exp:v.exp,rise:v.rise,trig:null,timax:2.5,btype:'apnea',apnea:v.apnea,brate:v.brate,bpc:v.bpc,bti:60/v.brate/(1+v.bie),fio2:v.fio2})},
+   {id:'nivpc',label:'Presión control',short:'PC-VNI',use:{epoc:'warn',eap:'warn',icc:'warn',som:'ok',soh:'ok'},params:[pd('fio2','Conc. de O₂','%',21,100,1,40,'fio2'),pd('peep','PEEP','cmH₂O',1,50,.5,5,'peep'),pd('pc','PC sobre PEEP','cmH₂O',0,60,1,10,'pac'),pd('rate','F. resp.','rpm',4,100,1,15,'acrate'),pd('ie','I:E','',1,4,.5,2,'tiac',{ie:true,tiOf:v=>60/v.rate/(1+v.ie)}),pd('rise','T. subida insp.','s',0,.4,.05,.2,'riseS')],
+    eng:v=>({mode:'PC',ps:v.pc,peep:v.peep,rate:v.rate,ti:60/v.rate/(1+v.ie),rise:v.rise,trig:null,assist:true,fio2:v.fio2})}
+  ], usesNiv:true},
+ hm:{name:'HAMILTON-T1',sub:'Transporte/UCI · botón giratorio',
+  modes:[
+   {id:'niv',label:'NIV',use:{epoc:'ok',eap:'ok',icc:'ok'},params:[pd('fio2','Oxígeno','%',21,100,1,50,'fio2'),pd('peep','PEEP/CPAP','cmH₂O',0,35,1,5,'peep'),pd('ps','Psoporte','cmH₂O',0,60,1,15,'ps'),pd('trig','Disp. flujo','l/min',1,20,1,5,'trigH'),pd('exp','ETS','%',5,80,5,35,'exp',{more:true}),pd('rise','P rampa','ms',0,200,25,100,'riseMs',{more:true}),pd('timax','TI máx','s',1,3,.1,1.5,'timax',{more:true}),pd('apn','Respaldo de apnea','',0,1,1,1,'onoff',{onoff:true,more:true})],
+    eng:v=>({mode:'PS',ps:v.ps,peep:v.peep,trig:v.trig,exp:v.exp,rise:v.rise/1000,timax:v.timax,btype:v.apn?'apnea':'none',apnea:20,brate:12,bpc:v.ps,bti:1.0,fio2:v.fio2})},
+   {id:'nivst',label:'NIV-ST',use:{epoc:'ok',eap:'warn',icc:'ok',som:'ok',soh:'ok'},params:[pd('fio2','Oxígeno','%',21,100,1,50,'fio2'),pd('peep','PEEP/CPAP','cmH₂O',0,35,1,5,'peep'),pd('pinsp','Pinsp','cmH₂O',3,60,1,15,'ps'),pd('rate','Frecuencia','c/min',5,80,1,12,'backup'),pd('trig','Disp. flujo','l/min',1,20,1,5,'trigH',{more:true}),pd('exp','ETS','%',5,80,5,35,'exp',{more:true}),pd('rise','P rampa','ms',0,200,25,100,'riseMs',{more:true}),pd('timax','TI máx','s',1,3,.1,1.5,'timax',{more:true}),pd('tinsp','TI','s',.3,3,.1,1,'tiac',{more:true})],
+    eng:v=>({mode:'PS',ps:v.pinsp,peep:v.peep,trig:v.trig,exp:v.exp,rise:v.rise/1000,timax:v.timax,btype:'st',rate:v.rate,ti:v.tinsp,fio2:v.fio2})}
+  ], usesNiv:false},
+ mn:{name:'MONNAL T60',sub:'Urgencias/transporte · teclas y Validar',
+  modes:[
+   {id:'psniv',label:'PS / NIV',use:{epoc:'ok',eap:'ok',icc:'ok'},params:[pd('fio2','FiO₂','%',21,100,5,50,'fio2'),pd('ps','PS','cmH₂O',5,25,1,8,'ps'),pd('peep','PEEP','cmH₂O',0,15,1,5,'peep'),pd('fmin','f mín.','c/min',1,40,1,5,'backup'),pd('trig','Trig.I','L/min',.5,10,.5,3,'trigM'),pd('timax','TImáx','s',.3,5,.1,1.3,'timax'),pd('pend','Pend.','cmH₂O/s',60,120,20,100,'pend'),pd('exp','Trig.E','%',10,90,10,50,'exp')],
+    eng:v=>({mode:'PS',ps:v.ps,peep:v.peep,trig:v.trig,timax:v.timax,rise:clamp(v.ps/v.pend,.04,.4),exp:v.exp,btype:'rate',rate:v.fmin,fio2:v.fio2})},
+   {id:'cpap',label:'CPAP',use:{epoc:'bad',eap:'ok',icc:'warn'},params:[pd('fio2','FiO₂','%',21,100,5,50,'fio2'),pd('cpap','CPAP','cmH₂O',2,20,1,5,'cpap')],
+    eng:v=>({mode:'CPAP',peep:v.cpap,ps:0,fio2:v.fio2,btype:'none'})}
+  ], usesNiv:true},
+ md:{name:'MEDUMAT Standard²',sub:'Emergencias · mandos giratorios',
+  modes:[
+   {id:'cpap',label:'CPAP',use:{epoc:'bad',eap:'ok',icc:'warn'},params:[pd('peep','PEEP','mbar',0,20,1,5,'cpap'),pd('pmax','Pmax','mbar',10,65,1,30,'pmax'),pd('o2','O₂','',0,1,1,1,'o2',{o2:true})],
+    eng:v=>({mode:'CPAP',peep:v.peep,ps:0,fio2:v.o2?100:55,btype:'none'})},
+   {id:'ippv',label:'IPPV',use:{epoc:'bad',eap:'bad',icc:'bad',som:'bad',soh:'bad'},params:[pd('peep','PEEP','mbar',0,20,1,0,null),pd('o2','O₂','',0,1,1,1,'o2',{o2:true})],
+    eng:v=>({mode:'PC',ps:15,peep:v.peep,rate:12,ti:1.3,rise:.1,assist:false,fio2:v.o2?100:55})}
+  ], usesNiv:false}
+};
+
+/* =================== ESTADO DE LA INTERFAZ =================== */
+let ST;
+function newState(dev){
+ const d=DEV[dev], vals={};
+ d.modes.forEach(m=>m.params.forEach(p=>{ if(!(p.k in vals)) vals[p.k]=p.def; }));
+ if(dev==='md') vals.peep=5;
+ ST={dev,vals,pend:null,modeId:d.modes[0].id,pendMode:null,niv:dev==='hm'||dev==='md',running:false,sel:null,cand:null,modal:null,leak:15,o2open:false,page:0,
+     md:{screen:'off',cursor:0,count:20,started:null,prev:false,talla:170},hmTab:'basic',confirmedOnce:false,log:[]};
+ if(dev==='hm') ST.modeId='niv';
+ applyEngine();
+}
+const curDev=()=>DEV[ST.dev];
+const modeOf=id=>curDev().modes.find(m=>m.id===id);
+const curMode=()=>modeOf(ST.modeId);
+function applyEngine(){
+ const m=curMode(), e=m.eng(ST.vals);
+ E=Object.assign({mode:'PS',ps:0,peep:0,rise:.15,trig:2,exp:30,timax:1.5,btype:'none',rate:0,apnea:20,brate:12,bpc:10,bti:1,fio2:40,ti:1,assist:true},e);
+ E.on=ST.running&&(ST.dev!=='md'||ST.o2open||true);
+ E.niv=ST.niv;
+ if(ST.dev==='md'&&!ST.o2open){ E.ps=E.ps*.4; E.peep=E.peep*.4; }
+}
+function startStop(on){ ST.running=on; applyEngine(); if(on){ S.v.lastPat=S.t; S.v.tb=S.t; S.v.tc=S.t; S.onSince=S.t; } }
+
+/* =================== RENDER COMÚN =================== */
+const fmtv=(p,v)=>p.onoff?(v?'Encendido':'Apagado'):p.o2?(v?'100 % O₂':'Air Mix'):p.ie?('1:'+nf(v)):(p.off0&&!v?'Off':nf(v));
+function alarmsList(){
+ const M=S.mon||{}, a=[], d=ST.dev;
+ if(d==='md'&&!ST.o2open&&ST.md.screen!=='off') a.push(['hi','Presión de suministro < 2,7 bar']);
+ if(d==='sv'&&!ST.o2open) a.push(['hi','Presiones de suministro de gas bajas']);
+ if(!ST.running){ a.push(['info',d==='sv'?'EN ESPERA':'Modo de espera, sin ventilación']); return a; }
+ if(M.bk) a.push(['med',d==='sv'?'Sin esfuerzo del paciente':'Apnea: ventilación de respaldo']);
+ if(M.leak>40) a.push(['med',d==='sv'?'Fuga demasiado alta':d==='hm'?'Fuga alta':'Fuga alta']);
+ if(M.mv>12) a.push(['med',d==='bv'?'Volumen minuto alto':d==='sv'?'Vol. minuto esp. alto':'VMe alto']);
+ if(M.vtkg>10) a.push(['med',d==='bv'?'Volumen tidal alto':'Vt alto']);
+ if(M.frm>35) a.push(['med','Frecuencia alta']);
+ if(M.spo2<(PAT[scen].hyper?85:88)) a.push(['hi','SpO₂ baja']);
+ return a;
+}
+function topAlarm(){ const a=alarmsList(); return a.find(x=>x[0]==='hi')||a.find(x=>x[0]==='med')||a[0]||['info','Sin alarmas']; }
+
+function renderAll(){
+ $('#devs').innerHTML=Object.entries(DEV).map(([k,d])=>`<button data-dev="${k}" aria-pressed="${k===ST.dev}"><b>${d.name}</b><span>${d.sub}</span></button>`).join('');
+ renderMonitor(); renderCoach(); renderInfo();
+}
+function renderMonitor(){ const f={bv:skinBV,sv:skinSV,hm:skinHM,mn:skinMN,md:skinMD}[ST.dev]; $('#mon').innerHTML=f(); onMonitor(); }
+function setTxt(id,t,cls){ const e=document.getElementById(id); if(e){ e.textContent=t; if(cls!==undefined) e.className=cls; } }
+
+/* ---------- bellavista ---------- */
+function skinBV(){
+ const m=curMode(), pm=ST.pendMode?modeOf(ST.pendMode):m, vals=ST.pend||ST.vals, sel=ST.sel&&pm.params.find(p=>p.k===ST.sel);
+ const nPend=ST.pend||ST.pendMode?countPend():0;
+ const tiles=[['ppk','P pico','mbar'],['peepm','PEEP','mbar'],['vt','Vt','mL'],['mv','MV','L/min'],['fr','Frecu','bpm'],['fio2m','FiO₂','%'],['leak','Fuga','L/min'],['vtkg','Vt/kg','mL/kg']];
+ const backupOff=pm.params.some(p=>p.k==='brate')&&!vals.brate;
+ return `<div class="bv">
+ <div class="bv-top"><div class="bv-alarm" id="alarm"></div><div class="bv-title">Single Vent · ${ST.running?'Cockpit':'En espera'}</div></div>
+ <div class="bv-main"><canvas class="wave" id="wave"></canvas>
+  <div class="bv-tiles">${tiles.map(([k,l,u])=>`<div class="bvt" id="t_${k}"><span>${l}</span><b id="m_${k}">--</b><small>${u}</small></div>`).join('')}
+   <div class="bvt big" data-act="bv-run"><b>${ST.running?'Parar ventilación':'Iniciar ventilación'}</b><small id="m_dur" style="text-align:center">${ST.niv?'Circuito: no invasivo':'Circuito: invasivo'}</small></div></div></div>
+ <div class="bv-set">
+  <div class="bv-modehdr"><span>▶ <b>${pm.label}</b> Single Vent${ST.pendMode?' (pendiente)':''}</span>${backupOff?'<span class="red">Backup Off</span>':''}</div>
+  <div class="bv-params">${pm.params.map(p=>`<button class="bvp ${ST.sel===p.k?'sel':''} ${ST.pend&&ST.pend[p.k]!==ST.vals[p.k]?'pend':''}" data-act="bv-sel" data-k="${p.k}"><span>${p.label}</span><b>${fmtv(p,vals[p.k])}</b><small>${p.unit}</small></button>`).join('')}</div>
+  ${sel?`<div class="bv-edit"><b>${sel.label}</b><button data-act="bv-step" data-d="-1" aria-label="Bajar">−</button><b style="font-family:var(--mono);min-width:60px;text-align:center">${fmtv(sel,vals[sel.k])} ${sel.unit}</b><button data-act="bv-step" data-d="1" aria-label="Subir">+</button><input type="range" data-act="bv-range" min="${sel.min}" max="${sel.max}" step="${sel.step}" value="${vals[sel.k]}" aria-label="${sel.label}"></div>`:''}
+  <div class="bv-conf">${nPend?`<span>${nPend} cambio(s) pendiente(s)</span><button class="go" data-act="bv-ok">Confirmar</button><button data-act="bv-no">Cancelar</button>`:'<span style="font-size:.85rem">Toca un parámetro para ajustarlo</span>'}</div>
+ </div>
+ <div class="bv-bottom">${[['bv-circ','Menú principal'],['bv-modes','Ventilación'],['','Cockpit'],['','Monitorización'],['','Ajustes de alarma']].map(([a,l])=>`<button ${a?`data-act="${a}"`:''}><i></i>${l}</button>`).join('')}</div>
+ ${ST.modal==='bv-modes'?`<div class="modal-bg"><div class="bv-modal"><h4>Modo</h4><div class="bv-list">${['CPAP','PCV','P-A/C','PC-SIMV','PSV'].map(l=>{ const mm=curDev().modes.find(x=>x.label===l); return `<button ${mm?`data-act="bv-pick" data-m="${mm.id}"`:'class="dis" disabled'} aria-pressed="${(ST.modalPick||pm.id)===(mm&&mm.id)}">${l}</button>`; }).join('')}</div><div class="bv-mbtns"><button data-act="close">Cancelar</button><button data-act="bv-pickok">Aceptar</button></div></div></div>`:''}
+ ${ST.modal==='bv-circ'?`<div class="modal-bg"><div class="bv-modal"><h4>Circuito de paciente</h4><div class="bv-list"><button data-act="bv-niv" data-v="0" aria-pressed="${!ST.niv}">Invasivo (tubo)</button><button data-act="bv-niv" data-v="1" aria-pressed="${ST.niv}">No invasivo (mascarilla)</button></div><p style="padding:0 12px 8px;font-size:.85rem">En VNI verás la barra azul y el símbolo de mascarilla; el equipo compensa la fuga.</p><div class="bv-mbtns"><button data-act="close">Cerrar</button></div></div></div>`:''}
+ </div>`;
+}
+function countPend(){ let n=0; if(ST.pendMode&&ST.pendMode!==ST.modeId) n++; if(ST.pend) Object.keys(ST.pend).forEach(k=>{ if(ST.pend[k]!==ST.vals[k]) n++; }); return n; }
+
+/* ---------- servo ---------- */
+function skinSV(){
+ const m=curMode(), cfgOrder=m.params;
+ const mp=ST.modal&&ST.modal.startsWith('sv-p:')?m.params.find(p=>p.k===ST.modal.slice(5)):null;
+ const tiles=[['ppk','Ppico','',''],['fr','F resp.','g',''],['mv','VMe','c',''],['fio2m','Conc. de O₂','g',''],['leak','Fuga l/min','c',''],['vtkg','Vc/PBW','c','']];
+ return `<div class="sv">
+ <div class="sv-left">
+  <button data-act="sv-run" class="${ST.running?'':'on'}">${ST.running?'⏻<br>En espera':'▶<br>Iniciar'}</button>
+  <button class="dis">Desconexión</button>
+  <button data-act="sv-modes" class="${ST.modal==='sv-modes'?'on':''}">▦<br>Modos</button>
+  <button class="dis">Límites de alarma</button><button class="dis">Tendencias y diarios</button><button class="dis">Maniobras</button>
+ </div>
+ <div>
+  <div class="sv-status"><span id="alarm" class="sv-alarm"></span><span>PBW ${PAT[scen].ibw} kg</span></div>
+  <div class="sv-mode ${ST.running?(ST.niv?'':'inv'):'stby'}">${ST.running?`${ST.niv?'🎭 ':''}${ST.niv?m.short:(m.id==='nivps'?'PS/CPAP':'Presión control')}`:'EN ESPERA – PACIENTE NO VENTILADO'}</div>
+  <div class="sv-main"><canvas class="wave" id="wave"></canvas><div class="sv-tiles">${tiles.map(([k,l,c])=>`<div class="svt ${c}" id="t_${k}"><span>${l}</span><b id="m_${k}">***</b></div>`).join('')}</div></div>
+  <div class="sv-params">${cfgOrder.map(p=>`<button class="svp" data-act="sv-open" data-k="${p.k}"><span>${p.label}</span><b>${fmtv(p,ST.vals[p.k])}</b></button>`).join('')}</div>
+ </div>
+ ${mp?`<div class="modal-bg"><div class="sv-modal"><h4><span>${ST.niv?'VNI, ':''}${m.label.toUpperCase()}</span><button data-act="close" style="background:none;border:0;color:#7dff7a;font-size:1.2rem;cursor:pointer" aria-label="Cerrar">✕</button></h4><div class="sv-mbody"><div style="text-align:center;color:#c8d4e8">${mp.label}${mp.unit?' ('+mp.unit+')':''}</div><div class="sv-big"><button data-act="sv-step" data-d="-1" aria-label="Bajar">−</button><b>${fmtv(mp,ST.cand)}</b><button data-act="sv-step" data-d="1" aria-label="Subir">+</button></div><input type="range" data-act="sv-range" min="${mp.min}" max="${mp.max}" step="${mp.step}" value="${ST.cand}" style="accent-color:#f4c52c" aria-label="${mp.label}">${mp.k==='bie'||mp.k==='brate'?`<div style="text-align:center;color:#c8d4e8">Ti apoyo ${nf(60/(mp.k==='brate'?ST.cand:ST.vals.brate)/(1+(mp.k==='bie'?ST.cand:ST.vals.bie)),2)} s</div>`:''}</div><div class="sv-mbtns"><button data-act="close">Cancelar</button><button class="go" data-act="sv-ok">Aceptar</button></div></div></div>`:''}
+ ${ST.modal==='sv-modes'?`<div class="modal-bg"><div class="sv-modal"><h4><span>MODOS · Para obtener información, pulse y mantenga el modo</span><button data-act="close" style="background:none;border:0;color:#7dff7a;font-size:1.2rem;cursor:pointer" aria-label="Cerrar">✕</button></h4><div class="sv-mbody">
+   <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start"><div><div style="font-size:.85rem;margin-bottom:4px">Tipo de ventilación</div><button class="sv-type" data-act="sv-type">${ST.niv?'NO INVASIVA 🎭':'INVASIVA'}</button><div style="font-size:.75rem;color:#c8d4e8;margin-top:4px">Pulsa para cambiar</div></div>
+   <div style="flex:1;display:flex;flex-direction:column;gap:6px">${ST.niv?`<span style="font-size:.85rem">Control de VNI</span><div class="sv-grid"><button class="niv" data-act="sv-pick" data-m="nivpc" aria-pressed="${(ST.modalPick||ST.modeId)==='nivpc'}">PRESIÓN CONTROL</button></div><span style="font-size:.85rem">VNI soporte</span><div class="sv-grid"><button class="niv" data-act="sv-pick" data-m="nivps" aria-pressed="${(ST.modalPick||ST.modeId)==='nivps'}">PRESIÓN SOPORTE</button><button class="hatch" disabled title="Necesita catéter Edi">NAVA</button></div><span style="font-size:.85rem">Otros tratamientos</span><div class="sv-grid"><button class="hf" disabled>ALTO FLUJO</button></div>`:`<span style="font-size:.85rem">Control · Interactivo · Soporte</span><div class="sv-grid"><button data-act="sv-pick" data-m="nivpc" aria-pressed="${(ST.modalPick||ST.modeId)==='nivpc'}">PRESIÓN CONTROL</button><button disabled>VOLUMEN CONTROL</button><button data-act="sv-pick" data-m="nivps" aria-pressed="${(ST.modalPick||ST.modeId)==='nivps'}">PS/CPAP</button><button disabled>NAVA</button></div><span style="font-size:.8rem;color:#ffb3a8">Modos invasivos: con mascarilla no compensan la fuga.</span>`}</div></div></div>
+   <div class="sv-mbtns"><button data-act="close">Cancelar</button><button class="go" data-act="sv-pickok">Aceptar</button></div></div></div>`:''}
+ </div>`;
+}
+
+/* ---------- hamilton ---------- */
+function skinHM(){
+ const m=curMode(), basics=m.params.filter(p=>!p.more), more=m.params.filter(p=>p.more);
+ const shown=ST.hmTab==='basic'?basics:more, sel=ST.sel&&m.params.find(p=>p.k===ST.sel);
+ const mons=[['ppk','Ppico','cmH₂O'],['vt','VTE NIV','ml'],['mv','VolMin NIV','l/min'],['fr','fTotal','c/min'],['fio2m','Oxígeno','%'],['leakp','Fuga','%'],['vtkg','Vt/PCI','ml/kg']];
+ return `<div class="hm"><div>
+  <div class="hm-top"><span class="mode">${m.label}</span><span class="grp">Adulto · ${SCEN[scen].hd} · PCI ${PAT[scen].ibw} kg</span><span id="alarm" class="hm-alarm"></span></div>
+  <div class="hm-main"><canvas class="wave" id="wave"></canvas><div class="hm-mon">${mons.map(([k,l,u])=>`<div class="hmm" id="t_${k}"><span>${l} <small>${u}</small></span><b id="m_${k}">--</b></div>`).join('')}</div></div>
+  <div class="hm-sub"><button data-act="hm-tab" data-v="basic" aria-pressed="${ST.hmTab==='basic'}">Controles básicos</button><button data-act="hm-tab" data-v="more" aria-pressed="${ST.hmTab==='more'}">Más</button><span style="font-size:.78rem;color:#9aa6ad;align-self:center;margin-left:6px">${sel?'Gira el botón y púlsalo para confirmar':'Toca un control para seleccionarlo'}</span></div>
+  <div class="hm-ctrls">${shown.map(p=>{ const isSel=ST.sel===p.k, v=isSel&&ST.cand!=null?ST.cand:ST.vals[p.k]; return `<button class="hmc ${isSel?'sel':''} ${isSel&&ST.cand!=null&&ST.cand!==ST.vals[p.k]?'cand':''}" data-act="hm-sel" data-k="${p.k}"><span>${p.label}</span><b>${fmtv(p,v)}</b><span>${p.unit}</span></button>`; }).join('')}</div>
+ </div>
+ <div class="hm-side">
+  <button data-act="hm-modes">Modos</button><button data-act="hm-run" class="${ST.running?'':'on'}">${ST.running?'Standby':'Iniciar ventilación'}</button>
+  <div class="knob" aria-label="Botón de presionar y girar"><button class="l" data-act="hm-turn" data-d="-1" aria-label="Girar a la izquierda">↺</button><button class="c" data-act="hm-press">PULSAR</button><button class="r" data-act="hm-turn" data-d="1" aria-label="Girar a la derecha">↻</button></div>
+ </div>
+ ${ST.modal==='hm-modes'?`<div class="modal-bg"><div class="mn-modal" style="background:#2a3035"><h4>Modos</h4><div class="grid">${['ASV','PCV+','(S)CMV+','PSIMV+','SIMV+','ESPONT','DuoPAP','APRV','NIV','NIV-ST'].map(l=>{ const mm=curDev().modes.find(x=>x.label===l); return `<button ${mm?`data-act="hm-pick" data-m="${mm.id}"`:'disabled style="opacity:.45"'} aria-pressed="${(ST.modalPick||ST.modeId)===(mm&&mm.id)}" style="background:${mm?'#0f8f8a':'#33393f'};border-color:#555">${l}</button>`; }).join('')}</div><p style="font-size:.8rem;color:#b5c0c6">Modos no invasivos: NIV y NIV-ST. Confirma para activar.</p><div class="row2" style="justify-content:flex-end"><button class="btn" data-act="close">Cancelar</button><button class="btn primary" data-act="hm-pickok">Confirmar</button></div></div></div>`:''}
+ </div>`;
+}
+
+/* ---------- monnal ---------- */
+function skinMN(){
+ const m=curMode(), per=5, pages=Math.ceil(m.params.length/per), page=Math.min(ST.page,pages-1), shown=m.params.slice(page*per,page*per+per), sel=ST.sel&&m.params.find(p=>p.k===ST.sel);
+ const mons=[['ppk','Ppico','cmH₂O'],['peepm','PEEP','cmH₂O'],['vt','VTe','mL'],['mv','VMe','L/min'],['fr','Ftot','c/min'],['fio2m','FiO₂','%'],['leak','Fuga','L/min']];
+ return `<div class="mn">
+ <div class="mn-top"><span class="mode">${m.label}</span>${ST.niv?'<span class="niv">No invasiva</span>':''}<span style="font-size:.85rem;opacity:.8">${ST.running?'Ventilación en curso':'Espera'}</span><span id="alarm" class="mn-alarm"></span></div>
+ <div class="mn-main"><canvas class="wave" id="wave"></canvas><div>${mons.map(([k,l,u])=>`<div class="mnm" id="t_${k}"><span>${l} <small>${u}</small></span><b id="m_${k}">--</b></div>`).join('')}</div></div>
+ <div class="mn-set">${shown.map(p=>`<button class="mns ${ST.sel===p.k?'sel':''}" data-act="mn-sel" data-k="${p.k}"><span>${p.label}</span><b>${fmtv(p,ST.sel===p.k&&ST.cand!=null?ST.cand:ST.vals[p.k])}</b><small>${p.unit}</small></button>`).join('')}${pages>1?`<button class="mn-arrow" data-act="mn-page" aria-label="Otra página de ajustes">${page?'◀':'▶'}</button>`:''}</div>
+ ${sel?`<div class="mn-edit"><b>${sel.label}</b><button data-act="mn-step" data-d="-1" aria-label="Bajar">−</button><b style="min-width:60px;text-align:center">${fmtv(sel,ST.cand)} ${sel.unit}</b><button data-act="mn-step" data-d="1" aria-label="Subir">+</button><input type="range" data-act="mn-range" min="${sel.min}" max="${sel.max}" step="${sel.step}" value="${ST.cand}" aria-label="${sel.label}"><button data-act="close-sel">Anular</button><button class="go" data-act="mn-ok">Validar</button></div>`:''}
+ <div class="mn-keys"><button data-act="mn-niv" class="${ST.niv?'on':''}">No invasiva</button><button data-act="mn-modes">Modos de ventilación</button><button data-act="mn-run" class="${ST.running?'':'on'}">${ST.running?'Detener ventilación':'Iniciar ventilación'}</button></div>
+ ${ST.modal==='mn-modes'?`<div class="modal-bg"><div class="mn-modal"><h4>Modos de ventilación</h4><div class="grid">${['VCV','PCV','PS','PS / NIV','CPAP','SIMV','Duo-Levels','PRVC'].map(l=>{ const mm=curDev().modes.find(x=>x.label===l); return `<button ${mm?`data-act="mn-pick" data-m="${mm.id}"`:'disabled style="opacity:.45"'} aria-pressed="${(ST.modalPick||ST.modeId)===(mm&&mm.id)}">${l}</button>`; }).join('')}</div><p style="font-size:.8rem;color:#a8c0d8">PS / NIV y CPAP son los modos para mascarilla. Duo-Levels es opcional.</p><div class="row2" style="justify-content:flex-end"><button class="btn" data-act="close">Anular</button><button class="btn primary" data-act="mn-pickok">Validar</button></div></div></div>`:''}
+ </div>`;
+}
+
+/* ---------- medumat ---------- */
+const MD_START=['Paciente anterior','Nuevo paciente','Emergencia adulto'];
+const MD_MODES=[['IPPV','ippv'],['S-IPPV',null],['SIMV',null],['CPAP','cpap'],['CPAP + ASB',null],['BiLevel + ASB',null],['aPCV',null],['RSI',null],['RCP',null]];
+function skinMD(){
+ const sc=ST.md.screen, m=curMode(), a=topAlarm();
+ let area='';
+ if(sc==='off') area='<div style="flex:1;background:#0b0f14"></div>';
+ else if(sc==='start') area=`<div class="md-area"><b>Menú de inicio</b>${MD_START.map((l,i)=>`<div class="md-item ${ST.md.cursor===i?'sel':''}">${l}${i===0?` <span style="color:#c3392d">(${ST.md.count} s)</span>`:''}</div>`).join('')}<small>Gira el mando derecho y púlsalo para elegir. Si no eliges en 20 s, ventila con el paciente anterior.</small></div>`;
+ else if(sc==='talla') area=`<div class="md-area"><b>Nuevo paciente</b><div class="md-item sel">Talla: ${ST.md.talla} cm · ${SCEN[scen].hd.split(' ')[0]}</div><small>Gira el mando derecho para la talla y púlsalo para continuar.</small></div>`;
+ else if(sc==='modes') area=`<div class="md-area"><b>Modo</b>${MD_MODES.map(([l,id],i)=>`<div class="md-item ${ST.md.cursor===i?'sel':''} ${id?'':'dis'}">${l}${id?'':' <small>(no en el manual aportado)</small>'}</div>`).join('')}</div>`;
+ else { const ps=m.params; area=`<div class="md-area"><canvas class="wave" id="wave" style="height:130px"></canvas><div class="md-fields">${m.id==='cpap'?`<div class="md-field">—</div><div class="md-field ${ST.sel==='peep'?'act':''}">PEEP<b>${ST.vals.peep}</b>mbar</div><div class="md-field ${ST.sel==='pmax'?'act':''}">Pmax<b>${ST.vals.pmax}</b>mbar</div>`:`<div class="md-field">Vt<b>500</b>ml</div><div class="md-field">Freq.<b>12</b>/min</div><div class="md-field ${ST.sel==='peep'?'act':''}">PEEP<b>${ST.vals.peep}</b>mbar</div>`}</div></div>`; }
+ const on=sc!=='off';
+ return `<div class="md"><div class="md-face">
+  <div class="md-brand"><span>MEDUMAT Standard²</span><span class="md-led"><i class="${on?'on':''}"></i><i class="on"></i></span></div>
+  <div class="md-scr">${on?`<div class="md-stat"><span>▮▮▮▮</span><span>🔔</span><span style="margin:0 auto">${new Date().toTimeString().slice(0,5)}</span><span class="o2">${ST.vals.o2?'100%<br>O₂':'Air<br>Mix'}</span><span class="mode">${sc==='vent'?m.label:'—'}</span></div><div class="md-alarm ${a[0]==='med'?'med':''}" id="alarm" ${a[0]==='info'?'hidden':''}></div>`:''}
+   ${on?`<div class="md-body"><div class="md-vals"><div>Vte ml<b id="m_vt">--</b></div><div>f(fsp) /min<b id="m_fr">--</b></div><div>MVe l/min<b id="m_mv">--</b></div></div>${area}</div>`:area}</div>
+  <div class="md-knobs">${['izq','centro','der'].map((n,i)=>`<div class="md-knob"><button class="t" data-act="md-turn" data-n="${i}" data-d="-1" aria-label="Mando ${n}: girar a la izquierda">↺</button><button class="p" data-act="md-press" data-n="${i}">PULSAR</button><button class="t" data-act="md-turn" data-n="${i}" data-d="1" aria-label="Mando ${n}: girar a la derecha">↻</button></div>`).join('')}</div>
+ </div>
+ <div class="md-side"><button data-act="md-sil">🔕</button><button data-act="md-menu">MENÚ</button><button data-act="md-air" class="${ST.vals.o2?'':'on'}">AIR MIX</button><button disabled>CPR</button><button data-act="md-power">⏻</button></div>
+ </div>`;
+}
+
+/* =================== MONITOR EN DIRECTO =================== */
+const DEVCOL={bv:['#ff5b3d','#eef2ff','#f0e14a','#1f2638'],sv:['#f2c94c','#5fd16b','#7cc4ff','#101a33'],hm:['#ffd65a','#ff7ab0','#7fe0d8','#14181b'],mn:['#ffb05e','#5fb3ff','#7de3a0','#0b1c2e'],md:['#1e5ad6','#1e5ad6','#1e5ad6','#ffffff']};
+function onMonitor(){
+ const M=S.mon||{}, run=ST.running, d=ST.dev, dash=d==='sv'?'***':'--';
+ const val={ppk:nf(M.ppk,0),peepm:nf(M.peep,1),vt:nf(M.vt,0),mv:nf(M.mv,1),fr:nf(M.frm,0),fio2m:nf(M.fio2,0),leak:nf(M.leak,0),leakp:nf(M.leakp,0),vtkg:nf(M.vtkg,1)};
+ Object.keys(val).forEach(k=>setTxt('m_'+k,run?val[k]:dash));
+ if(d==='sv') setTxt('m_fio2m',nf(ST.o2open?(run?E.fio2:21):(run?Math.min(E.fio2,24):21),0));
+ const a=alarmsList(), top=topAlarm(), cls={bv:'bv-alarm',sv:'sv-alarm',hm:'hm-alarm',mn:'mn-alarm',md:'md-alarm'}[d];
+ const el=document.getElementById('alarm'); if(el){ el.textContent=top[1]+(a.length>1&&top[0]!=='info'?`  (${a.length})`:''); el.className=cls+' '+(d==='md'?(top[0]==='med'?'med':''):top[0]); if(d==='md') el.hidden=top[0]==='info'; }
+ const map={leak:'leak',leakp:'leak',mv:'mv',vtkg:'vt',vt:'vt',fr:'fr'};
+ document.querySelectorAll('[id^="t_"]').forEach(t=>{ const k=t.id.slice(2); const bad=run&&((k==='leak'||k==='leakp')&&M.leak>40||k==='mv'&&M.mv>12||(k==='vt'||k==='vtkg')&&M.vtkg>10||k==='fr'&&M.frm>35); t.classList.toggle('warn',!!bad); });
+ renderLive(); renderMissions();
+}
+function drawWave(){
+ const c=document.getElementById('wave'); if(!c) return;
+ const col=DEVCOL[ST.dev], dpr=window.devicePixelRatio||1, W=c.clientWidth||400, chs=ST.dev==='md'?[['p',-2,30,'Paw mbar']]:[['p',-5,30,ST.dev==='sv'?'Pva cmH₂O':ST.dev==='bv'?'Paw mbar':'Paw cmH₂O'],['f',-100,100,ST.dev==='sv'?'Flujo l/m':'Flujo L/min'],['v',-100,900,'V ml']];
+ const H=ST.dev==='md'?130:Math.max(240,Math.min(330,W*.55));
+ if(c.width!==Math.round(W*dpr)||c.height!==Math.round(H*dpr)){ c.width=Math.round(W*dpr); c.height=Math.round(H*dpr); c.style.height=H+'px'; }
+ const x=c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0); x.fillStyle=col[3]; x.fillRect(0,0,W,H);
+ const ch=H/chs.length, left=36, pw=W-left-6, segs=!S.filled?[[0,S.w]]:(S.w+12>=N?[[S.w+12-N,S.w]]:[[0,S.w],[S.w+12,N]]);
+ let vmax=900; if(chs.length>1){ let mx=0; for(let i=0;i<N;i++) mx=Math.max(mx,S.buf.v[i]); vmax=Math.max(600,Math.ceil(mx*1.2/200)*200); }
+ chs.forEach(([k,mn,mx,lab],ci)=>{ if(k==='v') mx=vmax;
+  const y0=ci*ch+14, h=ch-22, Y=v=>y0+h-(clamp(v,mn,mx)-mn)/(mx-mn)*h, yz=Y(0), cc=col[ci];
+  x.strokeStyle=ST.dev==='md'?'#d5dbe2':'rgba(255,255,255,.12)'; x.lineWidth=1; x.beginPath(); x.moveTo(left,yz+.5); x.lineTo(left+pw,yz+.5); x.stroke();
+  x.fillStyle=ST.dev==='md'?'#444':'rgba(255,255,255,.65)'; x.font='10px "IBM Plex Mono",monospace'; x.textAlign='right'; x.fillText(String(mx),left-4,y0+8); x.fillText('0',left-4,yz+3); x.textAlign='left'; x.fillStyle=cc; x.fillText(lab,left+4,y0-2);
+  if(!ST.running) return;
+  const b=S.buf[k];
+  segs.forEach(([a,e])=>{ if(e-a<2) return; x.beginPath(); x.moveTo(left+a/N*pw,yz); for(let i=a;i<e;i++) x.lineTo(left+i/N*pw,Y(b[i])); x.lineTo(left+(e-1)/N*pw,yz); x.closePath(); x.globalAlpha=ST.dev==='bv'?.55:.18; x.fillStyle=cc; x.fill(); x.globalAlpha=1;
+   x.beginPath(); for(let i=a;i<e;i++){ const X=left+i/N*pw,YY=Y(b[i]); i===a?x.moveTo(X,YY):x.lineTo(X,YY); } x.strokeStyle=cc; x.lineWidth=1.8; x.stroke(); });
+  if(ci===0) segs.forEach(([a,e])=>{ for(let i=a;i<e;i++){ if(S.buf.ev[i]){ const X=left+i/N*pw; x.fillStyle=['','#4fd18b','#ffa53a','#6aa8ff'][S.buf.ev[i]]; x.beginPath(); x.moveTo(X-4,y0); x.lineTo(X+4,y0); x.lineTo(X,y0+7); x.fill(); } if(S.buf.ie[i]){ const X=left+i/N*pw; x.strokeStyle='#ff5b4b'; x.lineWidth=2; x.beginPath(); x.moveTo(X-4,y0+12); x.lineTo(X+4,y0+20); x.moveTo(X+4,y0+12); x.lineTo(X-4,y0+20); x.stroke(); } } });
+ });
+ if(!ST.running){ x.fillStyle=ST.dev==='md'?'#666':'rgba(255,255,255,.55)'; x.font='14px system-ui'; x.textAlign='center'; x.fillText('Sin ventilación',W/2,H/2); }
+ else { x.fillStyle='rgba(255,255,255,.25)'; x.fillRect(left+S.w/N*pw,0,2,H); }
+}
+
+/* =================== TUTOR =================== */
+const useOf=m=>m.use[scen]||(m.eng(ST.vals).mode==='CPAP'?'bad':'ok');
+const LAB=c=>{ const m=curMode(); const p=m.params.find(p=>p.c===c); return p?p.label:c; };
+function score(){
+ const m=curMode(), out=[]; let ok=0,tot=0;
+ m.params.forEach(p=>{
+  const v=ST.vals[p.k]; let st='ok', msg=WHY[p.c]||'', tg='';
+  if(p.onoff){ st=v?'ok':'bad'; msg=v?'Respaldo de apnea encendido.':'Con hipercapnia debe estar encendido.'; }
+  else if(p.o2){ const want=scen==='eap'?1:0; st=v===want?'ok':'warn'; msg=scen==='eap'?'En el EAP grave, 100 % O₂ al inicio.':'En un retenedor, Air Mix y SpO₂ 88–92 %.'; }
+  else { const r=(REC[p.c]||{})[scen]; if(!r) return; tg=p.tiOf?`T insp ${nf(r[0])}–${nf(r[1])} s (ahora ${nf(p.tiOf(ST.vals),2)} s)`:p.ie?`1:${nf(r[0])}–1:${nf(r[1])}`:`${nf(r[0])}–${nf(r[1])} ${p.unit}`;
+   const vv=p.tiOf?p.tiOf(ST.vals):v;
+   if(p.off0&&!v) st=scen==='eap'?'warn':'bad'; else if(vv>=r[0]&&vv<=r[1]) st='ok'; else { const span=r[1]-r[0]||1, dd=vv<r[0]?r[0]-vv:vv-r[1]; st=dd>span*.6?'bad':'warn'; }
+   if(p.c==='pmax'&&ST.vals.peep+10>v){ st='bad'; msg='Pmax al menos 10 mbar por encima de la PEEP.'; }
+   if(p.c==='timax'&&ST.dev==='hm'&&r[0]<1) tg='1,0–'+nf(r[1])+' s (mínimo del equipo 1 s)'; }
+  tot++; if(st==='ok') ok++; out.push([st,`${p.label}: ${fmtv(p,v)} ${p.ie||p.onoff||p.o2?'':p.unit}`,(tg?`Objetivo: ${tg}. `:'')+msg]);
+ });
+ return {ok,tot,out};
+}
+function missions(){
+ const d=ST.dev, m=curMode(), M=S.mon||{}, sc=score(), good=sc.tot?sc.ok/sc.tot>=.8:false, u=useOf(m);
+ const L=[];
+ if(d==='md'){ L.push(['Abre la bala de O₂ (≥ 2,7 bar)',ST.o2open]); L.push(['Enciende y elige "Nuevo paciente" (no el anterior)',ST.md.started==='new']); L.push([scen==='eap'?'Elige CPAP':'Elige el modo (en este manual solo CPAP)',ST.md.screen==='vent'&&ST.modeId==='cpap']); L.push(['Ajusta PEEP, Pmax y O₂',good]); L.push(['Ventilando con fuga < 30 L/min',ST.running&&M.leak<30]); L.push([scen==='eap'?'Objetivo clínico: SpO₂ ≥ 92 %':'Objetivo clínico: baja el CO₂ (con CPAP sola no se consigue)',ST.running&&(scen==='eap'?M.spo2>=92:M.pco2<60)]); return L; }
+ if(d==='bv') L.push(['Menú principal: circuito no invasivo',ST.niv]);
+ if(d==='sv'){ L.push(['Conecta el gas (alarma de suministro)',ST.o2open]); L.push(['MODOS: tipo de ventilación no invasiva',ST.niv]); }
+ if(d==='mn') L.push(['Pulsa la tecla "No invasiva"',ST.niv]);
+ L.push([`Modo adecuado para ${SCEN[scen].t}`,u==='ok']);
+ if(d==='sv'&&scen!=='eap') L.push(['Sube PS y PC de apoyo (vienen en 5)',ST.vals.ps>=8&&ST.vals.bpc>=8]);
+ if(d==='bv'&&m.id==='psv'&&scen!=='eap') L.push(['Activa la Frecu backup',ST.vals.brate>0]);
+ if(d==='hm'&&m.id==='niv') L.push(['Respaldo de apnea encendido',!!ST.vals.apn]);
+ if(d==='mn'&&m.id==='psniv'&&scen!=='eap') L.push(['f mín. de al menos 8',ST.vals.fmin>=8]);
+ { const tiP=m.params.find(p=>p.c==='tiac'&&!p.more); if(tiP&&m.eng(ST.vals).mode==='PC'){ const r=REC.tiac[scen], t=tiP.tiOf?tiP.tiOf(ST.vals):ST.vals[tiP.k]; L.push([`Ajusta el T insp al paciente (${nf(r[0])}–${nf(r[1])} s)`,t>=r[0]&&t<=r[1]]); } }
+ L.push(['Parámetros dentro del objetivo (80 %)',good]);
+ if(d==='bv') L.push(['Cambios confirmados',!countPend()&&ST.confirmedOnce]);
+ L.push(['Ventilación iniciada',ST.running]);
+ L.push(['Fuga por debajo de 30 L/min',ST.running&&M.leak<30]);
+ L.push(['Paciente sincronizado 15 s seguidos',ST.running&&M.syncFor>=15]);
+ const hy=PAT[scen].hyper, spOk=hy?M.spo2>=88&&M.spo2<=93:M.spo2>=92;
+ L.push([`Objetivo clínico: Vt 6–8 mL/kg y SpO₂ ${hy?'88–92':'≥ 92'} %`,ST.running&&M.vtkg>=5.5&&M.vtkg<=9&&spOk]);
+ return L;
+}
+function renderMissions(){ const ul=document.getElementById('miss'); if(!ul) return; const L=missions(); ul.innerHTML=L.map(([t,ok])=>`<li class="${ok?'done':''}"><i>${ok?'✓':''}</i><span>${t}</span></li>`).join(''); const n=L.filter(x=>x[1]).length; setTxt('missn',`${n} de ${L.length}`); }
+function renderLive(){
+ const el=document.getElementById('live'); if(!el) return; const M=S.mon||{}, out=[];
+ if(!ST.running){ el.innerHTML=`<div class="lv"><b>Sin ventilación</b>El paciente respira solo con gafas nasales: FR ${nf(M.frr||S.rrNow,0)}, SpO₂ ${nf(S.spo2*100,0)} %.</div>`; return; }
+ const B=Math.max(M.B,1);
+ out.push(['', `FR real ${nf(M.frr,0)} · monitor ${nf(M.frm,0)} · Vt real ${nf(M.vtR,0)} mL`,`SpO₂ ${nf(M.spo2,0)} % · pCO₂ estimada ${nf(M.pco2,0)} mmHg`]);
+ const md=curMode(), isPC=E.mode==='PC', tp=md.params.find(p=>p.c&&p.c.startsWith('trig')), tiP=md.params.find(p=>p.c==='tiac'), tiNow=tiP?(tiP.tiOf?tiP.tiOf(ST.vals):ST.vals[tiP.k]):null, rTi=(REC.tiac||{})[scen]||[.8,1.2];
+ const trapV=M.efFlow<-10;
+ if(M.ie/Math.max(M.E,1)>.12){
+  const st=[];
+  if(M.leak>25) st.push(`<b>Fuga</b> de ${nf(M.leak,0)} L/min: revisa la tubuladura y la interfase y recoloca la mascarilla. Con fuga el equipo no "ve" bien el esfuerzo.`);
+  else st.push('Fuga controlada: revisa igualmente tubuladura e interfase.');
+  if(tp) st.push(`<b>Baja ${tp.label}</b> (ahora ${fmtv(tp,ST.vals[tp.k])} ${tp.unit}${ST.dev==='bv'?'; en el bellavista no más de 1,5–2, puedes llegar al mínimo':''}) y quédate mirando que no aparezca doble disparo ni autodisparo.`);
+  else st.push(`El trigger inspiratorio de ${curDev().name} es fijo: no se puede bajar.`);
+  if(isPC&&tiNow>rTi[1]) st.push(`<b>T insp</b> de ${nf(tiNow,2)} s: demasiado largo, el paciente no puede espirar. Bájalo a ${nf(rTi[0])}–${nf(rTi[1])} s.`);
+  if(isPC&&E.rate>M.frr+1) st.push(`En A-C la frecuencia programada (${nf(E.rate,0)}) supera la del paciente (${nf(M.frr,0)}): sus esfuerzos caen en la espiración de la máquina. Si está más despierto, vuelve a PSV con backup.`);
+  if(M.vtkg>9) st.push(`Vt de ${nf(M.vtkg,1)} mL/kg: el <b>exceso de soporte</b> también da esfuerzos ineficaces. Baja ${isPC?'la presión':LAB('ps')}.`);
+  if(!isPC&&M.late/B>.2) st.push(`Inspiración larga: sube ${LAB('exp')}${md.params.some(p=>p.c==='timax')?' o baja '+LAB('timax'):''}.`);
+  st.push(trapV?`<b>Auto-PEEP visible</b>: el flujo espiratorio no llega a cero (${nf(M.efFlow,0)} L/min al empezar el esfuerzo). Sube ${LAB('peep')} 1–2 y alarga la espiración.`:`Auto-PEEP: compruébalo en la curva de flujo. Ahora el flujo espiratorio llega casi a cero, así que subir ${LAB('peep')} no es lo principal.`);
+  st.push('Si persiste sin fuga, con trigger bajo y sin auto-PEEP: puede estar <b>agotado</b> y sin fuerza para disparar. Valora la A-C y la IOT.');
+  out.push(['bad','Esfuerzos ineficaces',`La FR real (${nf(M.frr,0)}) es mayor que la del monitor (${nf(M.frm,0)}). Por orden:<ol style="margin:4px 0 0;padding-left:18px">${st.map(x=>`<li>${x}</li>`).join('')}</ol>`]);
+ } else if(trapV) out.push(['warn','Auto-PEEP visible',`El flujo espiratorio no llega a cero antes del siguiente esfuerzo. Alarga la espiración${isPC?' (baja T insp o la frecuencia)':' ('+LAB('exp')+' más alto)'} y valora subir ${LAB('peep')} 1–2.`]);
+ if(M.auto>=2&&M.auto/B>.15) out.push(['bad','Autodisparo',`Respiraciones que el paciente no pide. Recoloca la mascarilla${tp?` y sube ${tp.label} (si lo acabas de bajar, vuelve un punto atrás)`:''}.`]);
+ if(isPC&&tiNow>rTi[1]+.05) out.push(['bad','T insp demasiado largo',`${nf(tiNow,2)} s: el paciente termina de inspirar y la máquina sigue insuflando; empuja para espirar (picos al final). Ajústalo: EPOC 0,8–1,2 s; restrictivo (obeso, neuromuscular) 1–1,4 s.`]);
+ else if(!isPC&&M.late/B>.3) out.push(['warn','Ciclado tardío',`Punta al final de la presión. Sube ${LAB('exp')}${md.params.some(p=>p.c==='timax')?' o baja '+LAB('timax'):''}.`]);
+ if(M.dbl>=2&&M.dbl/B>.08) out.push(['warn','Doble disparo',isPC?`T insp corto: súbelo un poco${tp?` o sube ${tp.label}`:''}.`:`Inspiración corta. Baja ${LAB('exp')}${md.params.some(p=>p.c==='timax')?' o sube '+LAB('timax'):''}${tp?`; si acabas de bajar ${tp.label}, súbelo un punto`:''}.`]);
+ if(M.leak>30) out.push(['bad','Fuga alta',`${nf(M.leak,0)} L/min: el Vt y el VM están sobrestimados. Recoloca la mascarilla.`]);
+ if(M.vtkg>9.5&&M.leak<30) out.push(['warn','Vt alto',`${nf(M.vtkg,1)} mL/kg de peso ideal: baja la presión de soporte.`]);
+ if(M.vtkg>0&&M.vtkg<5.5&&curMode().eng(ST.vals).mode!=='CPAP') out.push(['warn','Vt bajo',`${nf(M.vtkg,1)} mL/kg: sube la presión de soporte.`]);
+ if(PAT[scen].hyper&&E.mode==='CPAP') out.push(['bad','CPAP sola en hipercapnia','No aporta presión de soporte: el Vt no sube y el CO₂ no baja. Usa un modo con presión de soporte'+(ST.dev==='md'?' (CPAP + ASB en tu versión del Medumat).':'.')]);
+ if(PAT[scen].hyper&&M.spo2>93) out.push(['warn','Hiperoxia en retenedor','Baja el oxígeno para SpO₂ 88–92 %.']);
+ if(M.spo2<(PAT[scen].hyper?86:90)) out.push(['bad','Hipoxemia',scen==='eap'?`Sube ${LAB('peep')||'la PEEP'} y el oxígeno.`:'Sube el oxígeno.']);
+ if(M.bk) out.push(['warn','Respaldo activo','El paciente no dispara: el equipo da respiraciones de rescate.']);
+ if(out.length===1) out.push(['ok','Sincronizado','Cada esfuerzo dispara el equipo, sin fuga relevante.']);
+ el.innerHTML=out.map(([c,a,b])=>`<div class="lv ${c}"><b>${a}</b>${b}</div>`).join('');
+}
+function renderCoach(){
+ $('#coach').innerHTML=`<div><span class="eyebrow">Caso</span><div class="chips" id="scen">${Object.entries(SCEN).map(([k,s])=>`<button data-s="${k}" aria-pressed="${k===scen}">${s.t}</button>`).join('')}</div></div>
+ <div class="case">${SCEN[scen].d}</div>
+ <div><div class="row2" style="justify-content:space-between"><h3>Misiones</h3><span class="small muted" id="missn"></span></div><ul class="miss" id="miss"></ul></div>
+ <div class="rng"><label for="leak" class="small">Ajuste de la mascarilla: fuga <b id="leakv">${ST.leak}</b> L/min</label><input type="range" id="leak" min="0" max="80" value="${ST.leak}"><div class="row2"><button class="btn" data-act="mask">Recolocar mascarilla</button>${ST.dev==='md'||ST.dev==='sv'?`<button class="btn" data-act="gas">${ST.o2open?'Cerrar':'Abrir'} ${ST.dev==='md'?'la bala de O₂':'el gas (O₂ y aire)'}</button>`:''}</div></div>
+ <div><h3>Lo que está pasando</h3><div class="live" id="live"></div></div>
+ <div class="row2"><button class="btn primary" data-act="check">Comprobar ajustes</button><button class="btn" data-act="reset">Reiniciar</button></div>
+ <div class="res live" id="res"></div>`;
+ renderMissions(); renderLive();
+}
+function showCheck(){
+ const m=curMode(), u=useOf(m), sc=score(), msgs={ok:'Adecuado para este caso.',warn:'Alternativa: no es el de elección.',bad:'No adecuado para este caso.'};
+ const acNote=m.eng(ST.vals).mode==='PC'?' A-C: para el paciente algo somnoliento en el que la VMNI sigue indicada (si está muy somnoliento, IOT). Genera muchas asincronías: adapta el T insp.':'';
+ $('#res').innerHTML=`<div class="lv ${u}"><b>Modo ${m.label}</b>${msgs[u]}${acNote}</div><div class="lv"><b>${sc.ok} de ${sc.tot} ajustes en objetivo</b></div>`+sc.out.map(([s,a,b])=>`<div class="lv ${s}"><b>${a}</b>${b}</div>`).join('');
+}
+
+/* =================== FICHA / PASOS / ALARMAS / COMPARAR =================== */
+const INFO={
+ bv:{how:'P soporte sobre la PEEP. Los cambios quedan en amarillo hasta pulsar Confirmar. Trig flujo: no más de 1,5–2 L/min; ante esfuerzos ineficaces sin fuga se baja, incluso al mínimo, vigilando el doble disparo. P-A/C: el T insp viene en 1,7 s; hay que adaptarlo (EPOC 0,8–1,2 s; restrictivo 1–1,4 s).',src:'bellavista 1000 IFU: VNI p. 34, 38, 49; ajustes p. 125–127; alarmas p. 122, 136.',
+  steps:['Menú principal: circuito no invasivo (barra azul y mascarilla).','Introduce sexo y talla: el equipo calcula el IBW.','Ventilación: elige PSV (o CPAP en el EAP) y Aceptar.','Toca cada parámetro, ajústalo y pulsa Confirmar. Trig flujo 1,5–2 L/min como máximo.','Si usas P-A/C (paciente algo somnoliento): cambia el T insp, que viene en 1,7 s.','Activa Frecu backup en hipercapnia.','Inicia; las alarmas de paciente se suprimen 2 min para ajustar la mascarilla.'],
+  alarms:[['Fuga alta','Mascarilla mal ajustada o desconexión.','Recolocar o cambiar mascarilla.'],['Volumen minuto alto','Fuga o hiperventilación.','Corrige la fuga antes de tocar la alarma.'],['Volumen tidal alto','PS excesiva o fuga.','Revisa fuga; baja la PS.'],['Apnea','No dispara en el tiempo de apnea.','Respaldo y conciencia.']]},
+ sv:{how:'PS sobre PEEP. Cada parámetro se cambia en su ventana y se aplica con Aceptar. Trigger fijo en VNI.',src:'SERVO-U User’s Manual v4.0: VNI p. 99–103; ajustes p. 195–197; alarmas p. 164–168, 199–200.',
+  steps:['Comprobación previa y conexión de O₂ y aire.','EN ESPERA → MODOS: tipo de ventilación NO INVASIVA.','Elige PRESIÓN SOPORTE y Aceptar.','Sube PS sobre PEEP y PC sobre PEEP apoyo (vienen en 5).','Ajusta fin de inspiración, tiempo de subida y respaldo (apnea, F. resp. apoyo, I:E apoyo).','Inicia; el respaldo (PC-VNI) entra solo tras el tiempo de apnea.'],
+  alarms:[['Presiones de suministro de gas bajas','O₂/aire sin conectar.','Conectar tomas; comprobar FiO₂ medida.'],['Fuga demasiado alta','Interfaz mal ajustada o de talla incorrecta.','Recolocar o cambiar.'],['Sin esfuerzo del paciente','Apnea: pasa a respaldo.','Valorar paciente y PC de apoyo.'],['Paciente desconectado','> 1 min desconectado.','Reconectar.']]},
+ hm:{how:'Psoporte añadida a PEEP/CPAP. Se selecciona un control, se gira el botón y se pulsa para confirmar.',src:'HAMILTON-T1 Manual del operador: tabla 4-2, p. 5-37, tabla A-5, Apéndice D.',
+  steps:['Grupo de paciente, sexo y altura (PCI).','Modos: NIV o NIV-ST y confirmar.','Selecciona cada control, gira y pulsa para confirmar.','En "Más": ETS (35 % en VNI), P rampa (máx. 200 ms), TI máx (1–3 s), respaldo de apnea.','Inicia; baja los límites de volumen por la fuga y vigila las presiones (> 33 cmH₂O, riesgo de aspiración).'],
+  alarms:[['Volumen bajo','La fuga reduce el volumen medido.','Ajusta límites de VolMinEsp y Vt bajo.'],['Presión alta','P rampa corta o presión excesiva.','Revisa ajustes.'],['Autodisparo','Fuga que baja la PEEP real.','Revisa mascarilla y disparo.']]},
+ mn:{how:'PS por encima de la PEEP. Selecciona un ajuste, cámbialo y pulsa Validar. La pendiente va en cmH₂O/s (alta = rápida).',src:'MONNAL T60 Manual: PS/NIV p. 44; CPAP p. 45; apnea p. 39; tablas p. 139–143.',
+  steps:['Nuevo paciente: categoría, estatura y sexo.','Tecla "No invasiva".','Modos de ventilación: PS / NIV (o CPAP) y Validar.','Ajusta FiO₂, PS (máx. 25), PEEP (máx. 15), f mín., Trig.I, TImáx, Pend., Trig.E (página 2 con la flecha).','Inicia; vigila VTi − VTe (fuga).'],
+  alarms:[['Autodisparo frecuente','Fuga.','Sube levemente Trig.I.'],['VMe bajo','Umbral < 2 L/min en VNI.','Revisa fuga y FR.'],['Ventilación de apnea','Sin ciclos durante T apnea.','Valorar al paciente.']]},
+ md:{how:'Funciona con O₂ a presión (2,7–6 bar). Mandos giratorios: girar para cambiar, pulsar para elegir. En el manual aportado solo hay CPAP para VMNI; tu equipo tiene CPAP + ASB (manual más nuevo).',src:'MEDUMAT Standard² IFU (2013): p. 43–52, 84–85, 121–122.',
+  steps:['Abre la bala: presión ≥ 2,7 bar.','Enciende: en 20 s arranca con el paciente anterior si no eliges.','Nuevo paciente: talla y sexo.','MENÚ → modo CPAP (o CPAP + ASB en tu versión).','Ajusta PEEP y Pmax; 100 % O₂ o Air Mix.','Ventila con mascarilla; no nebulizar.'],
+  alarms:[['Presión de suministro < 2,7 bar','Bala vacía o cerrada, fuga en la línea.','Abrir o cambiar la bala.'],['PEEP alta','Espiración corta (PEEP intrínseca).','Alargar la espiración.'],['Fuga con mascarilla','Mal sellado.','Recolocar.']]}
+};
+let infoTab='ficha';
+function renderInfo(){
+ document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===infoTab));
+ const d=DEV[ST.dev], I=INFO[ST.dev]; let h='';
+ if(infoTab==='ficha'){
+  h=`<h2>${d.name}</h2><p>${I.how}</p><div class="tw"><table><thead><tr><th>Modo</th><th>Parámetro</th><th>Rango (manual)</th><th>Por defecto</th><th>EPOC · EAP · ICC · Somnol. · Obeso</th></tr></thead><tbody>${d.modes.flatMap(m=>m.params.map(p=>`<tr><td>${m.label}</td><td><b>${p.label}</b></td><td class="v">${p.onoff?'Enc./Apag.':p.o2?'100 % / Air Mix':p.ie?'1:1–1:4':`${p.off0?'Off, 5':nf(p.min)}–${nf(p.max)} ${p.unit}`}</td><td class="v">${fmtv(p,p.def)}</td><td class="small">${['epoc','eap','icc','som','soh'].map(s=>{ const r=(REC[p.c]||{})[s]; return r?(p.tiOf?`Ti ${nf(r[0])}–${nf(r[1])}`:p.ie?`1:${nf(r[0])}–${nf(r[1])}`:`${nf(r[0])}–${nf(r[1])}`):'—'; }).join(' · ')}</td></tr>`)).join('')}</tbody></table></div><p class="small muted">Fuente: ${I.src}</p>`;
+ } else if(infoTab==='pasos'){ h=`<h2>Puesta en marcha · ${d.name}</h2><ol>${I.steps.map(s=>`<li>${s}</li>`).join('')}</ol>`; }
+ else if(infoTab==='alarmas'){ h=`<h2>Alarmas · ${d.name}</h2><div class="tw"><table><thead><tr><th>Alarma</th><th>Causa</th><th>Qué hacer</th></tr></thead><tbody>${I.alarms.map(a=>`<tr><td><b>${a[0]}</b></td><td>${a[1]}</td><td>${a[2]}</td></tr>`).join('')}</tbody></table></div>`; }
+ else { const C=[['Ayuda inspiratoria','P soporte','PS sobre PEEP','Psoporte / Pinsp','PS','— (CPAP + ASB en tu versión)'],['Espiratoria','PEEP','PEEP','PEEP/CPAP','PEEP','PEEP'],['Rampa','Rampa (ms)','T. subida (s)','P rampa (ms, máx. 200)','Pend. (cmH₂O/s)','—'],['Trigger','Trig flujo (≤ 1,5–2 L/min)','Fijo en VNI','Disp. flujo','Trig.I','Fijo (−1,3 mbar)'],['Ciclado','Exp Trig','Fin de inspiración','ETS','Trig.E','Fijo 30 %'],['Tope Ti','T insp máx','—','TI máx (≥ 1 s)','TImáx','—'],['Respaldo','Frecu backup','Tras apnea → PC-VNI','Respaldo apnea / NIV-ST','f mín. + apnea','—'],['Cómo se cambia','Tocar + Confirmar','Ventana + Aceptar','Girar + pulsar','Validar','Girar mando']];
+  h=`<h2>El mismo concepto en cada equipo</h2><div class="tw"><table><thead><tr><th>Concepto</th>${Object.values(DEV).map(x=>`<th>${x.name}</th>`).join('')}</tr></thead><tbody>${C.map(r=>`<tr><td><b>${r[0]}</b></td>${r.slice(1).map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`; }
+ $('#info').innerHTML=h;
+}
+
+/* =================== EVENTOS =================== */
+function stepVal(p,v,d){ let n=+(v+p.step*d).toFixed(3); if(p.off0){ if(v===0&&d>0) n=5; else if(n<5&&d<0) n=0; } return clamp(n,p.min,p.max); }
+function rangeVal(p,v){ let n=+v; if(p.off0&&n>0&&n<5) n=5; return n; }
+document.addEventListener('click',e=>{
+ const b=e.target.closest('[data-act],[data-dev],[data-s],[data-t]'); if(!b) return;
+ if(b.dataset.dev){ newState(b.dataset.dev); resetSim(); renderAll(); return; }
+ if(b.dataset.s){ scen=b.dataset.s; const keep=ST.dev; newState(keep); resetSim(); renderAll(); return; }
+ if(b.dataset.t){ infoTab=b.dataset.t; renderInfo(); return; }
+ const a=b.dataset.act, m=curMode();
+ const P=k=>m.params.find(p=>p.k===k);
+ switch(a){
+  case 'close': ST.modal=null; ST.modalPick=null; renderMonitor(); break;
+  case 'close-sel': ST.sel=null; ST.cand=null; renderMonitor(); break;
+  case 'mask': ST.leak=12; renderCoach(); break;
+  case 'gas': ST.o2open=!ST.o2open; applyEngine(); renderCoach(); renderMonitor(); break;
+  case 'check': showCheck(); break;
+  case 'reset': newState(ST.dev); resetSim(); renderAll(); break;
+  /* bellavista */
+  case 'bv-run': if(!ST.running&&countPend()){ alertMsg('Confirma o cancela los cambios pendientes antes de iniciar.'); break; } startStop(!ST.running); renderMonitor(); break;
+  case 'bv-sel': { const pm=ST.pendMode?modeOf(ST.pendMode):m; ST.sel=ST.sel===b.dataset.k?null:b.dataset.k; if(!ST.pend) ST.pend={...ST.vals}; renderMonitor(); break; }
+  case 'bv-step': { const pm=ST.pendMode?modeOf(ST.pendMode):m, p=pm.params.find(x=>x.k===ST.sel); ST.pend[p.k]=stepVal(p,ST.pend[p.k],+b.dataset.d); renderMonitor(); break; }
+  case 'bv-ok': if(ST.pendMode) ST.modeId=ST.pendMode; if(ST.pend) ST.vals={...ST.pend}; ST.pend=null; ST.pendMode=null; ST.sel=null; ST.confirmedOnce=true; applyEngine(); renderMonitor(); break;
+  case 'bv-no': ST.pend=null; ST.pendMode=null; ST.sel=null; renderMonitor(); break;
+  case 'bv-modes': ST.modal='bv-modes'; ST.modalPick=ST.pendMode||ST.modeId; renderMonitor(); break;
+  case 'bv-pick': ST.modalPick=b.dataset.m; renderMonitor(); break;
+  case 'bv-pickok': if(ST.modalPick!==ST.modeId){ ST.pendMode=ST.modalPick; if(!ST.pend) ST.pend={...ST.vals}; } else ST.pendMode=null; ST.modal=null; ST.sel=null; renderMonitor(); break;
+  case 'bv-circ': ST.modal='bv-circ'; renderMonitor(); break;
+  case 'bv-niv': ST.niv=b.dataset.v==='1'; applyEngine(); renderMonitor(); break;
+  /* servo */
+  case 'sv-run': startStop(!ST.running); renderMonitor(); break;
+  case 'sv-modes': ST.modal='sv-modes'; ST.modalPick=ST.modeId; renderMonitor(); break;
+  case 'sv-type': ST.niv=!ST.niv; applyEngine(); renderMonitor(); break;
+  case 'sv-pick': ST.modalPick=b.dataset.m; renderMonitor(); break;
+  case 'sv-pickok': ST.modeId=ST.modalPick||ST.modeId; ST.modal=null; applyEngine(); renderMonitor(); break;
+  case 'sv-open': ST.modal='sv-p:'+b.dataset.k; ST.cand=ST.vals[b.dataset.k]; renderMonitor(); break;
+  case 'sv-step': { const p=P(ST.modal.slice(5)); ST.cand=stepVal(p,ST.cand,+b.dataset.d); renderMonitor(); break; }
+  case 'sv-ok': { const k=ST.modal.slice(5); ST.vals[k]=ST.cand; ST.modal=null; applyEngine(); renderMonitor(); break; }
+  /* hamilton */
+  case 'hm-tab': ST.hmTab=b.dataset.v; ST.sel=null; ST.cand=null; renderMonitor(); break;
+  case 'hm-sel': ST.sel=b.dataset.k; ST.cand=ST.vals[b.dataset.k]; renderMonitor(); break;
+  case 'hm-turn': if(!ST.sel){ alertMsg('Selecciona primero un control.'); break; } { const p=P(ST.sel); ST.cand=stepVal(p,ST.cand,+b.dataset.d); renderMonitor(); } break;
+  case 'hm-press': if(ST.sel){ ST.vals[ST.sel]=ST.cand; ST.sel=null; ST.cand=null; applyEngine(); renderMonitor(); } break;
+  case 'hm-run': startStop(!ST.running); renderMonitor(); break;
+  case 'hm-modes': ST.modal='hm-modes'; ST.modalPick=ST.modeId; renderMonitor(); break;
+  case 'hm-pick': ST.modalPick=b.dataset.m; renderMonitor(); break;
+  case 'hm-pickok': ST.modeId=ST.modalPick; ST.modal=null; ST.sel=null; applyEngine(); renderMonitor(); break;
+  /* monnal */
+  case 'mn-sel': ST.sel=b.dataset.k; ST.cand=ST.vals[b.dataset.k]; renderMonitor(); break;
+  case 'mn-step': { const p=P(ST.sel); ST.cand=stepVal(p,ST.cand,+b.dataset.d); renderMonitor(); break; }
+  case 'mn-ok': ST.vals[ST.sel]=ST.cand; ST.sel=null; ST.cand=null; applyEngine(); renderMonitor(); break;
+  case 'mn-page': ST.page=ST.page?0:1; ST.sel=null; renderMonitor(); break;
+  case 'mn-niv': ST.niv=!ST.niv; applyEngine(); renderMonitor(); break;
+  case 'mn-run': startStop(!ST.running); renderMonitor(); break;
+  case 'mn-modes': ST.modal='mn-modes'; ST.modalPick=ST.modeId; renderMonitor(); break;
+  case 'mn-pick': ST.modalPick=b.dataset.m; renderMonitor(); break;
+  case 'mn-pickok': ST.modeId=ST.modalPick; ST.modal=null; ST.sel=null; ST.page=0; applyEngine(); renderMonitor(); break;
+  /* medumat */
+  case 'md-power': if(ST.md.screen==='off'){ ST.md.screen='start'; ST.md.cursor=1; ST.md.count=20; } else { ST.md.screen='off'; startStop(false); } renderMonitor(); break;
+  case 'md-air': ST.vals.o2=ST.vals.o2?0:1; applyEngine(); renderMonitor(); break;
+  case 'md-menu': if(ST.md.screen!=='off'){ ST.md.screen='modes'; ST.md.cursor=3; renderMonitor(); } break;
+  case 'md-sil': break;
+  case 'md-turn': mdTurn(+b.dataset.n,+b.dataset.d); break;
+  case 'md-press': mdPress(+b.dataset.n); break;
+ }
+ renderMissions();
+});
+document.addEventListener('input',e=>{
+ const t=e.target;
+ if(t.id==='leak'){ ST.leak=+t.value; setTxt('leakv',t.value); return; }
+ const a=t.dataset.act; if(!a) return; const m=curMode();
+ if(a==='bv-range'){ const pm=ST.pendMode?modeOf(ST.pendMode):m, p=pm.params.find(x=>x.k===ST.sel); ST.pend[p.k]=rangeVal(p,t.value); refreshSoft(); }
+ if(a==='sv-range'){ const p=m.params.find(x=>x.k===ST.modal.slice(5)); ST.cand=rangeVal(p,t.value); refreshSoft(); }
+ if(a==='mn-range'){ const p=m.params.find(x=>x.k===ST.sel); ST.cand=rangeVal(p,t.value); refreshSoft(); }
+});
+let softT=null; function refreshSoft(){ clearTimeout(softT); softT=setTimeout(()=>{ const f=document.activeElement&&document.activeElement.dataset?document.activeElement.dataset.act:null; renderMonitor(); if(f){ const n=document.querySelector(`[data-act="${f}"]`); if(n) n.focus(); } },120); }
+function alertMsg(t){ const r=$('#res'); if(r) r.innerHTML=`<div class="lv warn"><b>Atención</b>${t}</div>`; }
+function mdTurn(n,d){
+ const sc=ST.md.screen;
+ if(sc==='start'&&n===2){ ST.md.cursor=clamp(ST.md.cursor+d,0,2); ST.md.count=Math.max(ST.md.count,0); }
+ else if(sc==='talla'&&n===2){ ST.md.talla=clamp(ST.md.talla+5*d,50,250); }
+ else if(sc==='modes'&&n===2){ ST.md.cursor=clamp(ST.md.cursor+d,0,MD_MODES.length-1); }
+ else if(sc==='vent'){ const m=curMode(); const key=m.id==='cpap'?(n===1?'peep':n===2?'pmax':null):(n===2?'peep':null); if(key){ const p=m.params.find(x=>x.k===key); ST.vals[key]=stepVal(p,ST.vals[key],d); ST.sel=key; applyEngine(); } }
+ renderMonitor();
+}
+function mdPress(n){
+ const sc=ST.md.screen; if(n!==2&&sc!=='vent') return;
+ if(sc==='start'){ const c=ST.md.cursor; if(c===0) mdPrev(); else if(c===1){ ST.md.screen='talla'; ST.md.started='new'; } else { ST.md.started='emerg'; ST.modeId='ippv'; ST.vals.peep=0; ST.md.screen='vent'; startStop(true); } }
+ else if(sc==='talla'){ ST.md.screen='modes'; ST.md.cursor=3; }
+ else if(sc==='modes'){ const id=MD_MODES[ST.md.cursor][1]; if(!id){ alertMsg('Ese modo no está descrito en el manual aportado (2013). En tu equipo existe: consulta su manual.'); return; } ST.modeId=id; if(id==='cpap'&&ST.vals.peep<1) ST.vals.peep=5; ST.md.screen='vent'; applyEngine(); startStop(true); }
+ else if(sc==='vent'){ ST.sel=null; }
+ renderMonitor();
+}
+function mdPrev(){ ST.md.started='prev'; ST.modeId='ippv'; ST.vals.peep=0; ST.md.screen='vent'; startStop(true); alertMsg('Ha arrancado con el paciente anterior en IPPV: no es un modo de VMNI. Apaga y elige "Nuevo paciente".'); }
+setInterval(()=>{ if(ST.dev==='md'&&ST.md.screen==='start'){ ST.md.count--; if(ST.md.count<=0) mdPrev(); renderMonitor(); } },1000);
+
+/* =================== BUCLE =================== */
+let last=performance.now();
+function frame(now){ const dt=clamp((now-last)/1000,0,.1); last=now; const n=Math.max(1,Math.ceil(dt/.004)); for(let i=0;i<n;i++) step(dt/n); drawWave(); requestAnimationFrame(frame); }
+window.__dbg=()=>({S,E,ST,applyEngine,PAT,fast:sec=>{for(let i=0;i<sec/.004;i++) step(.004);},set:k=>{scen=k;},ks:k=>{KS=k;}});
+const h=(location.hash||'').slice(1); newState(DEV[h]?h:'sv'); resetSim(); renderAll(); requestAnimationFrame(frame);
+})();
+</script>

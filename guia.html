@@ -1,0 +1,503 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guía visual de VMNI</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: columna de lectura con "pantallas" de ventilador; los colores de las tres curvas (presión, flujo, volumen) son el sistema de acento */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --ink:#18212b; --muted:#56636f; --line:#d5dbe1;
+  --pres:#d2532a; --flow:#2f7bc8; --vol:#b07b10;
+  --ok:#2e8b57; --bad:#c0392b; --warn:#c98a00;
+  --screen:#1c2733; --screen-ink:#e8eef4; --screen-grid:#33414f;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"Libre Franklin",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#11171d; --surface:#18212a; --ink:#e6ebf0; --muted:#9aa7b3; --line:#2c3843;
+  --pres:#f07a4f; --flow:#5fa4ea; --vol:#e0a93a; --ok:#4fbf84; --bad:#ef6b5b; --warn:#e7b43c;
+  --screen:#0c1218; --screen-ink:#e8eef4; --screen-grid:#26323d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11171d; --surface:#18212a; --ink:#e6ebf0; --muted:#9aa7b3; --line:#2c3843;
+  --pres:#f07a4f; --flow:#5fa4ea; --vol:#e0a93a; --ok:#4fbf84; --bad:#ef6b5b; --warn:#e7b43c;
+  --screen:#0c1218; --screen-ink:#e8eef4; --screen-grid:#26323d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px}
+main{max-width:900px;margin:0 auto;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(2.2rem,6vw,3.4rem);font-weight:700;letter-spacing:.01em}
+h2{font-size:1.75rem;font-weight:600}
+h3{font-size:1.2rem;font-weight:600}
+p{margin:0;max-width:65ch}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+header{display:flex;flex-direction:column;gap:12px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:18px;height:3px;border-radius:2px;display:inline-block}
+section{display:flex;flex-direction:column;gap:16px}
+.sec-head{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card p,.card li{font-size:.92rem}
+.card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.screen{background:var(--screen);color:var(--screen-ink);border-radius:12px;padding:14px;overflow-x:auto}
+.screen svg{display:block;width:100%;min-width:320px;height:auto}
+.screen text{fill:var(--screen-ink);font-family:var(--mono);font-size:11px}
+.screen .lbl{fill:#9fb0c0;font-size:10px}
+.ax{stroke:var(--screen-grid);stroke-width:1}
+.lead{stroke:#7e8e9d;stroke-width:.7;stroke-dasharray:2 2}
+.cp{stroke:var(--pres)} .cf{stroke:var(--flow)} .cv{stroke:var(--vol)}
+.curve{fill:none;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.tp{fill:var(--pres)!important}.tf{fill:var(--flow)!important}.tv{fill:var(--vol)!important}
+.chain{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px}
+.chain .step{flex:1 1 140px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:.88rem;min-width:0}
+.chain .arrow{align-self:center;color:var(--muted);font-family:var(--mono)}
+.chain.fix .step{border-left:3px solid var(--ok)}
+.chain.prob .step{border-left:3px solid var(--bad)}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.9rem;min-width:520px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:none}
+td.v{font-family:var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-family:var(--mono);font-size:.7rem;padding:2px 7px;border-radius:99px;border:1px solid currentColor}
+.tag.ok{color:var(--ok)}.tag.bad{color:var(--bad)}.tag.warn{color:var(--warn)}
+.formula{font-family:var(--mono);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:.85rem;overflow-x:auto}
+.pearl{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--flow);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.pearl strong{font-family:var(--display);font-size:1.15rem;font-weight:600}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.chart .gl{stroke:var(--line);stroke-width:1}
+.chart .thr{stroke-width:1;stroke-dasharray:4 3}
+.timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.tl{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.tl .t{font-family:var(--display);font-size:1.6rem;font-weight:700;color:var(--flow)}
+.decide{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.decide .card.ok{border-top:4px solid var(--ok)} .decide .card.bad{border-top:4px solid var(--bad)}
+dl{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px 18px}
+dl div{min-width:0}
+dt{font-weight:600;font-size:.92rem}
+dd{margin:0;color:var(--muted);font-size:.88rem}
+.case{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.case-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.case-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:720px){.case-body{grid-template-columns:1fr}}
+.case-text{display:flex;flex-direction:column;gap:10px;min-width:0}
+.case-text ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px;font-size:.92rem}
+.case-text p{font-size:.92rem}
+.case-text td{padding:6px 10px}
+.case-text td.v{white-space:normal}
+.flows{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:16px}
+.flow{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.flow h3{margin-bottom:6px}
+.fstep{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg);font-size:.88rem}
+.fstep b{display:block;font-size:.92rem;margin-bottom:2px}
+.frow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:8px;align-items:stretch}
+.fdec{border:1.5px dashed var(--flow);border-radius:8px;padding:10px 12px;font-size:.88rem;font-weight:600;display:flex;align-items:center}
+.fbr{display:flex;gap:6px;align-items:center;min-width:0}
+.fl{font-family:var(--mono);font-size:.7rem;font-weight:500;white-space:nowrap}
+.fl.no{color:var(--bad)}.fl.si{color:var(--warn)}
+.ffix{flex:1;min-width:0;border:1px solid var(--warn);border-radius:8px;padding:8px 10px;font-size:.84rem}
+.ffix ul{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:3px}
+.fdown{font-family:var(--mono);font-size:.72rem;color:var(--ok);padding-left:14px}
+.fend{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fend div{border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:.86rem;background:var(--bg)}
+.fend .ok{border-top:3px solid var(--ok)}.fend .bad{border-top:3px solid var(--bad)}
+@media (max-width:520px){.frow,.fend{grid-template-columns:1fr}}
+footer{color:var(--muted);font-size:.82rem;border-top:1px solid var(--line);padding-top:14px}
+</style>
+
+<main>
+<header>
+  <span class="eyebrow">Ventilación mecánica no invasiva · EPOC hipercápnico</span>
+  <h1>Guía visual de VMNI</h1>
+  <p>Todo lo que vimos con tu paciente: fisiología, parámetros, lectura de curvas, asincronías, modos y cuándo decidir. Los colores siguen la pantalla del bellavista.</p>
+  <div class="legend"><span><i style="background:var(--pres)"></i>Presión</span><span><i style="background:var(--flow)"></i>Flujo</span><span><i style="background:var(--vol)"></i>Volumen</span></div>
+</header>
+
+<!-- 1 FISIOLOGÍA -->
+<section>
+  <div class="sec-head"><span class="eyebrow">1 · Fisiología</span><h2>Por qué sube el CO₂ en el EPOC y cómo lo corrige la VMNI</h2></div>
+  <h3>El problema</h3>
+  <div class="chain prob">
+    <div class="step">Bronquio estrecho: el aire sale con dificultad</div><span class="arrow">→</span>
+    <div class="step">No vacía: aire atrapado y <b>auto-PEEP</b></div><span class="arrow">→</span>
+    <div class="step">Músculos fatigados: respiración rápida y superficial</div><span class="arrow">→</span>
+    <div class="step"><b>CO₂ sube</b>, pH baja: acidosis respiratoria</div>
+  </div>
+  <h3>La solución</h3>
+  <div class="chain fix">
+    <div class="step"><b>EPAP/PEEP</b>: colchón que compensa el auto-PEEP y facilita disparar</div><span class="arrow">+</span>
+    <div class="step"><b>PS</b>: empuje en cada inspiración, más volumen</div><span class="arrow">→</span>
+    <div class="step">Menos trabajo respiratorio</div><span class="arrow">→</span>
+    <div class="step"><b>CO₂ baja</b>, pH se corrige</div>
+  </div>
+</section>
+
+<!-- 2 CURVAS -->
+<section>
+  <div class="sec-head"><span class="eyebrow">2 · Una respiración</span><h2>Los conceptos sobre las tres curvas</h2></div>
+  <div class="screen">
+  <svg viewBox="0 0 380 520" role="img" aria-label="Curvas de presión, flujo y volumen con IPAP, EPAP, PS, trigger, rampa, ciclado, Ti, Te, flujo pico, auto-PEEP y Vt">
+    <text x="20" y="26" class="tp">PRESIÓN</text>
+    <line class="ax" x1="40" y1="150" x2="350" y2="150"/>
+    <path class="curve cp" d="M40 150 L70 150 L95 80 L160 80 L170 150 L300 150 L320 80 L350 80"/>
+    <text x="40" y="54" class="lbl">Trigger</text><line class="lead" x1="58" y1="58" x2="70" y2="146"/>
+    <text x="96" y="54" class="lbl">Rampa</text><line class="lead" x1="104" y1="58" x2="86" y2="104"/>
+    <text x="152" y="54" class="lbl">Ciclado</text><line class="lead" x1="166" y1="58" x2="166" y2="110"/>
+    <text x="200" y="76">IPAP</text>
+    <line x1="236" y1="84" x2="236" y2="146" stroke="var(--pres)" stroke-width="1"/>
+    <text x="244" y="118">PS = IPAP − EPAP</text>
+    <text x="200" y="168">EPAP = PEEP</text>
+    <line x1="70" y1="186" x2="166" y2="186" stroke="#9fb0c0"/><text x="92" y="200" class="lbl">Ti inspiración</text>
+    <line x1="172" y1="186" x2="298" y2="186" stroke="#9fb0c0"/><text x="190" y="200" class="lbl">Te: larga en EPOC</text>
+    <text x="20" y="232" class="tf">FLUJO</text>
+    <line class="ax" x1="40" y1="300" x2="350" y2="300"/><text x="354" y="304" class="lbl">0</text>
+    <path class="curve cf" d="M40 300 L70 300 C76 252 86 250 100 252 L160 285 L165 300 L170 345 C200 332 250 322 300 318 L305 300 C310 255 320 252 350 256"/>
+    <text x="110" y="246" class="lbl">Flujo pico</text>
+    <text x="176" y="288" class="lbl">Corta al 30 %</text>
+    <text x="140" y="372" class="lbl">No vuelve a 0 antes del</text>
+    <text x="140" y="386" class="lbl">siguiente ciclo: auto-PEEP</text>
+    <line class="lead" x1="268" y1="360" x2="292" y2="322"/>
+    <text x="20" y="410" class="tv">VOLUMEN</text>
+    <line class="ax" x1="40" y1="480" x2="350" y2="480"/>
+    <path class="curve cv" d="M40 480 L70 480 C100 462 140 424 165 420 C200 440 250 470 300 477 C315 466 330 452 350 446"/>
+    <line x1="165" y1="424" x2="165" y2="476" stroke="var(--vol)"/>
+    <text x="174" y="430">Vt 6–8 ml/kg</text>
+    <text x="70" y="508" class="lbl">FR = ciclos/min · VM = Vt × FR</text>
+  </svg>
+  </div>
+  <div class="grid">
+    <div class="card"><h3 style="color:var(--pres)">Presión</h3><p>Lo que programas. Ppico esperada = <b>PEEP + PS</b>. Si la supera en más de 2–3, sospecha ciclado tardío o lucha.</p></div>
+    <div class="card"><h3 style="color:var(--flow)">Flujo</h3><p>Muestra cuándo dispara, cuándo corta y si vacía. <b>Si no vuelve a 0, hay atrapamiento.</b></p></div>
+    <div class="card"><h3 style="color:var(--vol)">Volumen</h3><p>La altura es el Vt. Si no baja a 0, hay <b>fuga</b>.</p></div>
+  </div>
+</section>
+
+<!-- 3 PARÁMETROS -->
+<section>
+  <div class="sec-head"><span class="eyebrow">3 · Ajustes</span><h2>Parámetros iniciales en el EPOC agudizado</h2></div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Parámetro</th><th>Qué hace</th><th>EPOC</th><th>Si va mal</th></tr></thead>
+    <tbody>
+      <tr><td><b>EPAP / PEEP</b></td><td>Colchón espiratorio; compensa el auto-PEEP</td><td class="v">5–6 → 8</td><td>Esfuerzos ineficaces con auto-PEEP visible (flujo que no llega a 0) → subir de 1 en 1</td></tr>
+      <tr><td><b>PS</b></td><td>Empuje inspiratorio; baja el CO₂</td><td class="v">8–10 → 14–16</td><td>Vt bajo → subir de 2 en 2</td></tr>
+      <tr><td><b>Rampa</b></td><td>Velocidad de subida de presión</td><td class="v">100–200 ms</td><td>Subida redondeada → acortar</td></tr>
+      <tr><td><b>Trigger insp.</b></td><td>Detecta que quiere inspirar</td><td class="v">0,5–2 L/min (bellavista: no más de 1,5–2)</td><td>Esfuerzos ineficaces → más sensible (vigilar doble disparo) · Autodisparo → menos sensible</td></tr>
+      <tr><td><b>Exp Trig</b></td><td>Cuándo deja de empujar (% flujo pico)</td><td class="v">30–50 %</td><td>Punta final → subir · doble disparo → bajar</td></tr>
+      <tr><td><b>Ti máx</b></td><td>Tope de tiempo inspiratorio</td><td class="v">0,8–1,2 s</td><td>Atrapamiento → bajar · doble disparo → subir</td></tr>
+      <tr><td><b>Backup</b></td><td>Respiraciones de rescate</td><td class="v">12–14 rpm</td><td><b>Activarlo</b> siempre en hipercapnia</td></tr>
+      <tr><td><b>FiO₂</b></td><td>Oxigenación</td><td class="v">SpO₂ 88–92 %</td><td>No hiperoxigenar</td></tr>
+    </tbody>
+  </table></div>
+  <div class="grid">
+    <div class="card"><h3>Peso ideal y Vt objetivo</h3>
+      <div class="formula">Mujer = 45,5 + 0,91 × (talla − 152,4)<br>Hombre = 50 + 0,91 × (talla − 152,4)</div>
+      <p>Vt = 6–8 ml/kg de peso ideal. Hombre de 172 cm ≈ 68 kg → 410–540 ml.</p></div>
+    <div class="card"><h3>Ti máx orientativo</h3>
+      <div class="formula">Ti máx ≈ (60 / FR) × 0,33</div>
+      <p>Calcúlalo con la <b>FR estable</b>, no en plena asincronía. FR 20 → ~1,0 s; FR 25 → ~0,8 s.</p></div>
+    <div class="card"><h3>Límite de Ppico en VMNI</h3>
+      <div class="formula">EPOC ≤ 20–25 · EAP ≤ 20 · SOH hasta 25–30</div>
+      <p>Por encima: fugas, aire al estómago e intolerancia. Alarma ≈ esperada + 5.</p></div>
+  </div>
+</section>
+
+<!-- 4 FLUJOGRAMAS DE AJUSTE -->
+<section>
+  <div class="sec-head"><span class="eyebrow">4 · Titulación</span><h2>Flujogramas de ajuste: BiPAP y CPAP</h2>
+    <p>Recorre cada pregunta de arriba abajo. Si la respuesta es <b>no</b>, aplica el ajuste de la derecha, espera 5–10 min y vuelve a esa misma pregunta (↻).</p></div>
+  <div class="flows">
+
+    <div class="flow">
+      <h3 style="color:var(--pres)">BiPAP / PSV · EPOC e hipercapnia</h3>
+      <div class="fstep"><b>1. Inicio</b>EPAP 5–6 · PS 8–10 · rampa 100–200 ms · Exp Trig 30–40 % · Ti máx 1,0–1,2 s · trigger 1,5–2 L/min (bellavista) · backup 12–14 activado · FiO₂ para SpO₂ 88–92 %</div>
+      <div class="fdown">↓</div>
+      <div class="frow"><div class="fdec">¿Fuga &lt; 25–30 L/min?</div><div class="fbr"><span class="fl no">No →</span><div class="ffix">Recolocar mascarilla, cambiar talla o facial total ↻</div></div></div>
+      <div class="fdown">Sí ↓</div>
+      <div class="frow"><div class="fdec">¿Vt 6–8 ml/kg de peso ideal?</div><div class="fbr"><span class="fl no">No →</span><div class="ffix">Bajo: subir PS de 2 en 2 (IPAP ≤ 20–25). Alto: bajar PS ↻</div></div></div>
+      <div class="fdown">Sí ↓</div>
+      <div class="frow"><div class="fdec">¿Paciente sincronizado?</div><div class="fbr"><span class="fl no">No →</span><div class="ffix"><ul>
+        <li><b>FR contada &gt; monitor</b> (esfuerzos ineficaces), por orden: 1) fuga en tubuladura o interfase; 2) bajar el trigger, incluso al mínimo, sin irse de la cama (doble disparo); 3) acortar la inspiración y bajar PS si Vt alto; 4) subir EPAP 1–2 solo si el flujo no llega a 0; 5) si persiste, agotamiento</li>
+        <li><b>Punta final o flujo sin llegar a 0:</b> subir Exp Trig, bajar Ti máx</li>
+        <li><b>Doble disparo:</b> bajar Exp Trig o subir Ti máx</li>
+        <li><b>FR monitor &gt; contada:</b> fuga; subir el trigger un punto (bellavista ≤ 2)</li>
+        <li><b>Subida lenta:</b> acortar rampa</li></ul></div></div></div>
+      <div class="fdown">Sí ↓</div>
+      <div class="frow"><div class="fdec">¿SpO₂ 88–92 %?</div><div class="fbr"><span class="fl no">No →</span><div class="ffix">Ajustar FiO₂. Hipoxemia persistente: subir EPAP ↻</div></div></div>
+      <div class="fdown">Sí ↓</div>
+      <div class="frow"><div class="fdec">¿FR &lt; 25 y menos tiraje?</div><div class="fbr"><span class="fl no">No →</span><div class="ffix">Revisar asincronías y PS; broncodilatadores ↻</div></div></div>
+      <div class="fdown">Sí ↓</div>
+      <div class="fstep"><b>Gasometría a 1–2 h</b>¿Suben el pH y baja la pCO₂?</div>
+      <div class="fend"><div class="ok"><b>Sí:</b> mantener; gaso a 4–6 h; destete con pH ≥ 7,35</div><div class="bad"><b>No o pH &lt; 7,25:</b> UCI e intubación</div></div>
+    </div>
+
+    <div class="flow">
+      <h3 style="color:var(--flow)">CPAP · Edema agudo de pulmón</h3>
+      <div class="fstep"><b>1. Inicio</b>CPAP 8–10 cmH₂O desde el principio · FiO₂ alta · mascarilla oronasal · <b>nitroglicerina a dosis alta</b> a la vez</div>
+      <div class="fdown">↓</div>
+      <div class="frow"><div class="fdec">¿Fuga controlada?</div><div class="fbr"><span class="fl no">No →</span><div class="ffix">Recolocar o cambiar mascarilla ↻</div></div></div>
+      <div class="fdown">Sí ↓</div>
+      <div class="frow"><div class="fdec">¿TAS &gt; 90 y bien perfundido?</div><div class="fbr"><span class="fl no">No →</span><div class="ffix">Bajar CPAP, revisar nitratos; descartar shock o SCA</div></div></div>
+      <div class="fdown">Sí ↓</div>
+      <div class="frow"><div class="fdec">¿SpO₂ 92–96 % y FR bajando?</div><div class="fbr"><span class="fl no">No →</span><div class="ffix">Subir CPAP de 2 en 2 hasta 10–12; escalar nitratos ↻</div></div></div>
+      <div class="fdown">Sí ↓</div>
+      <div class="frow"><div class="fdec">¿Signos de fatiga o hipercapnia?</div><div class="fbr"><span class="fl si">Sí →</span><div class="ffix"><b>Pasar a BiPAP:</b> EPAP = CPAP actual · PS 8–10 · rampa rápida · backup 12–15</div></div></div>
+      <div class="fstep" style="font-size:.8rem;color:var(--muted)">Fatiga: pCO₂ que sube, Glasgow que baja, FR &gt; 30 con Vt bajo, Tobin &gt; 105, respiración paradójica</div>
+      <div class="fdown">No ↓</div>
+      <div class="fstep"><b>Reevaluar a 30–60 min</b>¿Baja la TA, mejora la SpO₂ y baja la FR?</div>
+      <div class="fend"><div class="ok"><b>Sí:</b> bajar FiO₂ primero, luego CPAP; retirar cuando esté estable</div><div class="bad"><b>No o baja la conciencia:</b> UCI e intubación</div></div>
+    </div>
+
+  </div>
+  <div class="pearl"><strong>Un cambio cada vez</strong><p>Modifica un parámetro, espera 5–10 min y mira curvas y paciente antes del siguiente. Si cambias varios a la vez, no sabrás cuál ha funcionado.</p></div>
+</section>
+
+<!-- 4 ASINCRONÍAS -->
+<section>
+  <div class="sec-head"><span class="eyebrow">5 · Asincronías</span><h2>Cómo reconocerlas y corregirlas</h2></div>
+  <div class="grid">
+    <div class="card"><h3>Ciclado tardío</h3>
+      <div class="screen"><svg viewBox="0 0 300 90"><line class="ax" x1="10" y1="75" x2="290" y2="75"/>
+        <path class="curve cp" d="M10 75 L30 75 L42 35 L95 35 L101 22 L107 75 L160 75 L172 35 L225 35 L231 22 L237 75 L290 75"/>
+        <text x="112" y="24" class="lbl">punta final</text></svg></div>
+      <p>Sigue empujando cuando ya quiere espirar. <b>Subir Exp Trig, bajar Ti máx.</b></p></div>
+    <div class="card"><h3>Doble disparo</h3>
+      <div class="screen"><svg viewBox="0 0 300 90"><line class="ax" x1="10" y1="75" x2="290" y2="75"/>
+        <path class="curve cp" d="M10 75 L25 75 L35 35 L65 35 L71 75 L77 75 L85 35 L115 35 L121 75 L170 75 L180 35 L210 35 L216 75 L222 75 L230 35 L260 35 L266 75 L290 75"/>
+        <text x="126" y="28" class="lbl">dos seguidos</text></svg></div>
+      <p>Corta antes de que termine de inspirar. <b>Bajar Exp Trig o alargar Ti máx.</b></p></div>
+    <div class="card"><h3>Esfuerzo ineficaz</h3>
+      <div class="screen"><svg viewBox="0 0 300 90"><line class="ax" x1="10" y1="45" x2="290" y2="45"/>
+        <path class="curve cf" d="M10 45 L20 45 C24 12 32 10 40 12 L70 38 L74 45 L78 72 C100 64 120 60 130 60 L135 50 L140 60 C160 57 175 56 185 55 L190 45 C194 12 202 10 210 12 L240 38 L244 45 L248 72 C265 64 280 60 290 58"/>
+        <text x="120" y="84" class="lbl">muesca sin ciclo</text></svg></div>
+      <p>Intenta inspirar y el equipo no lo detecta por auto-PEEP. <b>Subir PEEP.</b></p></div>
+    <div class="card"><h3>Fuga</h3>
+      <div class="screen"><svg viewBox="0 0 300 90"><line class="ax" x1="10" y1="78" x2="290" y2="78"/>
+        <path class="curve cv" d="M10 78 L25 78 C45 45 65 28 80 25 C100 35 125 45 140 48 L145 78 L165 78 C185 45 205 28 220 25 C240 35 265 45 280 48 L285 78 L290 78"/>
+        <text x="90" y="62" class="lbl">no baja a 0</text></svg></div>
+      <p>Parte del aire no vuelve. <b>Recolocar la mascarilla.</b></p></div>
+  </div>
+  <div class="pearl"><strong>Si la FR que cuentas es mayor que la del monitor</strong><p>Piensa en <b>esfuerzos ineficaces</b>: el monitor solo cuenta lo que dispara. Por orden: revisa la <b>fuga</b> (tubuladura e interfase), <b>baja el trigger</b> (a veces hasta el mínimo, quedándote a ver que no haga doble disparo), acorta la inspiración y, si el Vt es alto, baja la PS. La PEEP se sube de 1 en 1 <b>solo si ves auto-PEEP</b> (flujo espiratorio que no llega a 0). Muchas veces el paciente está agotado y no tiene fuerza.</p></div>
+</section>
+
+<!-- 5 MODOS -->
+<section>
+  <div class="sec-head"><span class="eyebrow">6 · Modos</span><h2>Qué modo usar en cada situación</h2></div>
+  <div class="grid">
+    <div class="card"><span class="tag warn">EPOC hipercápnico</span><h3>PSV con backup o S/T</h3><ul><li>EPAP 5–8, PS 10–16</li><li>Rampa rápida, Exp Trig 30–50 %</li><li>Ti máx 0,8–1,2 s</li><li>SpO₂ 88–92 %</li></ul></div>
+    <div class="card"><span class="tag bad">EAP hipertensivo</span><h3>CPAP 8–10 (o BiPAP)</h3><ul><li>Baja precarga y poscarga</li><li>Nitroglicerina a dosis alta: lo esencial</li><li>Mejoría esperada en 30–60 min</li><li>Evitar morfina</li></ul></div>
+    <div class="card"><span class="tag ok">ICC + EPOC</span><h3>PSV con backup</h3><ul><li>EPAP 7–10: edema y auto-PEEP</li><li>PS 10–14</li><li>Ajustes de sincronía de EPOC</li><li>Nitratos, diurético y broncodilatadores</li></ul></div>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>CPAP o BiPAP en el EAP</h3><p>Son igual de eficaces, también con hipercapnia leve. Pasa a <b>BiPAP</b> si hay agotamiento, baja la conciencia, EPOC u obesidad-hipoventilación de base, pH claramente &lt; 7,25 o la pCO₂ no baja en 30–60 min con CPAP.</p></div>
+    <div class="card"><h3>PSV solo o con backup</h3><p>PSV solo: paciente despierto, sin hipercapnia, bien vigilado, o en prueba de destete. <b>Backup activado</b>: hipercapnia, somnolencia, sueño, sedación o apneas. Pon la frecuencia 4–6 por debajo de la espontánea.</p></div>
+    <div class="card"><h3>Otros modos del bellavista</h3><p><b>PSV target</b>: Vt objetivo, el equipo ajusta la presión. <b>P-A/C</b>: paciente algo somnoliento en el que la VMNI sigue indicada (si está muy somnoliento, IOT). Genera muchas asincronías: el T insp viene en <b>1,7 s</b> y hay que adaptarlo (EPOC 0,8–1,2 s; restrictivo, obeso o neuromuscular, 1–1,4 s). <b>APRV</b> y modos de volumen: casi siempre en invasiva.</p></div>
+  </div>
+</section>
+
+<!-- 6 MONITORIZACIÓN Y CASO -->
+<section>
+  <div class="sec-head"><span class="eyebrow">7 · Seguimiento</span><h2>Cuándo reevaluar y cómo decidir</h2></div>
+  <div class="timeline">
+    <div class="tl"><span class="t">0 h</span><p>Gasometría basal, ajuste inicial, backup activado, mascarilla sin fugas.</p></div>
+    <div class="tl"><span class="t">1–2 h</span><p><b>Gasometría clave.</b> Valora FR, conciencia, curvas y tolerancia.</p></div>
+    <div class="tl"><span class="t">4–6 h</span><p>Nueva gasometría. VMNI casi continua las primeras 24 h.</p></div>
+    <div class="tl"><span class="t">Destete</span><p>pH ≥ 7,35, FR &lt; 25 y estabilidad 4–6 h: pausas de día, VMNI de noche.</p></div>
+  </div>
+  <div class="decide">
+    <div class="card ok"><h3>Éxito: continuar</h3><ul><li>pH sube y pCO₂ baja</li><li>FR baja, menos musculatura accesoria</li><li>Mejor conciencia y confort</li></ul></div>
+    <div class="card bad"><h3>Fracaso: UCI e intubación sin demora</h3><ul><li>pH &lt; 7,25 o empeorando a la 1–2 h</li><li>FR &gt; 35, agotamiento</li><li>Deterioro de conciencia, inestabilidad, vómitos, intolerancia</li></ul></div>
+  </div>
+
+  <h3>Tu paciente: evolución en 2 horas</h3>
+  <div class="grid">
+    <div class="card chart"><span class="eyebrow">pH venoso</span>
+      <svg viewBox="0 0 320 220" role="img" aria-label="pH de 7,20 a 7,30">
+        <line class="gl" x1="50" y1="40" x2="300" y2="40"/><line class="gl" x1="50" y1="200" x2="300" y2="200"/>
+        <text x="10" y="44">7,40</text><text x="10" y="204">7,15</text>
+        <line class="thr" x1="50" y1="72" x2="300" y2="72" stroke="var(--ok)"/><text x="232" y="66" style="fill:var(--ok)">7,35 normal</text>
+        <line class="thr" x1="50" y1="136" x2="300" y2="136" stroke="var(--bad)"/><text x="222" y="152" style="fill:var(--bad)">7,25 fracaso</text>
+        <line x1="80" y1="168" x2="260" y2="104" stroke="var(--flow)" stroke-width="2.5"/>
+        <circle cx="80" cy="168" r="5" fill="var(--flow)"/><circle cx="260" cy="104" r="6" fill="var(--flow)"/>
+        <text x="62" y="190" style="fill:var(--ink)">7,20</text><text x="244" y="94" style="fill:var(--ink);font-weight:500">7,30</text>
+        <text x="70" y="216">0 h</text><text x="250" y="216">2 h</text>
+      </svg></div>
+    <div class="card chart"><span class="eyebrow">pCO₂ venosa (mmHg)</span>
+      <svg viewBox="0 0 320 220" role="img" aria-label="pCO2 de 60 a 50">
+        <line class="gl" x1="50" y1="40" x2="300" y2="40"/><line class="gl" x1="50" y1="200" x2="300" y2="200"/>
+        <text x="20" y="44">70</text><text x="20" y="204">40</text>
+        <line class="thr" x1="50" y1="173" x2="300" y2="173" stroke="var(--ok)"/><text x="240" y="167" style="fill:var(--ok)">45 límite</text>
+        <line x1="80" y1="93" x2="260" y2="147" stroke="var(--pres)" stroke-width="2.5"/>
+        <circle cx="80" cy="93" r="5" fill="var(--pres)"/><circle cx="260" cy="147" r="6" fill="var(--pres)"/>
+        <text x="70" y="82" style="fill:var(--ink)">60</text><text x="252" y="137" style="fill:var(--ink);font-weight:500">50</text>
+        <text x="70" y="216">0 h</text><text x="250" y="216">2 h</text>
+      </svg></div>
+  </div>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Momento</th><th>Ajustes</th><th>Lo que vimos</th><th>Acción</th></tr></thead>
+    <tbody>
+      <tr><td class="v">Inicio</td><td class="v">PS 12 · PEEP 6 · Ti 1,5 · Exp Auto</td><td>FR 29, flujo sin llegar a 0, punta final</td><td>Ajustar ciclado</td></tr>
+      <tr><td class="v">2 h 05</td><td class="v">PS 14 · Ti 1,2 · Exp Auto</td><td>FR 32, doble disparo, alarma de VM alto</td><td>Exp Trig manual 30 %</td></tr>
+      <tr><td class="v">2 h 18</td><td class="v">PS 14 · PEEP 6 · Exp 30 % · FiO₂ 35</td><td>FR 21, curvas cuadradas, sin dobles disparos</td><td><span class="tag ok">mantener</span> · activar backup</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 7 ÍNDICE DE TOBIN -->
+<section>
+  <div class="sec-head"><span class="eyebrow">8 · Fatiga</span><h2>Índice de respiración rápida y superficial (Tobin)</h2></div>
+  <div class="grid">
+    <div class="card"><h3>La fórmula</h3>
+      <div class="formula">Índice = FR ÷ Vt (en litros)</div>
+      <p>Pasa el Vt a litros: 250 ml = 0,25 L. Ejemplo: 32 ÷ 0,25 = <b>128</b>.</p></div>
+    <div class="card"><h3>Qué significa</h3>
+      <p>Al fatigarse, el cuerpo hace respiraciones <b>más pequeñas y más rápidas</b>. Las pequeñas ventilan sobre todo el espacio muerto (~150 ml): con Vt 250, solo ~100 ml llegan al alvéolo y el CO₂ sube.</p></div>
+  </div>
+  <div class="card chart"><span class="eyebrow">Índice de Tobin · respiraciones/min/L</span>
+    <svg viewBox="0 0 520 170" role="img" aria-label="Índice: normal 30, caso 3 128, umbral 105">
+      <rect x="40" y="40" width="80" height="26" fill="var(--ok)" opacity=".18"/>
+      <rect x="120" y="40" width="88" height="26" fill="var(--warn)" opacity=".18"/>
+      <rect x="208" y="40" width="292" height="26" fill="var(--bad)" opacity=".14"/>
+      <line class="gl" x1="40" y1="66" x2="500" y2="66"/>
+      <text x="40" y="84">0</text><text x="112" y="84">50</text><text x="198" y="84">105</text><text x="268" y="84">150</text><text x="472" y="84">250</text>
+      <text x="54" y="34" style="fill:var(--ok)">Normal</text><text x="128" y="34" style="fill:var(--warn)">Intermedio</text><text x="300" y="34" style="fill:var(--bad)">Fatiga probable</text>
+      <line x1="88" y1="66" x2="88" y2="104" stroke="var(--ok)" stroke-width="1.5"/><circle cx="88" cy="53" r="6" fill="var(--ok)"/>
+      <text x="62" y="120" style="fill:var(--ink)">Normal: 30</text><text x="40" y="136">15 ÷ 0,5</text>
+      <line x1="248" y1="66" x2="248" y2="104" stroke="var(--bad)" stroke-width="1.5"/><circle cx="248" cy="53" r="6" fill="var(--bad)"/>
+      <text x="222" y="120" style="fill:var(--ink)">Caso 3: 128</text><text x="222" y="136">32 ÷ 0,25 en CPAP</text>
+    </svg>
+    <p style="font-size:.85rem;color:var(--muted)">Escala: 0 a 250. El umbral clásico es 105.</p>
+  </div>
+  <div class="pearl"><strong>Úsalo con cautela</strong><p>Está validado para el <b>destete de la ventilación invasiva</b>, medido 1 minuto sin soporte. Con presión de soporte el Vt se infla y el índice sale falsamente bajo. En VMNI sirve como orientación, sobre todo en CPAP. Lo más útil es la <b>tendencia</b>: si sube, el paciente se agota.</p></div>
+</section>
+
+<!-- 8 CASOS -->
+<section>
+  <div class="sec-head"><span class="eyebrow">9 · Casos prácticos</span><h2>Tres pacientes, tres problemas distintos</h2>
+    <p>Regla para recordar: <b>FR contada &gt; monitor</b> → esfuerzos ineficaces · <b>FR monitor &gt; contada</b> → autodisparo.</p></div>
+
+  <div class="case">
+    <div class="case-head"><span class="tag warn">Caso 1 · EPOC</span><h3>Esfuerzos ineficaces por auto-PEEP</h3></div>
+    <div class="case-body">
+      <div class="screen"><svg viewBox="0 0 380 320" role="img" aria-label="Curvas del caso 1">
+        <text x="20" y="26" class="tp">PRESIÓN</text><line class="ax" x1="40" y1="110" x2="340" y2="110"/>
+        <path class="curve cp" d="M40 100 L50 100 C58 98 72 72 100 66 L155 65 L162 100 L220 100 C228 98 242 72 270 66 L325 65 L332 100 L340 100"/>
+        <text x="60" y="54" class="lbl">subida lenta: rampa 300 ms</text>
+        <text x="20" y="140" class="tf">FLUJO</text><line class="ax" x1="40" y1="200" x2="340" y2="200"/>
+        <path class="curve cf" d="M40 214 L50 200 C55 185 70 165 90 162 L150 188 L158 200 L162 232 C172 224 180 220 184 219 L187 208 L190 219 C198 216 203 215 206 215 L209 205 L212 215 C215 214 218 214 220 214 L220 200 C225 185 240 165 260 162 L320 188 L328 200 L332 232 C336 228 338 226 340 225"/>
+        <text x="150" y="252" class="lbl">muescas sin ciclo · no llega a 0</text>
+        <text x="20" y="236" class="tv">VOLUMEN</text><line class="ax" x1="40" y1="300" x2="340" y2="300"/>
+        <path class="curve cv" d="M40 300 L50 300 C80 284 120 272 155 270 C180 282 205 292 220 294 C250 285 290 272 325 270 C332 275 336 278 340 280"/>
+        <text x="160" y="268" class="lbl">Vt 380: bajo</text>
+      </svg></div>
+      <div class="case-text">
+        <p><b>Hombre de 70 años, 172 cm.</b> PS 10 · PEEP 5 · rampa 300 ms · Exp Trig 25 % · Ti máx 1,5 · backup off. Monitor FR 18; <b>contada 30</b>. pH 7,25 → 7,24 en 1 h.</p>
+        <ul>
+          <li><b>Clave:</b> 12 respiraciones no disparan el equipo. Fuga controlada y el flujo espiratorio no llega a 0: hay auto-PEEP visible, por eso aquí sí se sube la PEEP (además de bajar el trigger y acortar la inspiración).</li>
+          <li>Vt objetivo 410–540 ml (peso ideal ~68 kg).</li>
+        </ul>
+        <div class="tablewrap"><table style="min-width:0"><tbody>
+          <tr><td>Fuga / trigger</td><td class="v">revisar interfase · trigger 1–1,5 L/min</td></tr>
+          <tr><td>PEEP</td><td class="v">5 → 7–8</td></tr>
+          <tr><td>PS</td><td class="v">10 → 14</td></tr>
+          <tr><td>Rampa</td><td class="v">300 → 150 ms</td></tr>
+          <tr><td>Exp Trig</td><td class="v">25 → 40–50 %</td></tr>
+          <tr><td>Ti máx</td><td class="v">1,5 → 0,8–1,0 s</td></tr>
+          <tr><td>Backup / FiO₂</td><td class="v">activar 12 · SpO₂ 88–92 %</td></tr>
+        </tbody></table></div>
+        <p><span class="tag bad">decisión</span> pH que empeora a la hora: avisar UCI ya mientras se ajusta; reevaluar en 30–60 min.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="case">
+    <div class="case-head"><span class="tag ok">Caso 2 · ICC + EPOC</span><h3>Fuga con autodisparo</h3></div>
+    <div class="case-body">
+      <div class="screen"><svg viewBox="0 0 380 320" role="img" aria-label="Curvas del caso 2">
+        <text x="20" y="26" class="tp">PRESIÓN</text><line class="ax" x1="40" y1="110" x2="340" y2="110"/>
+        <path class="curve cp" d="M40 100 L50 100 L60 62 L130 62 L136 100 L150 100 L156 70 L176 70 L181 100 L220 100 L230 62 L300 62 L306 100 L340 100"/>
+        <text x="146" y="54" class="lbl">autodisparo</text><text x="236" y="54" class="lbl">corta por Ti máx</text>
+        <text x="20" y="140" class="tf">FLUJO</text><line class="ax" x1="40" y1="200" x2="340" y2="200"/>
+        <path class="curve cf" d="M40 210 L50 200 C54 160 62 156 72 160 C90 170 110 176 130 178 L136 200 L140 225 C146 216 148 212 150 205 C153 185 160 182 176 188 L181 200 L184 214 C200 210 210 208 220 206 C224 160 232 156 242 160 C260 170 280 176 300 178 L306 200 L310 225 C325 218 335 214 340 212"/>
+        <text x="62" y="152" class="lbl">meseta: el flujo no cae</text>
+        <text x="20" y="236" class="tv">VOLUMEN</text><line class="ax" x1="40" y1="300" x2="340" y2="300"/>
+        <path class="curve cv" d="M40 300 L50 300 C80 278 110 262 136 258 C140 262 145 268 150 270 C160 262 170 258 181 258 C195 268 210 274 220 276 C250 262 280 250 306 246 C320 254 330 260 340 263"/>
+        <text x="190" y="294" class="lbl">no vuelve a 0: fuga</text>
+      </svg></div>
+      <div class="case-text">
+        <p><b>Mujer de 74 años, 160 cm.</b> PS 16 · PEEP 5 · trigger 1,0 L/min · Exp Trig 25 % · Ti máx 1,8. Monitor <b>FR 34</b>, Vt 720, fuga 55 L/min; <b>contada 22</b>. Abdomen distendido. pH 7,27 → 7,29.</p>
+        <ul>
+          <li><b>Clave:</b> la fuga dispara respiraciones que la paciente no pide.</li>
+          <li>Vt 720 sobrestimado; objetivo 315–420 ml (peso ideal ~52 kg).</li>
+        </ul>
+        <div class="tablewrap"><table style="min-width:0"><tbody>
+          <tr><td>Mascarilla</td><td class="v">recolocar / cambiar talla</td></tr>
+          <tr><td>Trigger insp.</td><td class="v">1,0 → 1,5–2 L/min</td></tr>
+          <tr><td>PS</td><td class="v">16 → 12–14</td></tr>
+          <tr><td>PEEP</td><td class="v">5 → 7–8 (edema)</td></tr>
+          <tr><td>Exp Trig / Ti máx</td><td class="v">30–40 % · 1,0–1,2 s</td></tr>
+          <tr><td>Abdomen</td><td class="v">IPAP ≤ 20–22 · valorar SNG</td></tr>
+        </tbody></table></div>
+        <p><span class="tag warn">decisión</span> mejora lenta, no fracaso: corregir fuga, nitratos, diurético, broncodilatadores y reevaluar en 1 h.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="case">
+    <div class="case-head"><span class="tag bad">Caso 3 · EAP hipertensivo</span><h3>Fatiga en CPAP y nitratos insuficientes</h3></div>
+    <div class="case-body">
+      <div class="screen"><svg viewBox="0 0 380 320" role="img" aria-label="Curvas del caso 3 en CPAP">
+        <text x="20" y="26" class="tp">PRESIÓN · CPAP 10</text><line class="ax" x1="40" y1="110" x2="340" y2="110"/>
+        <path class="curve cp" d="M40 70 L50 70 Q58 78 66 72 L80 70 Q88 66 96 70 L110 70 Q118 78 126 72 L140 70 Q148 66 156 70 L170 70 Q178 78 186 72 L200 70 Q208 66 216 70 L230 70 Q238 78 246 72 L260 70 Q268 66 276 70 L290 70 Q298 78 306 72 L320 70 Q328 66 336 70 L340 70"/>
+        <text x="60" y="98" class="lbl">caídas: esfuerzo inspiratorio intenso</text>
+        <text x="20" y="140" class="tf">FLUJO</text><line class="ax" x1="40" y1="200" x2="340" y2="200"/>
+        <path class="curve cf" d="M40 200 L50 200 C54 176 64 176 78 200 C82 220 92 222 110 200 C114 176 124 176 138 200 C142 220 152 222 170 200 C174 176 184 176 198 200 C202 220 212 222 230 200 C234 176 244 176 258 200 C262 220 272 222 290 200 C294 176 304 176 318 200 C322 220 332 222 340 210"/>
+        <text x="20" y="236" class="tv">VOLUMEN</text><line class="ax" x1="40" y1="300" x2="340" y2="300"/>
+        <path class="curve cv" d="M40 300 L50 300 C60 284 70 278 78 278 C90 284 100 296 110 300 C120 284 130 278 138 278 C150 284 160 296 170 300 C180 284 190 278 198 278 C210 284 220 296 230 300 C240 284 250 278 258 278 C270 284 280 296 290 300 C300 284 310 278 318 278 C330 284 338 294 340 296"/>
+        <text x="150" y="268" class="lbl">Vt 250 · FR 32</text>
+      </svg></div>
+      <div class="case-text">
+        <p><b>Hombre de 66 años, sin EPOC.</b> CPAP 10, FiO₂ 100 %, una sola NTG 400 mcg. A los 45 min: TA 190/105, FR 32, Vt 250, <b>Glasgow 13</b>, pH 7,26 → 7,22, pCO₂ 50 → 58.</p>
+        <ul>
+          <li><b>Clave:</b> lucha mucho pero sin eficacia: Tobin 128, fatiga.</li>
+          <li>En CPAP hay una sola presión; las caídas son su esfuerzo.</li>
+        </ul>
+        <div class="tablewrap"><table style="min-width:0"><tbody>
+          <tr><td>Modo</td><td class="v">CPAP → BiPAP con backup</td></tr>
+          <tr><td>EPAP / PS</td><td class="v">mantener 10 · PS 10</td></tr>
+          <tr><td>Rampa / trigger</td><td class="v">100 ms · 2 L/min</td></tr>
+          <tr><td>Backup</td><td class="v">12–15</td></tr>
+          <tr><td>Nitroglicerina</td><td class="v">dosis alta, escalada rápida</td></tr>
+          <tr><td>Furosemida</td><td class="v">no subir: papel secundario</td></tr>
+        </tbody></table></div>
+        <p><span class="tag bad">decisión</span> prueba corta de BiPAP con UCI e intubación preparadas; reevaluar en 15–30 min. Intubar si no mejora la conciencia o el pH.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 GLOSARIO -->
+<section>
+  <div class="sec-head"><span class="eyebrow">10 · Glosario</span><h2>Términos clave</h2></div>
+  <dl>
+    <div><dt>Vt</dt><dd>Volumen de cada respiración; 6–8 ml/kg de peso ideal.</dd></div>
+    <div><dt>VM</dt><dd>Vt × FR; normal 6–8 L/min.</dd></div>
+    <div><dt>IPAP / EPAP</dt><dd>Presión alta en inspiración / colchón en espiración.</dd></div>
+    <div><dt>PS</dt><dd>Ayuda real: IPAP − EPAP.</dd></div>
+    <div><dt>Auto-PEEP</dt><dd>Presión que queda porque el pulmón no se vacía.</dd></div>
+    <div><dt>Trigger</dt><dd>Sensibilidad para detectar que el paciente inspira.</dd></div>
+    <div><dt>Rampa</dt><dd>Tiempo de subida de EPAP a IPAP.</dd></div>
+    <div><dt>Ciclado / Exp Trig</dt><dd>Momento en que deja de empujar, en % del flujo pico.</dd></div>
+    <div><dt>Ti máx</dt><dd>Tope de seguridad del tiempo inspiratorio.</dd></div>
+    <div><dt>Relación I:E</dt><dd>Normal 1:2; en EPOC 1:3 o más.</dd></div>
+    <div><dt>Backup</dt><dd>Respiraciones de rescate si deja de disparar.</dd></div>
+    <div><dt>Índice de Tobin</dt><dd>FR ÷ Vt en litros; &gt; 105 sugiere fatiga.</dd></div>
+    <div><dt>Autodisparo</dt><dd>El equipo cicla sin que el paciente lo pida, casi siempre por fuga.</dd></div>
+    <div><dt>Compliance / resistencia</dt><dd>Facilidad del pulmón para expandirse / del aire para pasar. EAP: compliance baja. EPOC: resistencia alta.</dd></div>
+  </dl>
+</section>
+
+<footer>Resumen docente basado en el caso del 25 de octubre de 2026. Valores orientativos: ajusta siempre a la clínica, a las curvas y a los protocolos de tu servicio. Las funciones propias del bellavista conviene confirmarlas en su manual.</footer>
+</main>
