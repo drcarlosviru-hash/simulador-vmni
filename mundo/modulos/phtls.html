@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taller PHTLS interactivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f3ef;--card:#fff;--ink:#16181d;--mute:#666b75;--line:#e4e0d8;--red:#d7263d;--red2:#a3162a;--amb:#f4a100;--grn:#16a34a;--blu:#2563eb;--x:#d7263d;--a:#f97316;--b:#0ea5e9;--c:#e11d48;--d:#8b5cf6;--e:#10b981;--r:16px}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--card:#181b21;--ink:#eef0f4;--mute:#9aa1ad;--line:#2a2f38}}
+*{box-sizing:border-box}html,body{margin:0}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:84px}
+h1,h2,h3,.disp{font-family:Sora,Inter,sans-serif;letter-spacing:-.01em;line-height:1.2}
+h1{font-size:clamp(26px,5vw,40px);margin:.2em 0}h2{font-size:22px;margin:.2em 0 .5em}h3{font-size:17px;margin:.8em 0 .3em}
+a{color:var(--blu)}
+header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topin{max-width:1100px;margin:auto;display:flex;align-items:center;gap:12px;padding:10px 16px}
+.logo{display:flex;align-items:center;gap:8px;font-family:Sora;font-weight:800}
+.logo b{background:var(--red);color:#fff;border-radius:8px;padding:2px 8px;font-size:14px}
+nav.tabs{display:flex;gap:4px;margin-left:auto}
+nav.tabs button,.bnav button{border:0;background:none;color:var(--mute);font:600 14px Inter;padding:8px 12px;border-radius:10px;cursor:pointer}
+nav.tabs button.on{background:var(--ink);color:var(--bg)}
+.bnav{display:none}
+@media (max-width:760px){nav.tabs{display:none}.bnav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--card);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}.bnav button{flex:1;display:flex;flex-direction:column;align-items:center;font-size:11px;padding:4px 2px;gap:1px}.bnav button span{font-size:20px}.bnav button.on{color:var(--red)}}
+main{max-width:1100px;margin:auto;padding:16px}
+.view{display:none;animation:fade .25s}.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.grid{display:grid;gap:12px}.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 14px Inter;padding:10px 14px;border-radius:12px;cursor:pointer}
+.btn.pri{background:var(--red);border-color:var(--red);color:#fff}.btn.dark{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:default}
+.chip{display:inline-block;font:600 12px Inter;padding:3px 9px;border-radius:99px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--mute)}
+.mute{color:var(--mute)}.small{font-size:13px}
+ul.clean{padding-left:18px;margin:.3em 0}ul.clean li{margin:.25em 0}
+/* hero */
+.hero{background:linear-gradient(135deg,#1a0b0f,#3a0d16 55%,#7a1222);color:#fff;border-radius:22px;padding:24px;position:relative;overflow:hidden}
+.hero p{color:#f3d6db;max-width:560px}.hero .btn{border-color:#ffffff40;background:#ffffff14;color:#fff}.hero .btn.pri{background:#fff;color:#7a1222}
+.hero .ekg{position:absolute;right:-10px;bottom:10px;width:60%;opacity:.35}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.stat{background:#ffffff14;border-radius:12px;padding:8px 12px}.stat b{font:800 20px Sora;display:block}
+/* XABCDE */
+.abc{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.abc button{border:0;border-radius:12px;padding:12px 0;font:800 24px Sora;color:#fff;cursor:pointer;opacity:.85}
+.abc button.on{opacity:1;transform:translateY(-2px);box-shadow:0 6px 16px #0003}
+/* body */
+.body{width:100%;max-height:70vh;display:block;margin:auto}
+.rg path,.rg rect{fill:transparent;stroke:none;cursor:pointer;transition:fill .2s}
+.rg:hover path,.rg:hover rect,.rg:focus path,.rg:focus rect{fill:#2563eb1f}
+.rg.sel path,.rg.sel rect{fill:#2563eb38}
+.rg.hl path,.rg.hl rect{fill:#d7263d55;animation:pulse 1.4s infinite}
+.rg:focus{outline:none}
+@keyframes pulse{50%{fill:#d7263d18}}
+.spineHit{cursor:pointer}
+.L,.sil{transition:opacity .3s;pointer-events:none}.off{opacity:0;pointer-events:none}
+.pt circle,.pt rect{stroke:#fff;stroke-width:1.5}.pulse circle{fill:#2563eb}.junc circle{fill:#f4a100}.tq rect{fill:#111}.nd circle{fill:#10b981}
+.layers{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.tog{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:6px 12px;font:600 13px Inter;cursor:pointer}
+.tog.on{background:var(--ink);color:var(--bg)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--mute)}.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.anat{display:grid;grid-template-columns:minmax(240px,380px) 1fr;gap:16px;align-items:start}
+@media (max-width:760px){.anat{grid-template-columns:1fr}.body{max-height:58vh}}
+.sec{border-left:4px solid var(--line);padding-left:10px;margin:10px 0}.sec h4{margin:0 0 2px;font:700 13px Inter;text-transform:uppercase;letter-spacing:.06em;color:var(--mute)}
+.sec.r{border-color:var(--red)}.sec.g{border-color:var(--grn)}.sec.b{border-color:var(--blu)}.sec.a{border-color:var(--amb)}
+/* media */
+.media{border:2px dashed var(--line);border-radius:14px;padding:12px;margin-top:12px}
+.media .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:8px}
+.media figure{margin:0;position:relative;background:#000;border-radius:10px;overflow:hidden}
+.media img,.media video{width:100%;height:130px;object-fit:cover;display:block;cursor:zoom-in}
+.media figure button{position:absolute;top:4px;right:4px;border:0;border-radius:99px;background:#000a;color:#fff;width:26px;height:26px;cursor:pointer}
+.lb{position:fixed;inset:0;background:#000e;z-index:99;display:none;align-items:center;justify-content:center;padding:16px}.lb.on{display:flex}.lb img,.lb video{max-width:100%;max-height:90vh;border-radius:10px}
+/* sim */
+.cases{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.case{cursor:pointer;position:relative;transition:transform .15s}.case:hover{transform:translateY(-3px)}
+.case .ic{font-size:34px}.case .done{position:absolute;top:12px;right:12px;font:700 12px Inter;color:var(--grn)}
+.sim{display:grid;grid-template-columns:330px 1fr;gap:16px;align-items:start}
+@media (max-width:860px){.sim{grid-template-columns:1fr}}
+.monitor{background:#05080b;color:#d6f7d6;border-radius:18px;padding:12px;font-family:"JetBrains Mono",monospace;border:3px solid #1d232b;box-shadow:inset 0 0 30px #000}
+.mon-top{display:flex;justify-content:space-between;font-size:12px;color:#8aa;margin-bottom:6px}
+.wave{width:100%;height:56px;display:block}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.vb{background:#0b1117;border-radius:10px;padding:6px 8px}.vb small{display:block;font-size:10px;color:#7c8a96;letter-spacing:.08em}
+.vb b{font-size:26px;font-weight:700;line-height:1.1}.vb.alarm b{animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.35}}
+.c-hr{color:#3cff6b}.c-sp{color:#38d8ff}.c-bp{color:#ff5470}.c-co{color:#ffe14d}.c-rr{color:#ffffff}.c-gcs{color:#c99bff}.c-t{color:#ffb35c}
+.golden{margin-top:8px;font-size:11px;color:#9ab}.bar{height:8px;background:#1a222c;border-radius:9px;overflow:hidden;margin-top:3px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#3cff6b,#ffe14d,#ff5470);transition:width .4s}
+.track{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}.track span{font:800 13px Sora;padding:5px 10px;border-radius:9px;background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--mute)}
+.track span.on{color:#fff}.track span.ok{color:#fff;opacity:.55}
+.opts{display:grid;gap:8px;margin-top:10px}
+.opt{text-align:left;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px 14px;font:500 15px Inter;cursor:pointer;transition:all .15s}
+.opt:hover:not(:disabled){border-color:var(--ink)}.opt.bad{border-color:var(--red);background:color-mix(in srgb,var(--red) 10%,var(--card));animation:shake .35s}.opt.good{border-color:var(--grn);background:color-mix(in srgb,var(--grn) 12%,var(--card))}
+.opt:disabled{cursor:default}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.fb{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:14px}.fb.good{background:color-mix(in srgb,var(--grn) 14%,transparent)}.fb.bad{background:color-mix(in srgb,var(--red) 12%,transparent)}
+.phase{display:inline-block;font:800 14px Sora;color:#fff;padding:3px 10px;border-radius:8px;margin-right:6px}
+/* chapters */
+.chl{display:grid;gap:8px}.chi{display:flex;gap:12px;align-items:center;cursor:pointer}.chi .n{font:800 15px Sora;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--red) 14%,transparent);color:var(--red);display:grid;place-items:center;flex:none}
+.chi .tick{margin-left:auto;color:var(--grn);font-weight:700}
+.divh{font:700 12px Inter;text-transform:uppercase;letter-spacing:.08em;color:var(--mute);margin:14px 0 4px}
+.nums{display:flex;flex-wrap:wrap;gap:6px}.nums span{background:#16181d;color:#ffe14d;font:600 13px "JetBrains Mono";padding:5px 9px;border-radius:8px}
+/* tools */
+.seg{display:flex;flex-wrap:wrap;gap:6px}.seg button{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:7px 10px;font:500 13px Inter;cursor:pointer;text-align:left}
+.seg button.on{border-color:var(--blu);background:color-mix(in srgb,var(--blu) 14%,var(--card))}
+.big{font:800 44px Sora;line-height:1}
+input[type=number],select{font:600 16px Inter;padding:9px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);width:110px}
+input[type=range]{width:100%;accent-color:var(--red)}
+.burnwrap{display:grid;grid-template-columns:1fr 1fr;gap:6px;max-width:420px}
+.bz path,.bz ellipse{cursor:pointer;transition:fill .15s}.bz.on path,.bz.on ellipse{fill:#f97316;stroke:#9a3412}
+table.t{border-collapse:collapse;width:100%;font-size:13px}table.t td,table.t th{border-bottom:1px solid var(--line);padding:6px;text-align:left}table.t th{color:var(--mute);font-weight:600}
+td.hl,th.hl{background:color-mix(in srgb,var(--red) 14%,transparent)}
+.triage-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}.triage-btns button{border:0;border-radius:12px;padding:14px 0;font:700 14px Inter;color:#fff;cursor:pointer}
+.tr-rojo{background:#d7263d}.tr-amarillo{background:#e5a100}.tr-verde{background:#16a34a}.tr-negro{background:#222}
+.prog{height:6px;background:var(--line);border-radius:6px;overflow:hidden}.prog i{display:block;height:100%;background:var(--red)}
+footer{max-width:1100px;margin:20px auto 0;padding:0 16px 24px;font-size:12px;color:var(--mute)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{height:12px}
+#simBody{max-height:360px}
+.chth{width:52px;height:52px;object-fit:cover;border-radius:10px;background:#fff;flex:none;border:1px solid var(--line)}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}.gal figure{margin:0}.gal img{width:100%;aspect-ratio:4/3;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--line);cursor:zoom-in}.gal figcaption{font-size:12px;margin-top:4px;line-height:1.3}.gal figcaption span{display:block;color:var(--mute);font-size:11px}
+.homegal{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}.homegal img{width:100%;aspect-ratio:1;object-fit:cover;background:#fff;border-radius:12px;border:1px solid var(--line);cursor:zoom-in}
+@media (max-width:760px){.homegal{grid-template-columns:repeat(3,1fr)}}
+.anat>*,.sim>*,.grid>*{min-width:0}
+.atlas{max-width:100%;margin:12px 0;border:1px solid var(--line);border-radius:14px;padding:10px;background:color-mix(in srgb,var(--ink) 3%,var(--card))}
+.atlas .main{margin:8px 0 6px}.atlas .main img{width:100%;aspect-ratio:4/3;object-fit:contain;background:#fff;border-radius:10px;cursor:zoom-in;display:block}
+.atlas figcaption{font:600 13px Inter;margin-top:6px}
+.atlas .strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}.atlas .strip img{height:58px;width:77px;object-fit:cover;background:#fff;border-radius:8px;cursor:pointer;opacity:.55;border:2px solid transparent;flex:none}.atlas .strip img.on{opacity:1;border-color:var(--red)}
+.lb{overflow:auto}.lb img{background:#fff;cursor:zoom-in}.lb.zm{align-items:flex-start;justify-content:flex-start}.lb.zm img{max-width:none;max-height:none;width:250%;cursor:zoom-out}
+.lbx{position:fixed;top:12px;right:12px;z-index:100;border:0;border-radius:99px;width:40px;height:40px;background:#fff;color:#111;font-size:18px;cursor:pointer}
+.tw{overflow-x:auto}table.t{font-size:12px}
+</style>
+</head>
+<body>
+<header class="top"><div class="topin">
+ <div class="logo"><b>PHTLS</b> Taller interactivo</div>
+ <nav class="tabs" id="tabs"></nav>
+</div></header>
+<main>
+ <section class="view" id="v-inicio"></section>
+ <section class="view" id="v-taller"></section>
+ <section class="view" id="v-anatomia"></section>
+ <section class="view" id="v-capitulos"></section>
+ <section class="view" id="v-herramientas"></section>
+ <section class="view" id="v-repaso"></section>
+</main>
+<footer>Material de estudio con resúmenes propios basados en <i>PHTLS 10.ª edición</i> (NAEMT). No sustituye al libro, al curso oficial ni a los protocolos de tu servicio. Láminas: <i>Anatomy and Physiology</i> (J. G. Betts et al., OpenStax, Rice University), licencia CC BY-NC-SA 4.0, acceso libre en openstax.org, con los créditos indicados en cada imagen; y <i>Gray's Anatomy of the Human Body</i> (H. Gray, 1918), dominio público. Uso educativo no comercial; esquema corporal interactivo de elaboración propia; las fotos y vídeos que añadas se guardan solo en este navegador.</footer>
+<nav class="bnav" id="bnav"></nav>
+<div class="lb" id="lb"></div>
+<script>
+const GRAY={"cabeza": [{"c": "Meninges: duramadre, aracnoides, piamadre (epidural/subdural)", "u": "img/os_1316_Meningeal_LayersN.jpg", "s": "OpenStax", "cr": ""}, {"c": "Polígono de Willis", "u": "img/os_1314_Circle_of_WillisN.jpg", "s": "OpenStax", "cr": ""}, {"c": "Senos venosos durales", "u": "img/os_1315_Brain_Sinuses.jpg", "s": "OpenStax", "cr": ""}, {"c": "Cráneo, vista anterior", "u": "img/os_704_Skull-01.jpg", "s": "OpenStax", "cr": ""}, {"c": "Base del cráneo", "u": "img/os_707_Superior-Inferior_View_of_Skull_Base-01.jpg", "s": "OpenStax", "cr": ""}, {"c": "Cerebro: lóbulos y cara medial", "u": "img/gray_cabeza_0.jpg", "s": "Gray", "cr": ""}, {"c": "Polígono de Willis y arterias cerebrales", "u": "img/gray_cabeza_1.jpg", "s": "Gray", "cr": ""}, {"c": "Arterias de cabeza y cara (meníngea media)", "u": "img/gray_cabeza_2.jpg", "s": "Gray", "cr": ""}, {"c": "Cráneo: vistas frontal y lateral", "u": "img/gray_cabeza_3.jpg", "s": "Gray", "cr": ""}, {"c": "Base del cráneo (fracturas de base)", "u": "img/gray_cabeza_4.jpg", "s": "Gray", "cr": ""}], "cuello": [{"c": "Laringe y membrana cricotiroidea", "u": "img/os_2306_The_Larynx.jpg", "s": "OpenStax", "cr": ""}, {"c": "Cartílagos laríngeos", "u": "img/os_2307_Cartilages_of_the_Larynx.jpg", "s": "OpenStax", "cr": ""}, {"c": "Vía aérea superior: nariz, faringe, laringe", "u": "img/os_2303_Anatomy_of_Nose-Pharynx-Mouth-Larynx.jpg", "s": "OpenStax", "cr": ""}, {"c": "Arteria carótida común y ramas", "u": "img/os_2122_Common_Carotid_Artery.jpg", "s": "OpenStax", "cr": ""}, {"c": "Venas de cabeza y cuello (yugulares)", "u": "img/os_2133_Head_and_Neck_Veins.jpg", "s": "OpenStax", "cr": ""}, {"c": "Laringe: cartílagos tiroides y cricoides", "u": "img/gray_cuello_0.jpg", "s": "Gray", "cr": ""}, {"c": "Carótidas y ramas cervicales", "u": "img/gray_cuello_1.jpg", "s": "Gray", "cr": ""}, {"c": "Venas yugulares y tiroides", "u": "img/gray_cuello_2.jpg", "s": "Gray", "cr": ""}, {"c": "Faringe y vía aérea superior", "u": "img/gray_cuello_3.jpg", "s": "Gray", "cr": ""}], "torax": [{"c": "Caja torácica", "u": "img/os_721_Rib_Cage.jpg", "s": "OpenStax", "cr": ""}, {"c": "Pleuras y cavidad pleural (neumotórax)", "u": "img/os_2313_The_Lung_Pleurea.jpg", "s": "OpenStax", "cr": ""}, {"c": "Pulmones: lóbulos y bronquios", "u": "img/os_2312_Gross_Anatomy_of_the_Lungs.jpg", "s": "OpenStax", "cr": ""}, {"c": "Posición del corazón en el tórax", "u": "img/os_2001_Heart_Position_in_ThoraxN.jpg", "s": "OpenStax", "cr": ""}, {"c": "Corazón humano: foto real y esquema", "u": "img/os_2000_Human_Heart_Photo.jpg", "s": "OpenStax", "cr": "Foto: Patrick J. Lynch"}, {"c": "Aorta torácica y abdominal", "u": "img/os_2121_Aorta.jpg", "s": "OpenStax", "cr": ""}, {"c": "Caja torácica y espacios intercostales", "u": "img/gray_torax_0.jpg", "s": "Gray", "cr": ""}, {"c": "Proyección de pulmones y pleura", "u": "img/gray_torax_1.jpg", "s": "Gray", "cr": ""}, {"c": "Árbol bronquial y pulmones", "u": "img/gray_torax_2.jpg", "s": "Gray", "cr": ""}, {"c": "Corazón y pericardio", "u": "img/gray_torax_3.jpg", "s": "Gray", "cr": ""}, {"c": "Mediastino y grandes vasos (aorta)", "u": "img/gray_torax_4.jpg", "s": "Gray", "cr": ""}], "abdomen": [{"c": "Cuadrantes y regiones abdominales", "u": "img/os_111_Abdominal_Quadrant_Regions.jpg", "s": "OpenStax", "cr": ""}, {"c": "Arterias torácicas y abdominales", "u": "img/os_2124_Thoracic_Abdominal_Arteries.jpg", "s": "OpenStax", "cr": ""}, {"c": "Riñones en el retroperitoneo", "u": "img/os_2608_Kidney_Position_in_Abdomen.jpg", "s": "OpenStax", "cr": ""}, {"c": "Bazo", "u": "img/os_2208_Spleen.jpg", "s": "OpenStax", "cr": ""}, {"c": "Vísceras abdominales in situ", "u": "img/gray_abdomen_0.jpg", "s": "Gray", "cr": ""}, {"c": "Corte transversal del abdomen", "u": "img/gray_abdomen_1.jpg", "s": "Gray", "cr": ""}, {"c": "Hígado", "u": "img/gray_abdomen_2.jpg", "s": "Gray", "cr": ""}, {"c": "Aorta abdominal y retroperitoneo", "u": "img/gray_abdomen_3.jpg", "s": "Gray", "cr": ""}, {"c": "Riñones y vasos renales", "u": "img/gray_abdomen_4.jpg", "s": "Gray", "cr": ""}, {"c": "Estómago e intestino delgado", "u": "img/gray_abdomen_5.jpg", "s": "Gray", "cr": ""}], "pelvis": [{"c": "Anillo pélvico", "u": "img/os_807_Pelvis.jpg", "s": "OpenStax", "cr": ""}, {"c": "Ligamentos de la pelvis", "u": "img/os_817_Ligaments_of_Pelvis.jpg", "s": "OpenStax", "cr": ""}, {"c": "Articulación de la cadera", "u": "img/os_916_Hip_Joint.jpg", "s": "OpenStax", "cr": ""}, {"c": "Anillo pélvico", "u": "img/gray_pelvis_0.jpg", "s": "Gray", "cr": ""}, {"c": "Cadera y acetábulo", "u": "img/gray_pelvis_1.jpg", "s": "Gray", "cr": ""}, {"c": "Región inguinal: vasos femorales (zona de unión)", "u": "img/gray_pelvis_2.jpg", "s": "Gray", "cr": ""}], "extsup": [{"c": "Arterias subclavia, axilar, braquial, radial y cubital", "u": "img/os_2127_Thoracic_Upper_Limb_Arteries.jpg", "s": "OpenStax", "cr": ""}, {"c": "Articulación del hombro", "u": "img/os_914_Shoulder_Joint.jpg", "s": "OpenStax", "cr": ""}, {"c": "Húmero y codo", "u": "img/os_804_Humerus_and_Elbow.jpg", "s": "OpenStax", "cr": "Modificación de trabajo de Trace Meek"}, {"c": "Arterias axilar y braquial", "u": "img/gray_extsup_0.jpg", "s": "Gray", "cr": ""}, {"c": "Huesos del antebrazo y húmero", "u": "img/gray_extsup_1.jpg", "s": "Gray", "cr": ""}, {"c": "Músculos del hombro y brazo", "u": "img/gray_extsup_2.jpg", "s": "Gray", "cr": ""}, {"c": "Clavícula y escápula", "u": "img/gray_extsup_3.jpg", "s": "Gray", "cr": ""}], "extinf": [{"c": "Arterias femoral, poplítea y tibiales", "u": "img/os_2129ab_Lower_Limb_Arteries_Anterior_Posterior.jpg", "s": "OpenStax", "cr": ""}, {"c": "Fémur y rótula", "u": "img/os_810_Femur_and_Patella.jpg", "s": "OpenStax", "cr": ""}, {"c": "Articulación de la rodilla", "u": "img/os_917_Knee_Joint.jpg", "s": "OpenStax", "cr": ""}, {"c": "Tipos de fracturas", "u": "img/os_612_Types_of_Fractures.jpg", "s": "OpenStax", "cr": ""}, {"c": "Arterias femoral, poplítea y tibiales", "u": "img/gray_extinf_0.jpg", "s": "Gray", "cr": ""}, {"c": "Fémur y tibia", "u": "img/gray_extinf_1.jpg", "s": "Gray", "cr": ""}, {"c": "Músculos de la extremidad inferior", "u": "img/gray_extinf_2.jpg", "s": "Gray", "cr": ""}, {"c": "Rodilla", "u": "img/gray_extinf_3.jpg", "s": "Gray", "cr": ""}], "columna": [{"c": "Columna vertebral", "u": "img/os_715_Vertebral_Column-408a.jpg", "s": "OpenStax", "cr": ""}, {"c": "Corte transversal de la médula espinal", "u": "img/os_1313_Spinal_Cord_Cross_Section.jpg", "s": "OpenStax", "cr": ""}, {"c": "Dermatomas", "u": "img/os_1611_Dermatomes-02.jpg", "s": "OpenStax", "cr": "Modificación de trabajo de Mikael Häggström"}, {"c": "Plexos nerviosos espinales", "u": "img/os_1321_Spinal_Nerve_Plexuses.jpg", "s": "OpenStax", "cr": ""}, {"c": "Vértebras y arteria vertebral", "u": "img/gray_columna_0.jpg", "s": "Gray", "cr": ""}, {"c": "Médula, raíces y dermatomas", "u": "img/gray_columna_1.jpg", "s": "Gray", "cr": ""}, {"c": "Plexos nerviosos", "u": "img/gray_columna_2.jpg", "s": "Gray", "cr": ""}, {"c": "Sacro y cóccix", "u": "img/gray_columna_3.jpg", "s": "Gray", "cr": ""}], "piel": [{"c": "Profundidad de las quemaduras", "u": "img/os_513_Degree_of_burns.jpg", "s": "OpenStax", "cr": ""}, {"c": "Estructura de la piel", "u": "img/os_501_Structure_of_the_skin.jpg", "s": "OpenStax", "cr": ""}], "vasos": [{"c": "Principales arterias sistémicas", "u": "img/os_2120_Major_Systemic_Artery.jpg", "s": "OpenStax", "cr": ""}]};
+
+// ====== CONTENIDO: resúmenes propios por capítulo (basados en PHTLS 10ª ed.) ======
+const DIVS = {1:"Introducción",2:"Evaluación y manejo",3:"Lesiones específicas",4:"Prevención",5:"Víctimas masivas y terrorismo",6:"Consideraciones especiales"};
+
+const CHAPTERS = [
+{n:1,d:1,t:"PHTLS: pasado, presente y futuro",ic:"📜",reg:null,
+ res:["La atención prehospitalaria del trauma evolucionó desde la evacuación militar (Larrey) hasta los SEM modernos con formación estandarizada.",
+ "La filosofía PHTLS: no hay una única forma correcta; se enseñan principios y el profesional decide con pensamiento crítico.",
+ "El trauma es una de las principales causas de muerte en jóvenes y genera un enorme coste social y económico.",
+ "La atención se divide en tres fases: pre-evento (prevención), evento (el impacto) y post-evento (asistencia)."],
+ per:["La enseñanza se basa en la evidencia y se revisa en cada edición.","El enfoque XABCDE prioriza la hemorragia exsanguinante antes que la vía aérea."],
+ num:["3 fases: pre-evento · evento · post-evento"],
+ q:[{p:"¿Qué letra se añadió delante del ABCDE clásico en PHTLS?",o:["Z – zona segura","X – hemorragia exsanguinante","S – seguridad","H – hipotermia"],a:1,e:"La X recuerda controlar primero la hemorragia externa exsanguinante, que mata en minutos."},
+    {p:"La fase del trauma en la que actúa la prevención es…",o:["Post-evento","Evento","Pre-evento","Hospitalaria"],a:2,e:"La prevención actúa antes de que ocurra la lesión (fase pre-evento)."}]},
+{n:2,d:1,t:"Principios de oro y pensamiento crítico",ic:"⭐",reg:null,
+ res:["Los principios son fijos (p. ej., oxigenar, controlar la hemorragia); las preferencias son la forma de cumplirlos según situación, paciente, conocimiento, protocolo y equipo.",
+ "El pensamiento crítico ayuda a controlar los sesgos y a decidir rápido con información incompleta.",
+ "El “periodo de oro”: las lesiones críticas necesitan quirófano cuanto antes; el tiempo en escena debe ser mínimo.",
+ "Los 14 principios de oro van desde la seguridad de la escena hasta una transferencia completa al hospital."],
+ per:["Escena segura primero: un rescatador herido no ayuda a nadie.","Objetivo SpO₂ ≥ 94 %.","Paciente crítico: transporte al centro apropiado más cercano lo antes posible (idealmente ≤ 10 min en escena).","Analgesia adecuada también es un principio de oro."],
+ num:["SpO₂ ≥ 94 %","Escena ≤ 10 min en el paciente crítico"],
+ q:[{p:"Según los principios de oro, ¿qué SpO₂ hay que mantener?",o:["≥ 85 %","≥ 90 %","≥ 94 %","100 % siempre"],a:2,e:"PHTLS recomienda oxígeno y ventilación para mantener SpO₂ ≥ 94 %."},
+    {p:"Un principio se diferencia de una preferencia en que…",o:["El principio depende del equipo disponible","El principio no cambia; la preferencia es cómo se cumple","Son lo mismo","La preferencia es obligatoria"],a:1,e:"El principio (p. ej., asegurar la vía aérea) es fijo; la técnica elegida es la preferencia."}]},
+{n:3,d:2,t:"Shock: fisiopatología de la vida y la muerte",ic:"🩸",reg:"torax",
+ res:["Shock = perfusión tisular inadecuada que lleva a metabolismo anaerobio, acidosis y muerte celular.",
+ "En el trauma, el shock es hemorrágico (hipovolémico) mientras no se demuestre lo contrario. Otros: distributivo (neurogénico), cardiogénico, obstructivo (neumotórax a tensión, taponamiento).",
+ "La hipotensión es un signo TARDÍO: la taquicardia, la piel fría y pálida, el relleno capilar lento y la ansiedad aparecen antes.",
+ "Reanimación: control de la hemorragia, hipotensión permisiva, evitar hipotermia, sangre/plasma si se dispone, y transporte rápido."],
+ per:["Hemorragia interna no controlada: PAS 80–90 mm Hg (PAM 60–65).","TCE: PAS ≥ 110 mm Hg. Lesión medular: PAM 85–90.","Bolos de 250 mL de cristaloide en adultos; 20 mL/kg tibio en niños.","Índice de shock = FC / PAS. Normal < 0,7; ≥ 0,9 indica más riesgo de hemorragia crítica.","TXA: más eficaz en las primeras 3 h; en guías tácticas, dosis única de 2 g IV/IO lenta."],
+ num:["Clase I < 15 % · II 15–30 % · III 30–40 % · IV > 40 %","PAM normal 70–100 mm Hg","Tríada letal: hipotermia + acidosis + coagulopatía"],
+ q:[{p:"¿Cuál es el objetivo de PAS en un adulto con hemorragia interna no controlada sin TCE?",o:["60–70","80–90","110–120","> 120"],a:1,e:"Hipotensión permisiva: PAS 80–90 mm Hg (PAM 60–65) para no ‘reventar’ el coágulo."},
+    {p:"Un paciente con FC 120 y PAS 100 tiene un índice de shock de…",o:["0,8","1,2","1,0","0,6"],a:1,e:"120/100 = 1,2 → ≥ 0,9, alto riesgo de hemorragia crítica."},
+    {p:"Pérdida estimada del 35 % de la volemia corresponde a hemorragia…",o:["Clase I","Clase II","Clase III","Clase IV"],a:2,e:"Clase III = 30–40 %: taquicardia, PA puede bajar, ansioso/confuso."}]},
+{n:4,d:2,t:"La física del trauma (cinemática)",ic:"🚗",reg:"torax",
+ res:["La energía no se crea ni se destruye: se transfiere al cuerpo y produce la lesión.",
+ "Energía cinética = ½ masa × velocidad²: la velocidad pesa mucho más que la masa.",
+ "En un choque hay tres impactos: vehículo, cuerpo y órganos internos (lesiones por compresión y cizallamiento).",
+ "Penetrantes: la energía depende del arma (baja, media, alta energía); importan cavitación temporal y permanente."],
+ per:["Leer la escena (deformación, volante doblado, parabrisas en ‘ojo de buey’) predice lesiones ocultas.","Impacto lateral: tórax, pelvis, cuello del lado del impacto.","Moto/peatón: patrón predecible según velocidad y altura (niño vs adulto).","Caídas: altura, superficie y parte del cuerpo que impacta primero."],
+ num:["EC = ½ m · v²  → doblar la velocidad = ×4 energía"],
+ q:[{p:"Si se duplica la velocidad de un vehículo, la energía cinética…",o:["Se duplica","Se triplica","Se cuadruplica","No cambia"],a:2,e:"EC depende de v²: 2² = 4."},
+    {p:"Un parabrisas en ‘ojo de buey’ sugiere sobre todo lesión de…",o:["Pelvis","Cabeza y columna cervical","Tobillo","Abdomen bajo"],a:1,e:"Impacto de la cabeza contra el cristal: TCE y lesión cervical."}]},
+{n:5,d:2,t:"Gestión de la escena",ic:"🚧",reg:null,
+ res:["Evaluar la escena: seguridad (tráfico, fuego, violencia, materiales peligrosos), situación y número de víctimas.",
+ "Precauciones estándar (EPI) y control de riesgos antes de acercarse.",
+ "Sistema de mando de incidentes para coordinar recursos.",
+ "Triaje en múltiples víctimas: START o SALT para priorizar a quién atender y evacuar primero."],
+ per:["START: camina → verde; no respira tras abrir vía aérea → negro; FR > 30, sin pulso radial/relleno > 2 s o no obedece → rojo; resto → amarillo.","Pedir recursos adicionales pronto (bomberos, policía, más ambulancias, helicóptero)."],
+ num:["START: FR > 30 · relleno > 2 s · obedece órdenes"],
+ q:[{p:"En START, un paciente que no camina, respira a 34/min…",o:["Verde","Amarillo","Rojo","Negro"],a:2,e:"FR > 30 = rojo (inmediato)."},
+    {p:"Lo primero al llegar a cualquier escena es…",o:["Valorar la vía aérea","Seguridad de la escena","Poner collarín","Tomar la PA"],a:1,e:"Primer principio de oro: seguridad del equipo y del paciente."}]},
+{n:6,d:2,t:"Evaluación y manejo del paciente",ic:"🩺",reg:null,
+ res:["Impresión general en segundos: ¿está críticamente lesionado?",
+ "Evaluación primaria XABCDE: tratar cada amenaza vital en cuanto se encuentra.",
+ "Decisión de traslado temprana; muchas intervenciones se hacen en ruta.",
+ "Evaluación secundaria (cabeza a pies, historia SAMPLE) solo cuando lo vital está controlado; reevaluar continuamente."],
+ per:["X: hemorragia exsanguinante · A: vía aérea (con restricción cervical si procede) · B: ventilación · C: circulación y otras hemorragias · D: neurológico (AVDN/GCS, pupilas) · E: exponer y proteger del frío.","En el crítico, la secundaria puede no llegar a hacerse antes del hospital — y está bien."],
+ num:["SAMPLE: Síntomas, Alergias, Medicación, Pasado, Última ingesta, Eventos"],
+ q:[{p:"En XABCDE, la ‘E’ incluye…",o:["Solo exponer","Exponer y proteger del ambiente (hipotermia)","Electrocardiograma","Evacuar"],a:1,e:"Exponer para explorar y luego abrigar: la hipotermia empeora la coagulopatía."},
+    {p:"¿Cuándo se hace la evaluación secundaria?",o:["Siempre antes de trasladar","Tras controlar las amenazas vitales","Antes del XABCDE","Nunca en prehospitalaria"],a:1,e:"Solo cuando lo vital está controlado; en el crítico, a menudo en ruta o en el hospital."}]},
+{n:7,d:2,t:"Vía aérea y ventilación",ic:"🫁",reg:"cuello",
+ res:["La hipoxia mata rápido y agrava el TCE; asegurar la vía aérea es prioritario tras la X.",
+ "Progresión: maniobras manuales (tracción mandibular), aspiración, cánulas, dispositivos supraglóticos, intubación y vía quirúrgica.",
+ "La capnografía (EtCO₂) confirma la colocación del tubo y guía la ventilación.",
+ "Evitar la hiperventilación: aumenta la presión intratorácica, reduce el retorno venoso y produce vasoconstricción cerebral."],
+ per:["EtCO₂ normal aproximadamente 30–40 mm Hg; en TCE objetivo 35–40.","Volumen corriente en ventilación mecánica: 5–7 mL/kg de peso ideal.","Tracción mandibular en lugar de frente-mentón si se sospecha lesión cervical.","Dispositivos supraglóticos: alternativa rápida y eficaz."],
+ num:["SpO₂ ≥ 94 %","EtCO₂ 35–40 (TCE)","Vt 5–7 mL/kg"],
+ q:[{p:"En sospecha de lesión cervical, ¿qué maniobra se prefiere?",o:["Frente-mentón","Tracción mandibular","Hiperextensión","Ninguna"],a:1,e:"La tracción mandibular abre la vía aérea moviendo menos la columna."},
+    {p:"¿Qué confirma mejor la posición del tubo endotraqueal?",o:["Ver empañarse el tubo","Capnografía continua","Auscultar el estómago","Color de la piel"],a:1,e:"La onda de EtCO₂ es el estándar para confirmar y vigilar el tubo."}]},
+{n:8,d:3,t:"Traumatismo de cabeza y cuello (TCE)",ic:"🧠",reg:"cabeza",
+ res:["La lesión primaria ocurre en el impacto; nuestro trabajo es evitar la lesión SECUNDARIA (hipoxia, hipotensión, hipercapnia/hipocapnia, hipoglucemia).",
+ "Presión de perfusión cerebral = PAM − PIC: si cae la PAM o sube la PIC, el cerebro sufre.",
+ "Signos de herniación: deterioro de GCS, pupila dilatada unilateral, postura de decorticación/descerebración, tríada de Cushing.",
+ "Hematoma epidural: intervalo lúcido típico. Subdural: más frecuente, peor pronóstico."],
+ per:["Una sola hipotensión o hipoxia duplica aproximadamente la mortalidad del TCE grave.","PAS ≥ 110 mm Hg en adultos con TCE.","No hiperventilar de forma rutinaria; solo hiperventilación leve (EtCO₂ 30–35) si hay signos de herniación: FR 20 adultos, 25 niños, 30 lactantes.","GCS ≤ 8: considerar asegurar la vía aérea."],
+ num:["PPC = PAM − PIC","PAS ≥ 110","EtCO₂ 35–40 (30–35 solo si herniación)"],
+ q:[{p:"Un paciente con TCE presenta pupila derecha dilatada y GCS que cae de 12 a 7. ¿Qué ventilación aplicas?",o:["FR 10, EtCO₂ 45","Hiperventilación leve: EtCO₂ 30–35","FR 40 lo más rápido posible","No ventilar"],a:1,e:"Con signos de herniación se acepta hiperventilación leve y controlada (EtCO₂ 30–35)."},
+    {p:"¿Objetivo de PAS en adulto con TCE aislado?",o:["≥ 80","≥ 90","≥ 110","≥ 140"],a:2,e:"Mantener PAS > 110 mm Hg se asocia a mejores resultados."},
+    {p:"El ‘intervalo lúcido’ es típico de…",o:["Hematoma subdural","Hematoma epidural","Conmoción","Fractura de base de cráneo"],a:1,e:"Clásico del epidural (arteria meníngea media)."}]},
+{n:9,d:3,t:"Traumatismo de columna",ic:"🦴",reg:"columna",
+ res:["El concepto ha cambiado de ‘inmovilización’ a RESTRICCIÓN DEL MOVIMIENTO ESPINAL (RME) selectiva.",
+ "Indicar RME según mecanismo, estado mental, dolor/sensibilidad en línea media, déficit neurológico y lesiones distractoras.",
+ "La tabla larga es una herramienta de extracción y traslado, no de inmovilización prolongada.",
+ "Shock neurogénico: hipotensión con bradicardia y piel caliente por pérdida del tono simpático."],
+ per:["En lesión medular, PAM 85–90 mm Hg; evitar la hipotensión permisiva.","Trauma penetrante aislado en cuello/torso sin déficit: la RME no está indicada y puede retrasar el tratamiento.","Explorar movilidad, sensibilidad y fuerza en las 4 extremidades."],
+ num:["PAM 85–90 en lesión medular","Shock neurogénico: ↓PA + ↓FC + piel caliente"],
+ q:[{p:"Hipotensión + bradicardia + piel caliente y seca tras caída sugiere…",o:["Shock hemorrágico","Shock neurogénico","Taponamiento","Hipoglucemia"],a:1,e:"Pérdida del tono simpático: vasodilatación sin taquicardia compensadora."},
+    {p:"Paciente con herida por arma blanca en el tórax, sin déficit neurológico. ¿RME?",o:["Sí, siempre tabla","No está indicada","Solo collarín","Solo si hay dolor"],a:1,e:"En penetrante sin déficit, la RME no aporta y retrasa la cirugía."}]},
+{n:10,d:3,t:"Trauma torácico",ic:"❤️",reg:"torax",
+ res:["Las lesiones torácicas comprometen B (ventilación) y C (gasto cardiaco).",
+ "Neumotórax a tensión: dificultad respiratoria, hipoxia, ausencia de murmullo, hipotensión; ingurgitación yugular y desviación traqueal son tardías.",
+ "Herida torácica abierta: apósito oclusivo (preferible con válvula) y vigilar la evolución a tensión.",
+ "Tórax inestable, contusión pulmonar, hemotórax masivo, taponamiento (tríada de Beck) y lesión aórtica."],
+ per:["Descompresión con aguja: 5.º espacio intercostal en línea axilar anterior/media, o 2.º espacio en línea medioclavicular.","Si un apósito oclusivo se asocia a deterioro, levantarlo para dejar salir el aire.","Tríada de Beck: hipotensión, ingurgitación yugular, tonos cardiacos apagados."],
+ num:["Descompresión: 5.º EIC LAA / 2.º EIC LMC"],
+ q:[{p:"¿Lugar recomendado para descomprimir un neumotórax a tensión en adultos?",o:["4.º EIC línea paraesternal","5.º EIC línea axilar anterior o 2.º EIC LMC","Epigastrio","1.er EIC"],a:1,e:"Ambos sitios son válidos; la evidencia apoya el 5.º EIC en línea axilar anterior."},
+    {p:"Herida aspirante en el tórax: ¿qué colocas?",o:["Gasa húmeda","Apósito oclusivo (idealmente con válvula)","Torniquete","Nada"],a:1,e:"Sellar la herida y vigilar signos de tensión."}]},
+{n:11,d:3,t:"Trauma abdominal",ic:"🫃",reg:"abdomen",
+ res:["El abdomen es una causa frecuente de hemorragia oculta y muerte evitable.",
+ "Órganos sólidos (hígado, bazo) sangran; huecos (intestino) se perforan y contaminan.",
+ "Signos: dolor, distensión, defensa, marcas del cinturón, equimosis; pero la exploración puede ser normal al principio.",
+ "No hay tratamiento definitivo en la calle: reconocer, tratar el shock y trasladar a un centro quirúrgico."],
+ per:["Evisceración: no reintroducir; cubrir con apósito estéril húmedo y luego seco/oclusivo.","Objeto empalado: no retirar; estabilizarlo.","Embarazada: desplazar el útero a la izquierda; puede perder 1 200–1 500 mL antes de dar signos de shock y el feto sufre primero."],
+ num:["Hipotensión permisiva: PAS 80–90"],
+ q:[{p:"Ante una evisceración intestinal, lo correcto es…",o:["Reintroducir con cuidado","Cubrir con apósito estéril húmedo","Dejar al aire","Aplicar presión fuerte"],a:1,e:"Nunca reintroducir; mantener húmedo y protegido."},
+    {p:"Un cuchillo clavado en el abdomen debe…",o:["Retirarse para valorar","Estabilizarse en su sitio","Girarse para ver la profundidad","Cortarse a ras"],a:1,e:"Retirarlo puede liberar una hemorragia taponada."}]},
+{n:12,d:3,t:"Trauma musculoesquelético",ic:"🦵",reg:"extinf",
+ res:["Las fracturas rara vez matan, salvo por hemorragia (pelvis, fémur bilateral) o lesión vascular.",
+ "Hemorragia de extremidad que amenaza la vida: torniquete alto y apretado; en zonas de unión (ingle, axila), empaquetamiento y compresión o torniquete de unión.",
+ "Fractura de pelvis inestable: faja pélvica centrada en los trocánteres mayores.",
+ "Síndrome compartimental y síndrome por aplastamiento: vigilar dolor desproporcionado y riesgo de hiperpotasemia al liberar."],
+ per:["Torniquete: anotar la hora; no aflojar en la calle; si no basta, poner un segundo justo por encima.","Fémur: hasta 1–1,5 L de sangre por lado; la tracción reduce dolor y sangrado.","Comprobar pulso, sensibilidad y movilidad distal antes y después de inmovilizar."],
+ num:["Faja pélvica: a nivel de trocánteres mayores","Fémur: hasta ~1,5 L por lado"],
+ q:[{p:"La faja pélvica se coloca a la altura de…",o:["Crestas ilíacas","Ombligo","Trocánteres mayores","Rodillas"],a:2,e:"Centrada en los trocánteres mayores para cerrar el anillo pélvico."},
+    {p:"Un torniquete bien puesto no detiene el sangrado. ¿Qué haces?",o:["Lo retiras","Segundo torniquete por encima","Elevas la pierna","Pones hielo"],a:1,e:"Colocar un segundo torniquete inmediatamente proximal."}]},
+{n:13,d:3,t:"Quemaduras",ic:"🔥",reg:"torax",
+ res:["Detener el proceso de quemado y enfriar brevemente, sin provocar hipotermia.",
+ "Valorar la vía aérea: hollín, quemaduras faciales, ronquera o estridor indican lesión por inhalación; el edema empeora en horas.",
+ "Estimar la superficie corporal quemada (SCQ) con la regla de los nueves o la palma (+ dedos ≈ 1 %). Solo cuentan 2.º y 3.er grado.",
+ "Reanimación con Ringer lactato; la diuresis es el mejor monitor. Pensar en CO y cianuro en incendios cerrados."],
+ per:["Brooke: 2 mL × kg × %SCQ / Parkland: 4 mL × kg × %SCQ en 24 h; la mitad en las primeras 8 h desde la quemadura.","Regla de los 10 (USAISR): %SCQ redondeado a la decena × 10 = mL/h (adultos 40–70 kg; +100 mL/h por cada 10 kg sobre 70).","Diuresis objetivo 0,5–1 mL/kg/h en adultos.","Evitar suero salino en grandes volúmenes (acidosis hiperclorémica)."],
+ num:["Palma + dedos ≈ 1 %","Regla de 10: 37 % → 40 × 10 = 400 mL/h"],
+ q:[{p:"Adulto de 70 kg con 37 % SCQ. Ritmo inicial por la regla de los 10…",o:["370 mL/h","400 mL/h","700 mL/h","200 mL/h"],a:1,e:"Se redondea a 40 % → 40 × 10 = 400 mL/h."},
+    {p:"Con Parkland, 80 kg y 30 % SCQ, el total en 24 h es…",o:["4 800 mL","9 600 mL","2 400 mL","12 000 mL"],a:1,e:"4 × 80 × 30 = 9 600 mL; 4 800 mL en las primeras 8 h."}]},
+{n:14,d:3,t:"Trauma pediátrico",ic:"🧒",reg:null,
+ res:["Los niños compensan muy bien el shock y luego se descompensan bruscamente: la taquicardia es el signo precoz.",
+ "Cabeza grande y occipucio prominente: almohadilla bajo los hombros para alinear la vía aérea.",
+ "Mayor superficie corporal relativa → se enfrían rápido.",
+ "Pensar siempre en maltrato si el mecanismo no encaja con las lesiones."],
+ per:["Bolo de cristaloide tibio de 20 mL/kg si hay shock; reevaluar.","PAS mínima aproximada: 70 + (2 × edad en años); en TCE se recomiendan umbrales más altos.","Usar cinta métrica por longitud para dosis y material.","Acceso IV limitado a 2 intentos en 90 s; después, intraósea."],
+ num:["20 mL/kg","PAS mín ≈ 70 + 2×edad","IO tras 2 intentos/90 s"],
+ q:[{p:"Niño de 4 años en shock. ¿Bolo inicial de cristaloide?",o:["5 mL/kg","10 mL/kg","20 mL/kg","40 mL/kg"],a:2,e:"20 mL/kg de solución tibia y reevaluar."},
+    {p:"Signo más precoz de shock en el niño…",o:["Hipotensión","Taquicardia","Bradicardia","Pupilas dilatadas"],a:1,e:"La hipotensión es tardía y anuncia colapso inminente."}]},
+{n:15,d:3,t:"Trauma geriátrico",ic:"👴",reg:null,
+ res:["Menor reserva fisiológica: lesiones ‘menores’ pueden ser graves.",
+ "Medicamentos (betabloqueantes, anticoagulantes) enmascaran la taquicardia y aumentan el sangrado.",
+ "Una PAS ‘normal’ puede ser hipotensión relativa en un hipertenso.",
+ "Caídas desde su propia altura: primera causa de trauma; alto riesgo de TCE y fractura de cadera."],
+ per:["Umbral de sospecha bajo para traslado a centro de trauma.","Acolchar prominencias óseas en la RME (cifosis); evitar la tabla rígida prolongada.","Valorar el contexto: posible maltrato o negligencia."],
+ num:["Anticoagulado + TCE = alto riesgo de hemorragia intracraneal"],
+ q:[{p:"Paciente de 80 años con betabloqueante, FC 72 y PAS 105 tras caída. Interpretas…",o:["Estable","Posible shock enmascarado","Shock neurogénico seguro","Hipertensión"],a:1,e:"El betabloqueante impide la taquicardia; PAS 105 puede ser hipotensión relativa."},
+    {p:"En la RME del anciano con cifosis…",o:["Forzar alineación plana","Acolchar y adaptar a su postura","No hacer nada","Usar dos collarines"],a:1,e:"Acolchar los huecos y respetar la curvatura."}]},
+{n:16,d:4,t:"Prevención de lesiones",ic:"🛡️",reg:null,
+ res:["Muchas lesiones son previsibles y prevenibles; el trauma no es un ‘accidente’.",
+ "Matriz de Haddon: cruza las fases (pre-evento, evento, post-evento) con huésped, agente y entorno.",
+ "Las ‘3 E’: educación, ingeniería (engineering) y legislación/cumplimiento (enforcement).",
+ "El personal de SEM tiene una posición privilegiada para detectar riesgos y educar a la comunidad."],
+ per:["Cinturón, casco, sillas infantiles, detectores de humo, prevención de caídas en mayores.","La propia seguridad del equipo (conducción, fatiga) también es prevención."],
+ num:["Matriz de Haddon: 3 fases × 3 factores"],
+ q:[{p:"Las ‘3 E’ de la prevención son…",o:["Evaluar, Estabilizar, Evacuar","Educación, Ingeniería, Cumplimiento legal","Emergencia, Enfermería, Equipo","Exponer, Explorar, Elevar"],a:1,e:"Education, Engineering, Enforcement."}]},
+{n:17,d:5,t:"Gestión de desastres",ic:"🌪️",reg:null,
+ res:["Un desastre supera la capacidad de respuesta habitual; se gestiona con el ciclo: preparación, respuesta, recuperación y mitigación.",
+ "Sistema de mando de incidentes con estructura clara y comunicación unificada.",
+ "Triaje para hacer el mayor bien al mayor número; retriaje continuo.",
+ "Atención a la salud mental de víctimas y rescatadores."],
+ per:["Colores de triaje: rojo (inmediato), amarillo (diferido), verde (leve), negro (fallecido/expectante).","SALT añade intervenciones salvavidas rápidas (control de hemorragia, abrir vía aérea, descompresión, antídotos)."],
+ num:["Rojo · Amarillo · Verde · Negro"],
+ q:[{p:"El objetivo del triaje en un desastre es…",o:["Atender primero al más grave siempre","El mayor bien para el mayor número","Atender por orden de llegada","Trasladar a todos a la vez"],a:1,e:"Con recursos limitados se prioriza para salvar al mayor número."}]},
+{n:18,d:5,t:"Explosiones y armas de destrucción masiva",ic:"💥",reg:"torax",
+ res:["Lesiones por explosión: primarias (onda expansiva: pulmón, oído, intestino), secundarias (fragmentos), terciarias (el cuerpo es lanzado), cuaternarias (quemaduras, aplastamiento, tóxicos) y quinarias (contaminantes).",
+ "Pulmón de explosión: hipoxia, hemoptisis, riesgo de embolia gaseosa con ventilación con presión positiva.",
+ "Armas químicas, biológicas, radiológicas y nucleares (QBRN): autoprotección, descontaminación y antídotos.",
+ "Riesgo de segundo artefacto: seguridad de la escena."],
+ per:["Agentes nerviosos (organofosforados): atropina y pralidoxima; signos colinérgicos (miosis, secreciones).","Descontaminar antes de entrar a la zona limpia."],
+ num:["5 tipos de lesión por explosión"],
+ q:[{p:"La lesión por la onda expansiva sobre pulmón y oído es…",o:["Primaria","Secundaria","Terciaria","Cuaternaria"],a:0,e:"La sobrepresión afecta órganos con aire: pulmón, oído medio, intestino."}]},
+{n:19,d:6,t:"Trauma ambiental I: calor y frío",ic:"🌡️",reg:null,
+ res:["Golpe de calor: temperatura central ≥ 40 °C con disfunción del SNC; emergencia vital.",
+ "Tratamiento: enfriamiento rápido y agresivo (inmersión en agua fría o mojar y ventilar) hasta < 40 °C en 30 min idealmente.",
+ "Hipotermia: leve 35–32 °C (tiritona), moderada 32–28 °C (cesa la tiritona), grave 28–24 °C, profunda < 24 °C (muerte aparente).",
+ "En el traumatizado, incluso la hipotermia leve empeora la coagulopatía (tríada letal)."],
+ per:["Manipular con suavidad al hipotérmico grave (riesgo de FV).","‘Nadie está muerto hasta que está caliente y muerto’.","Congelación: no recalentar si hay riesgo de que vuelva a congelarse."],
+ num:["Golpe de calor ≥ 40 °C + SNC","Hipotermia: 35 · 32 · 28 · 24 °C"],
+ q:[{p:"Un corredor confuso con 41 °C de temperatura central. Prioridad…",o:["Hidratar oral y esperar","Enfriamiento rápido inmediato","Antitérmicos","Abrigar"],a:1,e:"Golpe de calor: enfriar primero y rápido (inmersión en agua fría)."},
+    {p:"Hipotermia en la que suele cesar la tiritona…",o:["Leve (35–32)","Moderada (32–28)","Normotermia","Fiebre"],a:1,e:"En la moderada cesa la tiritona y empeora la consciencia."}]},
+{n:20,d:6,t:"Trauma ambiental II: rayo, ahogamiento, buceo y altitud",ic:"⚡",reg:null,
+ res:["Rayo: parada cardiorrespiratoria posible; con múltiples víctimas se aplica triaje inverso (atender primero a los que parecen muertos).",
+ "Ahogamiento: la prioridad es la hipoxia → ventilar precozmente (5 ventilaciones de rescate).",
+ "Buceo: barotrauma, enfermedad descompresiva y embolia gaseosa arterial → oxígeno al 100 % y cámara hiperbárica.",
+ "Altitud: mal agudo de montaña, edema cerebral y pulmonar de altura → el tratamiento clave es descender."],
+ per:["Las víctimas de rayo que no están en parada suelen sobrevivir.","Fluidos IV sin glucosa (1–2 mL/kg/h) en la enfermedad descompresiva."],
+ num:["Triaje inverso en rayo","Buceo: O₂ 100 %"],
+ q:[{p:"Varias víctimas de un rayo. ¿A quién atiendes primero?",o:["Al que más grita","Al que está en parada","Al que camina","A nadie hasta que llegue apoyo"],a:1,e:"Triaje inverso: la parada por rayo responde bien a la RCP precoz."},
+    {p:"Tratamiento más eficaz del edema pulmonar de altura…",o:["Diuréticos","Descender","Fluidos","Antibióticos"],a:1,e:"El descenso es el tratamiento definitivo."}]},
+{n:21,d:6,t:"Atención del trauma en entornos agrestes",ic:"🏔️",reg:null,
+ res:["Lejos de recursos y con traslados prolongados: la decisión médica cambia (evacuar o no, cuándo, cómo).",
+ "Gestión de la escena y del equipo (agua, refugio, clima) también es medicina.",
+ "Controlar la hemorragia, proteger la vía aérea, evitar la hipotermia y monitorizar durante horas.",
+ "Puede ser razonable descartar la lesión cervical clínicamente para facilitar la evacuación."],
+ per:["Planificar comunicación y evacuación antes de que pase algo.","Considerar convertir un torniquete en un vendaje compresivo si el traslado será muy largo y el paciente está estable (según protocolo)."],
+ num:["Pensar en horas, no en minutos"],
+ q:[{p:"La diferencia clave del entorno agreste es…",o:["Más recursos","Tiempos de evacuación prolongados","No hay trauma","Siempre hay helicóptero"],a:1,e:"La distancia y el tiempo obligan a cuidados prolongados."}]},
+{n:22,d:6,t:"Apoyo médico táctico civil (TEMS / TECC)",ic:"🎯",reg:null,
+ res:["Zonas: caliente (amenaza directa), templada (amenaza indirecta) y fría (evacuación).",
+ "Bajo amenaza directa: neutralizar la amenaza y solo control de la hemorragia con torniquete; mover a cubierto.",
+ "Amenaza indirecta: evaluación MARCH/XABCDE, vía aérea, descompresión, prevención de hipotermia, TXA.",
+ "Evacuación: reevaluación, monitorización y comunicación."],
+ per:["La mejor medicina en zona caliente es ganar el control de la amenaza.","El torniquete es la intervención estrella en zona caliente."],
+ num:["Caliente · Templada · Fría"],
+ q:[{p:"En la zona caliente (amenaza directa), la única intervención médica recomendada es…",o:["Intubar","Torniquete para hemorragia exsanguinante","Vía IV","Collarín"],a:1,e:"Todo lo demás espera a estar a cubierto."}]}
+];
+
+// ====== ANATOMÍA: regiones interactivas ======
+const REGIONS = {
+ cabeza:{t:"Cabeza y cerebro",ch:8,
+  anat:["Cráneo rígido: cualquier aumento de volumen (sangre, edema) eleva la PIC.","Arteria meníngea media bajo el hueso temporal (hematoma epidural).","Venas puente entre cerebro y duramadre (hematoma subdural).","Tronco del encéfalo: control respiratorio y cardiovascular."],
+  les:["Hematoma epidural / subdural","Contusión cerebral, lesión axonal difusa","Fractura de base de cráneo (ojos de mapache, signo de Battle, LCR por nariz u oído)"],
+  sig:["GCS y su tendencia","Pupilas: tamaño, simetría, reactividad","Tríada de Cushing: HTA, bradicardia, respiración irregular"],
+  acc:["SpO₂ ≥ 94 %, evitar hipoxia","PAS ≥ 110 mm Hg","EtCO₂ 35–40; 30–35 solo si herniación","Glucemia; cabecera elevada si no hay shock"]},
+ cuello:{t:"Cuello y vía aérea",ch:7,
+  anat:["Laringe y tráquea: vía aérea; cartílago cricoides como referencia.","Arterias carótidas y venas yugulares.","Columna cervical C1–C7: la zona más móvil y vulnerable."],
+  les:["Obstrucción de vía aérea (sangre, dientes, lengua, edema)","Lesión vascular cervical con hemorragia","Lesión cervical medular (C3–C5 inerva el diafragma)"],
+  sig:["Estridor, ronquera, enfisema subcutáneo","Desviación traqueal (tardía en neumotórax a tensión)","Ingurgitación yugular"],
+  acc:["Tracción mandibular, aspiración, cánula","Dispositivo supraglótico o intubación con capnografía","Herida vascular: presión directa / apósito oclusivo (riesgo de embolia gaseosa)"]},
+ torax:{t:"Tórax: pulmones, corazón y grandes vasos",ch:10,
+  anat:["Pulmones dentro de la pleura: el aire entre pleuras colapsa el pulmón.","Corazón en el mediastino, rodeado de pericardio.","Aorta: fija en el istmo → se rompe en desaceleraciones.","Paquete vasculonervioso por el borde INFERIOR de cada costilla → la aguja entra por el borde superior."],
+  les:["Neumotórax a tensión","Neumotórax abierto","Hemotórax masivo","Tórax inestable / contusión pulmonar","Taponamiento cardiaco"],
+  sig:["Murmullo vesicular asimétrico","Movimiento paradójico","Hipotensión + ingurgitación yugular","Tonos apagados (Beck)"],
+  acc:["Descompresión: 5.º EIC LAA o 2.º EIC LMC","Apósito oclusivo con válvula","Oxígeno y ventilación asistida","Traslado rápido a centro quirúrgico"]},
+ abdomen:{t:"Abdomen",ch:11,
+  anat:["Hígado (cuadrante superior derecho) y bazo (superior izquierdo): órganos sólidos que sangran mucho.","Intestino: órgano hueco, se perfora.","Riñones y grandes vasos en el retroperitoneo.","Los órganos superiores están protegidos parcialmente por las costillas inferiores."],
+  les:["Laceración hepática o esplénica","Perforación intestinal","Hemorragia retroperitoneal","Evisceración"],
+  sig:["Dolor, defensa, distensión","Marca del cinturón de seguridad","Shock sin causa externa evidente"],
+  acc:["Hipotensión permisiva PAS 80–90","No reintroducir vísceras: apósito húmedo","Estabilizar objetos empalados","Traslado precoz"]},
+ pelvis:{t:"Pelvis",ch:12,
+  anat:["Anillo óseo con plexos venosos posteriores muy vascularizados.","Vejiga, uretra y recto.","Arterias ilíacas y paso a femorales por la ingle (zona de unión)."],
+  les:["Fractura de pelvis en ‘libro abierto’ con hemorragia masiva","Lesión uretral","Hemorragia de unión inguinal"],
+  sig:["Dolor pélvico, dismetría, rotación de piernas","Equimosis perineal, sangre en meato","NO ‘balancear’ la pelvis repetidamente"],
+  acc:["Faja pélvica centrada en trocánteres mayores","Empaquetamiento y presión / torniquete de unión en la ingle","Juntar y atar las rodillas"]},
+ extsup:{t:"Extremidad superior",ch:12,
+  anat:["Arteria subclavia → axilar → braquial → radial y cubital.","Axila: zona de unión (no admite torniquete convencional).","Pulso radial: si está presente, la PAS suele ser suficiente para perfundir."],
+  les:["Amputación traumática","Hemorragia arterial braquial","Fracturas de húmero, codo, antebrazo"],
+  sig:["Sangrado pulsátil o en charco","Pulso, sensibilidad y movilidad distales"],
+  acc:["Torniquete alto y apretado (‘alto y fuerte’), anotar la hora","Axila: empaquetar con gasa hemostática + presión","Férula en posición funcional"]},
+ extinf:{t:"Extremidad inferior",ch:12,
+  anat:["Arteria femoral → poplítea → tibiales.","Fémur: rodeado de músculo; una fractura puede ocultar 1–1,5 L de sangre.","Compartimentos de la pierna: riesgo de síndrome compartimental."],
+  les:["Hemorragia femoral exsanguinante","Fractura de fémur (uni o bilateral)","Síndrome compartimental / aplastamiento"],
+  sig:["Deformidad, acortamiento","Dolor desproporcionado, tensión del compartimento","Pulsos distales"],
+  acc:["Torniquete; si falla, un segundo por encima","Férula de tracción en fémur medio aislado","Vigilar hiperpotasemia al liberar aplastamiento"]},
+ columna:{t:"Columna vertebral y médula",ch:9,
+  anat:["33 vértebras: cervicales (7), dorsales (12), lumbares (5), sacro y cóccix.","La médula termina aproximadamente en L1–L2.","Dermatomas: C4 clavícula, T4 pezón, T10 ombligo."],
+  les:["Lesión medular completa o incompleta","Shock neurogénico (lesiones por encima de T6)","Fracturas inestables"],
+  sig:["Dolor en línea media","Déficit motor o sensitivo","Priapismo, respiración diafragmática"],
+  acc:["RME selectiva según criterios","PAM 85–90 si lesión medular","Acolchar, colchón de vacío, minimizar tiempo en tabla"]}
+};
+
+// ====== ESTACIONES DE SIMULACIÓN ======
+// eff: cambios en constantes (fc, pas, pad, fr, spo2, etco2, gcs, temp). min: minutos que consume la acción.
+const CASES = [
+{id:"moto",t:"Motorista con hemorragia exsanguinante",ic:"🏍️",lvl:"Básico",reg:["extinf"],atlas:["extinf","vasos"],ch:[3,12],
+ brief:"Varón de 28 años. Moto contra guardarraíl a ~80 km/h. Tráfico aún circulando. Lo encuentras tendido en la cuneta con un gran charco de sangre bajo el muslo derecho.",
+ v:{fc:134,pas:86,pad:56,fr:28,spo2:91,etco2:30,gcs:13,temp:35.8},
+ steps:[
+ {ph:"Escena",q:"Llegas a la escena. ¿Qué haces primero?",o:[
+  {t:"Correr directamente hacia el paciente",ok:0,fb:"El tráfico sigue circulando: un rescatador atropellado es una segunda víctima. Primero la seguridad.",min:1},
+  {t:"Señalizar y asegurar la escena, EPI y pedir recursos",ok:1,fb:"Correcto. Principio de oro n.º 1: seguridad del equipo y del paciente; valoras si hacen falta más recursos.",min:1},
+  {t:"Empezar a tomar la PA desde la ambulancia",ok:0,fb:"No aporta nada sin escena segura ni impresión general.",min:1}]},
+ {ph:"X",q:"Sangrado arterial pulsátil por herida profunda en la cara interna del muslo derecho. ¿Acción?",o:[
+  {t:"Presión directa con la mano y esperar",ok:0,fb:"En una hemorragia arterial de muslo exsanguinante, la presión sola suele fallar y retrasa. Pierde volumen.",eff:{fc:8,pas:-8,gcs:-1},min:2},
+  {t:"Torniquete alto y apretado en el muslo y anotar la hora",ok:1,fb:"Correcto. La X va antes que la A. ‘Alto y fuerte’ y hora de colocación visible.",eff:{fc:-4,pas:4},min:1},
+  {t:"Canalizar vía IV antes de nada",ok:0,fb:"Rellenar un depósito con un agujero abierto no sirve: primero cerrar el grifo.",eff:{fc:10,pas:-10,gcs:-1},min:3},
+  {t:"Colocar collarín cervical",ok:0,fb:"La hemorragia exsanguinante mata en minutos; la columna puede esperar unos segundos.",eff:{fc:8,pas:-8},min:1}]},
+ {ph:"X",q:"Has apretado el torniquete al máximo, pero sigue sangrando. ¿Qué haces?",o:[
+  {t:"Aflojarlo y recolocarlo",ok:0,fb:"Aflojar libera más sangrado y pierdes el control conseguido.",eff:{fc:6,pas:-6},min:1},
+  {t:"Colocar un segundo torniquete justo por encima",ok:1,fb:"Correcto. En muslos grandes a menudo hacen falta dos torniquetes en paralelo.",eff:{fc:-6,pas:6},min:1},
+  {t:"Elevar la pierna",ok:0,fb:"La elevación no controla una hemorragia arterial.",eff:{fc:6,pas:-6},min:1}]},
+ {ph:"A",q:"Responde con frases cortas, sin ruidos respiratorios. ¿Vía aérea?",o:[
+  {t:"Intubar inmediatamente",ok:0,fb:"Habla: su vía aérea es permeable. Intubar ahora añade riesgo y tiempo.",min:3},
+  {t:"Permeable: vigilar y aspirar si hace falta",ok:1,fb:"Correcto. Si habla, la vía aérea está abierta. Mantén restricción del movimiento cervical si lo indica el mecanismo.",min:0},
+  {t:"Cánula orofaríngea",ok:0,fb:"En un paciente consciente provoca náuseas y vómito.",min:1}]},
+ {ph:"B",q:"FR 28, SpO₂ 91 %, murmullo simétrico, tórax estable. ¿Qué haces?",o:[
+  {t:"Oxígeno para mantener SpO₂ ≥ 94 %",ok:1,fb:"Correcto. Principio de oro: SpO₂ ≥ 94 %.",eff:{spo2:6,fr:-4},min:1},
+  {t:"Ventilar con bolsa a 30/min",ok:0,fb:"Respira de forma eficaz; hiperventilarle reduce el retorno venoso y empeora el shock.",eff:{pas:-6,etco2:-6},min:1},
+  {t:"Nada, la saturación es aceptable",ok:0,fb:"91 % es hipoxemia en un paciente en shock.",eff:{spo2:-2},min:0}]},
+ {ph:"C",q:"Pulso radial débil, piel fría y pálida, relleno capilar 4 s, ansioso. Pelvis estable. Estimas una hemorragia…",o:[
+  {t:"Clase I (< 15 %)",ok:0,fb:"Con taquicardia > 120 y PAS límite ya no es clase I.",min:0},
+  {t:"Clase II (15–30 %)",ok:0,fb:"La PA en clase II suele mantenerse; aquí ya baja.",min:0},
+  {t:"Clase III (30–40 %)",ok:1,fb:"Correcto: ~1 500–2 000 mL, taquicardia marcada, PA en descenso, ansioso/confuso.",min:0},
+  {t:"Clase IV (> 40 %)",ok:0,fb:"Aún conserva pulso radial y está orientado; no es clase IV todavía.",min:0}]},
+ {ph:"C",q:"Hemorragia externa ya controlada. ¿Plan de reanimación?",o:[
+  {t:"Canalizar 2 vías en escena y pasar 2 L a chorro",ok:0,fb:"Retrasa el traslado y la sobrecarga de cristaloide diluye y enfría.",eff:{temp:-0.5},min:8},
+  {t:"Trasladar ya; en ruta IV/IO, bolos de 250 mL y reevaluar; TXA si protocolo (< 3 h)",ok:1,fb:"Correcto. Fluidos en ruta, por bolos, guiados por la respuesta. El TXA es más eficaz en las primeras 3 h.",eff:{fc:-10,pas:8},min:1},
+  {t:"Esperar en escena hasta que la PA se normalice",ok:0,fb:"El tiempo en escena del crítico debe ser mínimo (idealmente ≤ 10 min).",min:6}]},
+ {ph:"E",q:"Ropa empapada, temperatura 35,8 °C. ¿Qué haces?",o:[
+  {t:"Dejarle vestido para no perder tiempo",ok:0,fb:"No verías otras lesiones y la ropa mojada acelera la hipotermia.",eff:{temp:-0.4},min:0},
+  {t:"Exponer, explorar rápido y abrigar (mantas, calefacción)",ok:1,fb:"Correcto. La hipotermia forma parte de la tríada letal con acidosis y coagulopatía.",eff:{temp:0.3},min:1},
+  {t:"Cortar toda la ropa y dejarle destapado",ok:0,fb:"Exponer sí, pero luego hay que proteger del frío.",eff:{temp:-0.6},min:1}]},
+ {ph:"Traslado",q:"Hospital comarcal sin cirujano de guardia a 10 min, centro de trauma a 25 min. ¿Destino?",o:[
+  {t:"Hospital comarcal: es el más cercano",ok:0,fb:"No puede resolver la hemorragia; perdería el tiempo de una retransferencia.",min:0},
+  {t:"Centro de trauma: el más cercano APROPIADO",ok:1,fb:"Correcto. El principio es ‘el centro apropiado más cercano’ y prealertar.",min:0}]}
+ ],
+ debrief:["La X va antes que la A.","Dos torniquetes si uno no basta; anota la hora.","Clase III: cerrar el grifo, bolos pequeños y traslado.","Abrigar al paciente forma parte de la reanimación."]},
+
+{id:"torax",t:"Herida por arma blanca y neumotórax a tensión",ic:"🔪",lvl:"Intermedio",reg:["torax"],ch:[10],
+ brief:"Varón de 34 años apuñalado en el hemitórax izquierdo. La policía confirma escena segura. Está sentado, sudoroso y muy disneico.",
+ v:{fc:126,pas:92,pad:60,fr:34,spo2:86,etco2:29,gcs:14,temp:36.4},
+ steps:[
+ {ph:"X",q:"Herida de 2 cm en el 4.º EIC izquierdo, línea medioclavicular. Sangrado escaso. ¿Hay X?",o:[
+  {t:"No hay hemorragia exsanguinante: pasar a A",ok:1,fb:"Correcto. Sangrado escaso: la amenaza es respiratoria, no hemorrágica externa.",min:0},
+  {t:"Empaquetar la herida a fondo con gasa",ok:0,fb:"No se empaqueta una herida torácica: podrías crear o empeorar un neumotórax.",eff:{spo2:-3},min:2}]},
+ {ph:"A",q:"Habla entrecortado, sin estridor. Vía aérea…",o:[
+  {t:"Permeable",ok:1,fb:"Correcto.",min:0},{t:"Intubar ya",ok:0,fb:"Su problema es la mecánica ventilatoria, no la permeabilidad.",min:3}]},
+ {ph:"B",q:"La herida ‘sopla’ con cada respiración. ¿Qué colocas?",o:[
+  {t:"Apósito oclusivo, preferiblemente con válvula",ok:1,fb:"Correcto. Sella la herida y deja salir aire.",eff:{spo2:2},min:1},
+  {t:"Gasa seca sin sellar",ok:0,fb:"Seguiría entrando aire al espacio pleural.",eff:{spo2:-3},min:1},
+  {t:"Vendaje circular apretado del tórax",ok:0,fb:"Limita la expansión torácica.",eff:{spo2:-4,fr:4},min:1}]},
+ {ph:"B",q:"5 min después: FR 40, SpO₂ 80 %, PAS 74, murmullo izquierdo abolido, yugulares ingurgitadas. ¿Primera acción?",pre:{fr:6,spo2:-6,pas:-18,fc:12},o:[
+  {t:"Levantar un borde del apósito para dejar salir aire",ok:1,fb:"Correcto como primer paso: si el apósito está atrapando aire, ‘eructarlo’ puede aliviar.",min:0},
+  {t:"Dar 1 L de cristaloide rápido",ok:0,fb:"Es un shock obstructivo: los líquidos no lo resuelven.",min:1},
+  {t:"Pericardiocentesis",ok:0,fb:"Murmullo abolido unilateral + hipotensión orienta a neumotórax a tensión, no a taponamiento.",min:2}]},
+ {ph:"B",q:"No mejora. ¿Dónde descomprimes con aguja?",o:[
+  {t:"5.º EIC, línea axilar anterior izquierda",ok:1,fb:"Correcto. Sitio con mejor evidencia; alternativa: 2.º EIC línea medioclavicular. Entrar por el borde superior de la costilla.",eff:{spo2:12,pas:24,fc:-18,fr:-12,etco2:6},min:1},
+  {t:"2.º EIC, línea medioclavicular izquierda",ok:1,fb:"Correcto, sitio alternativo válido. Entrar por el borde superior de la costilla.",eff:{spo2:12,pas:24,fc:-18,fr:-12,etco2:6},min:1},
+  {t:"Borde inferior de la 5.ª costilla",ok:0,fb:"Por el borde inferior discurre el paquete vasculonervioso intercostal.",min:1},
+  {t:"Lado derecho",ok:0,fb:"El pulmón afectado es el izquierdo.",eff:{spo2:-4},min:1}]},
+ {ph:"C",q:"Tras la descompresión: PAS 98, FC 108. ¿Restricción del movimiento espinal?",o:[
+  {t:"Tabla larga y collarín por protocolo",ok:0,fb:"En trauma penetrante sin déficit neurológico, la RME no aporta y retrasa la cirugía.",min:4},
+  {t:"No está indicada: traslado rápido semisentado",ok:1,fb:"Correcto.",min:0}]},
+ {ph:"Traslado",q:"Durante el traslado vuelve a empeorar progresivamente. Piensas…",o:[
+  {t:"Recolapso: reevaluar y repetir la descompresión",ok:1,fb:"Correcto. Los catéteres se acodan u obstruyen; reevaluar sin parar.",min:0},
+  {t:"Es ansiedad, sedarle",ok:0,fb:"Nunca atribuir a ansiedad un deterioro en un trauma torácico.",min:0}]}
+ ],
+ debrief:["Hipoxia + murmullo abolido + hipotensión = tensión hasta que se demuestre lo contrario.","Primero ‘eructar’ el apósito; si no basta, aguja.","5.º EIC LAA o 2.º EIC LMC, por el borde superior de la costilla.","Penetrante sin déficit: no hay RME."]},
+
+{id:"tce",t:"TCE grave tras caída de un andamio",ic:"🧠",lvl:"Avanzado",reg:["cabeza","columna"],ch:[8,9],
+ brief:"Varón de 45 años, caída de 4 m sobre el asfalto. Compañeros dicen que habló al principio y luego ‘se quedó dormido’. Ronca y tiene una herida en el cuero cabelludo.",
+ v:{fc:56,pas:172,pad:96,fr:8,spo2:85,etco2:54,gcs:7,temp:36.2},
+ steps:[
+ {ph:"X",q:"Herida del cuero cabelludo con sangrado moderado continuo. ¿Acción?",o:[
+  {t:"Presión directa / vendaje compresivo",ok:1,fb:"Correcto. El cuero cabelludo sangra mucho y puede causar shock si se ignora.",min:1},
+  {t:"Ignorarla: es ‘solo’ el cuero cabelludo",ok:0,fb:"Puede perderse volumen relevante; y la hipotensión es letal en el TCE.",eff:{pas:-10},min:0}]},
+ {ph:"A",q:"Ronquido, restos de sangre en la boca. ¿Qué haces?",o:[
+  {t:"Tracción mandibular + aspiración + cánula orofaríngea",ok:1,fb:"Correcto. Tracción mandibular por posible lesión cervical.",eff:{spo2:3},min:1},
+  {t:"Maniobra frente-mentón forzada",ok:0,fb:"Moviliza más la columna cervical.",min:1}]},
+ {ph:"B",q:"FR 8 superficial, SpO₂ 85 %. ¿Qué haces?",o:[
+  {t:"Ventilar con bolsa-mascarilla y O₂ (SpO₂ ≥ 94 %)",ok:1,fb:"Correcto. Una sola hipoxia empeora mucho el pronóstico del TCE.",eff:{spo2:10,etco2:-14,fr:4},min:1},
+  {t:"Mascarilla con reservorio sin ventilar",ok:0,fb:"Con FR 8 no ventila suficiente; el CO₂ sube y aumenta la PIC.",eff:{spo2:2,etco2:4},min:1}]},
+ {ph:"D",q:"Abre los ojos al dolor, emite sonidos incomprensibles, flexión anormal (decorticación). ¿GCS?",o:[
+  {t:"5",ok:0,fb:"O2 + V2 + M3 = 7.",min:0},{t:"7",ok:1,fb:"Correcto: O2 + V2 + M3 = 7. GCS ≤ 8: proteger la vía aérea.",min:0},{t:"9",ok:0,fb:"O2 + V2 + M3 = 7.",min:0}]},
+ {ph:"D",q:"Pupila derecha 6 mm arreactiva, HTA y bradicardia. ¿Objetivo ventilatorio ahora?",o:[
+  {t:"Normoventilar: EtCO₂ 35–40",ok:0,fb:"Hay signos de herniación: se acepta hiperventilación leve y controlada.",min:0},
+  {t:"Hiperventilación leve: EtCO₂ 30–35 (FR ~20 en adulto)",ok:1,fb:"Correcto. Solo con signos de herniación, y de forma controlada con capnografía.",eff:{etco2:-6},min:0},
+  {t:"Hiperventilar al máximo (FR 35)",ok:0,fb:"La vasoconstricción excesiva produce isquemia cerebral.",eff:{etco2:-15},min:0}]},
+ {ph:"C",q:"¿Qué PAS mínima debes mantener en este paciente?",o:[
+  {t:"80 mm Hg (hipotensión permisiva)",ok:0,fb:"La hipotensión permisiva está contraindicada en el TCE.",min:0},
+  {t:"≥ 110 mm Hg",ok:1,fb:"Correcto. PAS ≥ 110 en adultos con TCE.",min:0},
+  {t:"Da igual mientras tenga pulso",ok:0,fb:"La hipotensión es la otra gran causa de lesión secundaria.",min:0}]},
+ {ph:"Traslado",q:"¿Restricción del movimiento espinal y destino?",o:[
+  {t:"RME (mecanismo + GCS alterado), cabecera 30° si no hay shock, centro con neurocirugía, medir glucemia",ok:1,fb:"Correcto. No puede valorarse clínicamente y tiene mecanismo de alta energía.",min:2},
+  {t:"Sin RME, centro de salud más cercano",ok:0,fb:"Necesita neurocirugía urgente.",min:0}]}
+ ],
+ debrief:["Evitar la lesión secundaria: hipoxia, hipotensión, hiper/hipocapnia, hipoglucemia.","PAS ≥ 110 y SpO₂ ≥ 94 %.","Hiperventilación leve SOLO con signos de herniación.","Tracción mandibular + RME por mecanismo."]},
+
+{id:"quemado",t:"Quemado en incendio de vivienda",ic:"🔥",lvl:"Intermedio",reg:["torax","extsup","cuello"],atlas:["piel","cuello"],ch:[13],
+ brief:"Varón de 80 kg rescatado por bomberos de una cocina en llamas. Quemaduras en el tronco anterior y ambos brazos. Voz ronca, hollín en la nariz.",
+ v:{fc:118,pas:128,pad:78,fr:26,spo2:98,etco2:34,gcs:14,temp:36.0},
+ steps:[
+ {ph:"Escena",q:"¿Qué haces primero con el paciente ya fuera del edificio?",o:[
+  {t:"Detener el proceso: retirar ropa y joyas, enfriar brevemente con agua templada",ok:1,fb:"Correcto. Enfriar poco tiempo y sin hielo para no provocar hipotermia.",min:2},
+  {t:"Cubrir con hielo",ok:0,fb:"El hielo profundiza la lesión y causa hipotermia.",eff:{temp:-1},min:1},
+  {t:"Aplicar pomadas",ok:0,fb:"No se aplican cremas antes de la valoración en el centro de quemados.",min:1}]},
+ {ph:"A",q:"Ronquera, hollín en narinas, vibrisas quemadas. Interpretas…",o:[
+  {t:"Lesión por inhalación: vía aérea en riesgo; O₂ al 100 % y preparar vía aérea avanzada precoz",ok:1,fb:"Correcto. El edema puede cerrar la vía aérea en horas; anticípate.",min:1},
+  {t:"Es irritación leve, vigilar",ok:0,fb:"Ronquera + hollín indican lesión por inhalación.",min:0}]},
+ {ph:"B",q:"El pulsioxímetro marca 98 %. ¿Te fías?",o:[
+  {t:"Sí, está bien oxigenado",ok:0,fb:"La carboxihemoglobina da lecturas falsamente normales.",min:0},
+  {t:"No: posible intoxicación por CO; O₂ al 100 % alto flujo. Pensar también en cianuro",ok:1,fb:"Correcto. En incendios cerrados, sospecha CO y cianuro.",min:0}]},
+ {ph:"C",q:"Tronco anterior entero + ambos brazos completos (2.º y 3.er grado). ¿SCQ (regla de los nueves)?",o:[
+  {t:"27 %",ok:0,fb:"Tronco anterior 18 + brazo 9 + brazo 9 = 36 %.",min:0},{t:"36 %",ok:1,fb:"Correcto: 18 + 9 + 9 = 36 %.",min:0},{t:"45 %",ok:0,fb:"Tronco anterior 18 + brazo 9 + brazo 9 = 36 %.",min:0}]},
+ {ph:"C",q:"Ritmo inicial de Ringer lactato con la regla de los 10 (pesa 80 kg)…",o:[
+  {t:"360 mL/h",ok:0,fb:"Se redondea a 40 % → 400 mL/h, y +100 mL/h por los 10 kg sobre 70.",min:0},
+  {t:"400 mL/h",ok:0,fb:"Falta sumar 100 mL/h por cada 10 kg por encima de 70 kg.",min:0},
+  {t:"500 mL/h",ok:1,fb:"Correcto: 40 × 10 = 400 + 100 (80 kg) = 500 mL/h. Ajustar por diuresis (0,5–1 mL/kg/h).",min:0}]},
+ {ph:"E",q:"¿Cómo cubres las quemaduras para el traslado?",o:[
+  {t:"Sábanas secas y limpias + mantas encima",ok:1,fb:"Correcto. Reduce el dolor y la pérdida de calor.",eff:{temp:0.3},min:1},
+  {t:"Compresas húmedas frías durante todo el traslado",ok:0,fb:"Provocan hipotermia en quemaduras extensas.",eff:{temp:-1},min:1}]},
+ {ph:"Traslado",q:"¿Destino?",o:[
+  {t:"Centro de quemados (o de trauma si hay lesiones asociadas)",ok:1,fb:"Correcto. Lesión por inhalación y > 20 % SCQ.",min:0},
+  {t:"Centro de salud para curas",ok:0,fb:"Necesita unidad especializada.",min:0}]}
+ ],
+ debrief:["Detener el quemado y enfriar brevemente, sin hipotermia.","Ronquera + hollín = vía aérea en riesgo.","SpO₂ ‘normal’ no descarta CO.","Regla de 10: redondear, ×10 y +100 mL/h por cada 10 kg sobre 70."]},
+
+{id:"nino",t:"Niño atropellado",ic:"🧒",lvl:"Intermedio",reg:["abdomen"],ch:[14,11],
+ brief:"Niño de 5 años (~18 kg) atropellado a baja velocidad en un aparcamiento. Pálido, quieto, quejoso. Marca de neumático en el abdomen.",
+ v:{fc:162,pas:76,pad:44,fr:34,spo2:93,etco2:30,gcs:14,temp:36.1},
+ steps:[
+ {ph:"B",q:"SpO₂ 93 %, FR 34. ¿Acción?",o:[
+  {t:"O₂ para SpO₂ ≥ 94 %",ok:1,fb:"Correcto.",eff:{spo2:4},min:1},{t:"No hace falta",ok:0,fb:"Está hipoxémico y en shock.",min:0}]},
+ {ph:"C",q:"PAS 76 mm Hg. Para 5 años, ¿la PAS mínima aproximada es…?",o:[
+  {t:"70",ok:0,fb:"70 + (2 × 5) = 80.",min:0},{t:"80",ok:1,fb:"Correcto: 70 + (2 × edad) = 80. Está hipotenso → shock DESCOMPENSADO.",min:0},{t:"90",ok:0,fb:"70 + (2 × 5) = 80.",min:0}]},
+ {ph:"C",q:"Dos intentos fallidos de vía periférica en 90 s. ¿Siguiente paso?",o:[
+  {t:"Seguir intentando IV",ok:0,fb:"Tras 2 intentos o 90 s, pasar a intraósea.",min:3},
+  {t:"Acceso intraóseo",ok:1,fb:"Correcto.",min:1}]},
+ {ph:"C",q:"¿Volumen del bolo de cristaloide tibio?",o:[
+  {t:"180 mL (10 mL/kg)",ok:0,fb:"La dosis es 20 mL/kg → 360 mL.",min:0},
+  {t:"360 mL (20 mL/kg)",ok:1,fb:"Correcto: 20 × 18 = 360 mL, tibio, y reevaluar.",eff:{fc:-14,pas:10},min:1},
+  {t:"1 000 mL",ok:0,fb:"Excesivo para 18 kg.",min:0}]},
+ {ph:"E",q:"Le has expuesto para explorarle. ¿Riesgo principal?",o:[
+  {t:"Hipotermia (gran superficie relativa)",ok:1,fb:"Correcto. Cúbrelo y calienta la ambulancia.",eff:{temp:0.3},min:0},
+  {t:"Ninguno",ok:0,fb:"Los niños se enfrían muy rápido.",eff:{temp:-0.5},min:0}]},
+ {ph:"Traslado",q:"¿Destino?",o:[
+  {t:"Centro de trauma pediátrico / con cirugía pediátrica",ok:1,fb:"Correcto. Posible lesión de órgano sólido.",min:0},
+  {t:"Pediatra de atención primaria",ok:0,fb:"Necesita evaluación quirúrgica urgente.",min:0}]}
+ ],
+ debrief:["La taquicardia es el signo precoz; la hipotensión, tardío.","PAS mínima ≈ 70 + 2 × edad.","IO tras 2 intentos o 90 s.","20 mL/kg tibio y reevaluar."]},
+
+{id:"anciano",t:"Anciano anticoagulado tras caída",ic:"👴",lvl:"Básico",reg:["cabeza","pelvis"],ch:[15,8],
+ brief:"Mujer de 84 años, caída en el baño desde su propia altura. Toma bisoprolol y un anticoagulante. Herida frontal, dolor en la cadera derecha, la familia la nota ‘algo confusa’.",
+ v:{fc:70,pas:108,pad:62,fr:20,spo2:94,etco2:36,gcs:14,temp:35.9},
+ steps:[
+ {ph:"C",q:"FC 70, PAS 108 (habitualmente 160). ¿Interpretación?",o:[
+  {t:"Estable, constantes normales",ok:0,fb:"El betabloqueante impide la taquicardia y 108 es hipotensión relativa para ella.",min:0},
+  {t:"Posible shock enmascarado por betabloqueante e hipotensión relativa",ok:1,fb:"Correcto. En el mayor, ‘normal’ puede no serlo.",min:0}]},
+ {ph:"D",q:"Confusión nueva + anticoagulante + golpe en la cabeza…",o:[
+  {t:"Riesgo alto de hemorragia intracraneal: centro con TAC/neurocirugía",ok:1,fb:"Correcto.",min:0},
+  {t:"Demencia previa, no hace falta TAC",ok:0,fb:"La confusión NUEVA es un signo de alarma.",min:0}]},
+ {ph:"E",q:"Pierna derecha acortada y en rotación externa. Tiene cifosis marcada. ¿Cómo la inmovilizas?",o:[
+  {t:"Tabla rígida plana y collarín forzando la alineación",ok:0,fb:"Provoca dolor y úlceras; no respeta su anatomía.",min:2},
+  {t:"Colchón de vacío, acolchar huecos y respetar su postura",ok:1,fb:"Correcto.",min:2}]},
+ {ph:"E",q:"Durante la exploración ves hematomas de distinta antigüedad en los brazos. ¿Qué haces?",o:[
+  {t:"Documentarlo objetivamente y comunicarlo al hospital",ok:1,fb:"Correcto. Considerar maltrato o negligencia y seguir el protocolo local.",min:1},
+  {t:"Ignorarlo, es mayor",ok:0,fb:"El profesional de SEM puede ser el único testigo de la situación en el domicilio.",min:0}]}
+ ],
+ debrief:["Los fármacos enmascaran el shock.","Anticoagulado + TCE = TAC urgente.","Acolchar y adaptar la RME.","Pensar en maltrato."]}
+,
+{id:"embarazo",t:"Embarazada de 32 semanas en colisión de tráfico",ic:"🤰",lvl:"Intermedio",reg:["abdomen","pelvis"],atlas:["abdomen","pelvis"],ch:[11,3,9],
+ brief:"Mujer de 29 años, gestante de 32 semanas, conductora en una colisión frontal a ~60 km/h. Llevaba la banda del cinturón cruzando el abdomen. Refiere dolor abdominal intenso y nota que ‘el vientre está duro’.",
+ v:{fc:114,pas:98,pad:60,fr:24,spo2:95,etco2:32,gcs:15,temp:36.4},
+ steps:[
+ {ph:"C",q:"FC 114 y PAS 98. ¿Cómo lo interpretas?",o:[
+  {t:"Normal: en el embarazo la FC sube y la PA baja",ok:0,fb:"Los cambios fisiológicos explican una parte, pero la embarazada puede perder 1 200–1 500 mL antes de dar signos de shock. Nunca atribuyas la taquicardia solo al embarazo.",min:0},
+  {t:"Posible shock compensado: alto índice de sospecha",ok:1,fb:"Correcto. El aumento de la volemia (~50 %) enmascara la hemorragia; fíjate en la piel, el relleno capilar y el estado mental.",min:0}]},
+ {ph:"C",q:"La colocas en decúbito supino sobre el dispositivo de inmovilización y empieza a marearse: PAS 82, FC 128. ¿Qué haces?",pre:{pas:-16,fc:14},o:[
+  {t:"Inclinar el dispositivo hacia la izquierda o desplazar el útero manualmente hacia la izquierda",ok:1,fb:"Correcto. El útero grávido comprime la vena cava inferior en supino y reduce el retorno venoso. Al liberar la compresión, el gasto cardiaco mejora.",eff:{pas:16,fc:-12},min:1},
+  {t:"Elevar las piernas",ok:0,fb:"No resuelve la compresión de la cava por el útero.",eff:{pas:-4},min:1},
+  {t:"Posición de Trendelenburg",ok:0,fb:"Empeora la compresión aortocava y dificulta la ventilación.",eff:{pas:-6,spo2:-2},min:1}]},
+ {ph:"B",q:"SpO₂ 95 %, FR 24. ¿Oxígeno?",o:[
+  {t:"Sí, para mantener SpO₂ ≥ 94 %: la oxigenación fetal depende de la materna",ok:1,fb:"Correcto. El feto tolera mal la hipoxia materna; oxigena con generosidad.",eff:{spo2:3},min:0},
+  {t:"No hace falta, satura bien",ok:0,fb:"La reserva respiratoria de la embarazada es menor y el feto depende de ella.",min:0}]},
+ {ph:"C",q:"Útero rígido y doloroso, sangrado vaginal oscuro escaso. Sospechas…",o:[
+  {t:"Desprendimiento de placenta",ok:1,fb:"Correcto. Puede causar hemorragia oculta importante dentro del útero aunque el sangrado visible sea escaso.",min:0},
+  {t:"Trabajo de parto normal",ok:0,fb:"Útero rígido y doloroso tras un impacto con sangrado oscuro orienta a desprendimiento.",min:0},
+  {t:"Eclampsia",ok:0,fb:"La eclampsia da hipertensión, alteración neurológica y convulsiones; no es el cuadro.",min:0}]},
+ {ph:"C",q:"La madre se estabiliza con la inclinación lateral. ¿Está el feto fuera de peligro?",o:[
+  {t:"Sí, si la madre está estable el feto también",ok:0,fb:"La madre desvía sangre del útero hacia sus órganos vitales: el feto puede sufrir con constantes maternas ‘normales’.",min:0},
+  {t:"No necesariamente: reanimar bien a la madre es la mejor reanimación fetal",ok:1,fb:"Correcto. Trata agresivamente la hipoxia y la hipovolemia maternas.",min:0}]},
+ {ph:"A",q:"Durante el traslado refiere náuseas. ¿Qué preparas?",o:[
+  {t:"Aspirador listo y posibilidad de lateralizar el dispositivo",ok:1,fb:"Correcto. El vaciamiento gástrico está enlentecido: mayor riesgo de vómito y aspiración.",min:0},
+  {t:"Nada, solo es ansiedad",ok:0,fb:"El riesgo de aspiración en la embarazada es real.",min:0}]},
+ {ph:"Traslado",q:"¿Destino?",o:[
+  {t:"Centro de trauma con obstetricia y neonatología, con prealerta",ok:1,fb:"Correcto. Son dos pacientes: la madre necesita cirugía de trauma y el feto, monitorización y posible cesárea urgente.",min:0},
+  {t:"Hospital más cercano sin obstetricia",ok:0,fb:"No puede atender a la madre y al feto a la vez.",min:0},
+  {t:"Esperar en escena a que se estabilice",ok:0,fb:"No se retrasa el traslado de la embarazada traumatizada.",min:5}]}
+ ],
+ debrief:["La fisiología del embarazo enmascara el shock: sospecha alta.","Desplaza el útero a la izquierda en supino.","El feto puede sufrir con una madre ‘estable’.","Útero rígido + sangrado oscuro = desprendimiento de placenta.","Dos pacientes: centro con trauma y obstetricia."]}
+];
+
+// ====== TRIAJE START ======
+const TRIAGE = [
+ {d:"Mujer joven que camina hacia ti gritando, herida en el brazo.",walk:1,a:"verde"},
+ {d:"Varón tumbado, no respira. Abres la vía aérea: sigue sin respirar.",walk:0,br:0,rep:0,a:"negro"},
+ {d:"Varón tumbado, no respiraba; al abrir la vía aérea empieza a respirar.",walk:0,br:0,rep:1,a:"rojo"},
+ {d:"Mujer tumbada, FR 36/min.",walk:0,br:1,fr:36,a:"rojo"},
+ {d:"Varón, FR 22, sin pulso radial.",walk:0,br:1,fr:22,cap:0,a:"rojo"},
+ {d:"Varón, FR 20, relleno capilar 1 s, no obedece órdenes.",walk:0,br:1,fr:20,cap:1,obey:0,a:"rojo"},
+ {d:"Mujer con fractura de fémur, FR 24, relleno 1,5 s, obedece órdenes.",walk:0,br:1,fr:24,cap:1,obey:1,a:"amarillo"},
+ {d:"Varón de 60 años sentado en el suelo, no puede andar, FR 18, relleno capilar 3 s.",walk:0,br:1,fr:18,cap:0,a:"rojo"},
+ {d:"Varón con quemaduras en las piernas, no puede andar, FR 18, pulso radial presente, obedece.",walk:0,br:1,fr:18,cap:1,obey:1,a:"amarillo"},
+ {d:"Adolescente con cortes leves que ayuda a otros heridos.",walk:1,a:"verde"}
+];
+
+// ====== FIGURA ANATÓMICA SVG (ilustración propia) ======
+function mirror(s){return `<g transform="translate(300,0) scale(-1,1)">${s}</g>`;}
+const SH = {
+ head:`<ellipse cx="150" cy="58" rx="34" ry="42"/>`,
+ neck:`<path d="M134 92 L166 92 L171 126 L129 126 Z"/>`,
+ torso:`<path d="M128 120 Q150 115 172 120 L222 136 Q238 142 238 164 L230 250 Q224 290 210 318 L212 372 Q150 392 88 372 L90 318 Q76 290 70 250 L62 164 Q62 142 78 136 Z"/>`,
+ arm:`<path d="M78 136 Q58 140 54 168 L44 270 Q40 300 36 330 L28 392 Q24 410 36 414 Q48 414 50 398 L60 334 Q66 300 70 266 L80 196 Z"/>`,
+ leg:`<path d="M90 366 Q84 450 94 510 L98 588 Q90 604 76 610 L116 612 Q122 600 120 586 L126 510 Q134 450 148 386 Z"/>`
+};
+const RG = {
+ cabeza:`<ellipse cx="150" cy="58" rx="34" ry="42"/>`,
+ cuello:`<path d="M134 96 L166 96 L171 126 L129 126 Z"/>`,
+ torax:`<path d="M128 120 Q150 115 172 120 L222 136 Q238 142 238 164 L232 240 L68 240 L62 164 Q62 142 78 136 Z"/>`,
+ abdomen:`<path d="M68 240 L232 240 Q226 290 211 320 L89 320 Q74 290 68 240 Z"/>`,
+ pelvis:`<path d="M89 320 L211 320 L212 372 Q150 392 88 372 Z"/>`,
+ extsup: SH.arm + mirror(SH.arm),
+ extinf: SH.leg + mirror(SH.leg)
+};
+function ribs(){let s="";for(let i=0;i<9;i++){const y=146+i*11, w=62-Math.abs(i-3)*3;s+=`<path d="M150 ${y} Q${150-w} ${y-8} ${150-w-8} ${y+14}"/>`+`<path d="M150 ${y} Q${150+w} ${y-8} ${150+w+8} ${y+14}"/>`;}return s;}
+function spine(){let s="";for(let y=96;y<352;y+=10){s+=`<rect x="145" y="${y}" width="10" height="7" rx="2"/>`;}return s;}
+// Mapa de quemaduras (regla de los nueves) — frente y espalda
+const BURN = {
+ adulto:{f:{cab:4.5,bd:4.5,bi:4.5,tro:18,pd:9,pi:9,per:1},b:{cab:4.5,bd:4.5,bi:4.5,tro:18,pd:9,pi:9}},
+ nino:{f:{cab:9,bd:4.5,bi:4.5,tro:18,pd:7,pi:7},b:{cab:9,bd:4.5,bi:4.5,tro:18,pd:7,pi:7}}
+};
+function burnSVG(side){
+ const parts={cab:SH.head+SH.neck,bd:SH.arm,bi:mirror(SH.arm),tro:SH.torso,pd:SH.leg,pi:mirror(SH.leg)};
+ let s=Object.entries(parts).map(([k,v])=>`<g class="bz" data-z="${side}-${k}">${v}</g>`).join("");
+ if(side==="f") s+=`<g class="bz" data-z="f-per"><ellipse cx="150" cy="384" rx="12" ry="9"/></g>`;
+ return `<svg viewBox="0 0 300 620" class="body burn"><g fill="#efd2c0" stroke="#b88a73" stroke-width="1.5">${s}</g><text x="150" y="616" text-anchor="middle" font-size="16" fill="currentColor">${side==="f"?"Frente":"Espalda"}</text></svg>`;
+}
+
+// ====== FIGURA ANATÓMICA v2 (ilustración propia) ======
+const HALF = "M150 22 C176 22 188 42 187 66 C186 86 178 100 168 106 L166 118 C168 126 176 130 188 134 C206 139 220 142 228 150 C238 158 241 172 240 188 C242 214 246 240 248 262 C250 284 256 300 258 320 C262 348 266 372 268 392 C272 402 277 418 275 432 C273 444 265 449 259 445 C254 440 254 428 252 416 C248 398 244 376 240 354 C236 332 232 312 228 292 C226 272 224 250 222 232 C221 222 218 214 214 210 C214 232 212 256 208 276 C206 292 208 306 214 322 C220 340 220 360 216 380 C214 420 210 460 206 500 C204 520 206 540 206 560 C206 584 200 606 196 624 C198 632 210 638 211 645 C200 650 178 650 171 643 C172 630 174 620 172 606 C170 580 168 556 168 534 C168 516 166 500 164 484 C162 450 158 420 154 394 C153 390 152 388 150 388 L147 388 L147 22 Z";
+const M = s => `<g transform="translate(300,0) scale(-1,1)">${s}</g>`;
+const both = s => s + M(s);
+function bodySVG(opts = {}) {
+  const hl = opts.hl || [], id = opts.id || "b";
+  // regiones recortadas al contorno del cuerpo
+  const RB = {
+    cabeza: `<rect x="100" y="0" width="100" height="108"/>`,
+    cuello: `<rect x="120" y="104" width="60" height="32"/>`,
+    torax: `<rect x="86" y="134" width="128" height="118"/>`,
+    abdomen: `<rect x="86" y="252" width="128" height="68"/>`,
+    pelvis: `<rect x="80" y="320" width="140" height="72"/>`,
+    extsup: `<path d="M214 132 L300 132 L300 460 L222 460 L214 300 Z"/>` + M(`<path d="M214 132 L300 132 L300 460 L222 460 L214 300 Z"/>`),
+    extinf: `<rect x="60" y="388" width="180" height="272"/><path d="M150 380 L216 380 L216 392 L150 392 Z"/>`
+  };
+  const regs = Object.entries(RB).map(([k, v]) => `<g class="rg ${hl.includes(k) ? 'hl' : ''}" data-r="${k}" role="button" aria-label="${k}" tabindex="0" clip-path="url(#clip${id})">${v}</g>`).join("");
+  // costillas
+  let ribs = "";
+  for (let i = 0; i < 10; i++) {
+    const y = 150 + i * 10.5, w = [30, 40, 47, 51, 53, 53, 52, 49, 45, 40][i], d = 10 + i * 1.6;
+    ribs += `<path d="M156 ${y} C${150 + w * .6} ${y - 6} ${150 + w + 2} ${y - 1} ${150 + w + 2} ${y + d * .85}"/>`;
+  }
+  let vert = "";
+  for (let y = 108; y < 330; y += 9) vert += `<rect x="${y > 140 && y < 222 ? 146 : 145}" y="${y}" width="${y > 260 ? 11 : 10}" height="7" rx="2"/>`;
+  return `<svg viewBox="40 10 220 650" class="body" id="${id}" xmlns="http://www.w3.org/2000/svg">
+<defs>
+ <clipPath id="clip${id}"><path d="${HALF}"/><path transform="translate(300,0) scale(-1,1)" d="${HALF}"/></clipPath>
+ <linearGradient id="sk${id}" gradientUnits="userSpaceOnUse" x1="40" x2="260" y1="0" y2="0"><stop offset="0" stop-color="#e2ad92"/><stop offset=".5" stop-color="#f7d9c6"/><stop offset="1" stop-color="#e2ad92"/></linearGradient>
+ <radialGradient id="lu${id}" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#f9cfd3"/><stop offset="1" stop-color="#e3909b"/></radialGradient>
+ <radialGradient id="ht${id}" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#e5525e"/><stop offset="1" stop-color="#8e1424"/></radialGradient>
+ <radialGradient id="lv${id}" cx=".4" cy=".3" r=".9"><stop offset="0" stop-color="#b5584a"/><stop offset="1" stop-color="#6b2219"/></radialGradient>
+ <radialGradient id="br${id}" cx=".5" cy=".4" r=".7"><stop offset="0" stop-color="#f8c9d0"/><stop offset="1" stop-color="#df95a3"/></radialGradient>
+</defs>
+<g class="sil"><g fill="url(#sk${id})"><path d="${HALF}"/>${M(`<path d="${HALF}"/>`)}</g>
+ <g fill="none" stroke="#b9805f" stroke-width="1.4" stroke-linejoin="round"><path d="${HALF.replace(/ L147 388 L147 22 Z$/, '')}"/>${M(`<path d="${HALF.replace(/ L147 388 L147 22 Z$/, '')}"/>`)}</g>
+ <g fill="none" stroke="#c99378" stroke-width="1" opacity=".55" stroke-linecap="round">${both('<path d="M154 140 C176 136 196 140 212 146"/><path d="M152 206 C170 214 190 212 204 198"/><path d="M178 520 C186 526 194 526 200 520"/><path d="M232 300 C236 304 240 304 244 300"/>')}<circle cx="150" cy="292" r="2.2"/><path d="M150 230 L150 286"/></g>
+</g>
+<g class="L L-org" stroke-width="1">
+ <path d="M150 30 C170 30 180 44 180 62 C180 80 168 92 150 92 C132 92 120 80 120 62 C120 44 130 30 150 30 Z" fill="url(#br${id})" stroke="#b46b7a"/>
+ <path d="M150 32 L150 90 M134 42 c8 6 2 12 8 18 s-6 12 2 20 M128 62 c6 -2 8 4 14 2 M166 42 c-8 6 -2 12 -8 18 s6 12 -2 20 M172 62 c-6 -2 -8 4 -14 2" fill="none" stroke="#b46b7a" stroke-width=".9"/>
+ <path d="M146 108 h8 v48 h-8 z" fill="#cfe2ec" stroke="#7d9fb3"/>
+ <path d="M146 114 h8 M146 120 h8 M146 126 h8 M146 132 h8 M146 138 h8 M146 144 h8 M146 150 h8" stroke="#7d9fb3" stroke-width=".8"/>
+ <path d="M144 154 C128 146 106 158 98 184 C90 210 90 236 95 254 C112 260 132 256 146 246 C148 220 148 180 144 154 Z" fill="url(#lu${id})" stroke="#bf7480"/>
+ <path d="M156 154 C172 146 194 158 202 184 C210 210 210 236 205 254 C192 260 178 258 170 252 C170 238 162 228 158 216 C156 196 156 172 156 154 Z" fill="url(#lu${id})" stroke="#bf7480"/>
+ <path d="M100 214 C114 206 130 206 145 200 M96 236 C112 228 128 226 142 214 M204 204 C190 214 176 222 164 238" fill="none" stroke="#bf7480" stroke-width=".8"/>
+ <path d="M150 158 L150 166 M150 166 L136 178 M150 166 L164 178 M136 178 L126 196 M136 178 L132 200 M164 178 L174 196 M164 178 L168 200" fill="none" stroke="#9cb9c9" stroke-width="2.2" stroke-linecap="round"/>
+ <path d="M152 196 C140 190 132 200 136 214 C140 230 156 244 172 248 C180 236 186 220 180 206 C174 194 162 190 152 196 Z" fill="url(#ht${id})" stroke="#6d0f1b"/>
+ <path d="M160 200 C166 214 168 230 166 244" fill="none" stroke="#6d0f1b" stroke-width=".8" opacity=".6"/>
+ <path d="M92 254 C110 246 150 248 178 256 C172 270 152 282 128 288 C108 292 96 282 92 268 Z" fill="url(#lv${id})" stroke="#4d1610"/>
+ <ellipse cx="138" cy="284" rx="5" ry="7" fill="#7aa34a" stroke="#4d6b2a"/>
+ <path d="M168 258 C186 248 207 254 209 272 C211 292 197 305 179 301 C168 299 160 292 156 285 C167 283 175 276 171 266 Z" fill="#eab08c" stroke="#a96f4c"/>
+ <ellipse cx="211" cy="268" rx="7" ry="15" transform="rotate(18 211 268)" fill="#7e3156" stroke="#4f1a35"/>
+ <ellipse cx="122" cy="302" rx="8" ry="15" fill="none" stroke="#8c4430" stroke-dasharray="3 2" stroke-width="1.2"/>
+ <ellipse cx="178" cy="302" rx="8" ry="15" fill="none" stroke="#8c4430" stroke-dasharray="3 2" stroke-width="1.2"/>
+ <path d="M118 312 C130 306 170 306 184 312 C188 330 184 348 176 356 C160 362 140 362 124 356 C114 346 112 328 118 312 Z" fill="#f2c7aa" stroke="#c2906d"/>
+ <path d="M124 318 c8 -6 14 6 22 0 s14 6 22 0 s10 6 16 0 M122 330 c8 -6 14 6 22 0 s14 6 22 0 s12 6 18 0 M124 342 c8 -6 14 6 22 0 s14 6 22 0 s10 6 14 0" fill="none" stroke="#c2906d" stroke-width=".9"/>
+ <path d="M114 360 C108 340 106 318 110 300 C130 294 172 294 192 300 C196 318 196 340 192 356 C186 366 172 368 160 368" fill="none" stroke="#d99c74" stroke-width="7" stroke-linecap="round" opacity=".9"/>
+ <ellipse cx="150" cy="376" rx="14" ry="9" fill="#f1dc85" stroke="#ad9535"/>
+</g>
+<g class="L L-esq" fill="#f4efe6" stroke="#b8a68c" stroke-width=".8" opacity=".85">
+ <path d="M150 28 C172 28 184 44 184 64 C184 80 178 90 170 96 L168 108 C160 114 140 114 132 108 L130 96 C122 90 116 80 116 64 C116 44 128 28 150 28 Z" fill-opacity=".35"/>
+ <ellipse cx="139" cy="66" rx="7" ry="6" fill="#7d6d5c" fill-opacity=".6"/><ellipse cx="161" cy="66" rx="7" ry="6" fill="#7d6d5c" fill-opacity=".6"/><path d="M150 72 L146 82 L154 82 Z" fill="#7d6d5c" fill-opacity=".6"/>
+ <path d="M136 96 h28 M138 100 h24" stroke="#b8a68c" fill="none"/>
+ <g>${vert}</g>
+ <g fill="none" stroke="#efe6d6" stroke-width="3.2" stroke-linecap="round">${both(ribs)}</g>
+ <g fill="none" stroke="#b8a68c" stroke-width=".6" opacity=".7">${both(ribs)}</g>
+ <path d="M145 146 h10 l2 8 l-2 62 l-5 8 l-5 -8 l-2 -62 z"/>
+ ${both('<path d="M153 142 C172 136 196 138 216 148 L216 152 C196 144 172 142 154 147 Z"/>')}
+ ${both('<path d="M157 336 C168 324 190 316 204 324 C208 338 202 352 190 360 C180 367 170 372 160 376 L156 366 C161 358 160 346 157 336 Z" fill-opacity=".6"/><ellipse cx="166" cy="368" rx="4" ry="5" fill="#d9b9a2" fill-opacity=".7"/>')}
+ <path d="M144 330 h12 l-2 26 l-4 6 l-4 -6 z" fill-opacity=".6"/>
+ ${both('<path d="M222 156 C230 156 232 162 230 168 L240 296 C242 302 236 304 234 300 L224 168 C218 166 218 158 222 156 Z"/><path d="M236 302 L252 394 L256 393 L241 301 Z"/><path d="M240 300 L262 390 L266 389 L245 299 Z"/><path d="M254 398 l14 -3 l6 24 l-6 14 l-8 -2 z" fill-opacity=".7"/>')}
+ ${both('<circle cx="190" cy="378" r="7"/><path d="M190 380 C196 386 200 392 198 400 L194 512 C196 520 186 522 184 514 L186 400 Z"/><ellipse cx="190" cy="524" rx="7" ry="8"/><path d="M182 532 L184 620 L190 620 L190 532 Z"/><path d="M196 534 L196 616 L199 616 L200 534 Z"/><path d="M180 624 l14 0 l10 16 l-26 2 z" fill-opacity=".7"/>')}
+</g>
+<g class="L L-vas" fill="none" stroke-linecap="round" stroke-linejoin="round">
+ <g stroke="#c8102e" stroke-width="3">
+  <path d="M160 204 C160 186 158 174 151 173 C144 172 141 180 145 188"/><path d="M152 190 L152 328" opacity=".75"/>
+  ${both('<path d="M152 328 L166 372 C170 400 176 440 180 480 C182 500 184 516 186 532 L186 604 L186 636"/><path d="M148 176 C154 170 172 152 196 150 C210 150 216 158 220 172 C226 200 230 240 234 290 C238 320 246 360 254 392 L262 420"/><path d="M146 176 L142 106"/>')}
+ </g>
+ <g stroke="#c8102e" stroke-width="1.6">${both('<path d="M152 300 L172 302"/><path d="M234 296 C240 330 246 360 248 380"/><path d="M186 534 C192 560 196 590 196 616"/>')}</g>
+</g>
+<g class="L L-pts">
+ <g class="pt pulse">${both('<circle cx="142" cy="120" r="4.5"/><circle cx="253" cy="388" r="4.5"/><circle cx="168" cy="386" r="4.5"/>')}</g>
+ <g class="pt junc" fill-opacity=".85">${both('<circle cx="218" cy="176" r="7"/><circle cx="166" cy="378" r="8"/>')}</g>
+ <g class="pt tq">${both('<rect x="222" y="206" width="22" height="7" rx="3" transform="rotate(-6 233 209)"/><rect x="156" y="410" width="58" height="8" rx="3" transform="rotate(4 185 414)"/>')}</g>
+ <g class="pt nd"><circle cx="203" cy="228" r="4.5"/><circle cx="178" cy="166" r="4.5"/></g>
+</g>
+<g class="regs">${regs}</g>
+</svg>`;
+}
+
+// ====== APP ======
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const PH={X:"var(--x)",A:"var(--a)",B:"var(--b)",C:"var(--c)",D:"var(--d)",E:"var(--e)",Escena:"#64748b",Traslado:"#334155"};
+const ST={get(k,d){try{const v=localStorage.getItem("phtls_"+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("phtls_"+k,JSON.stringify(v))}catch(e){}}};
+const R={};
+const CH_ATLAS={3:['vasos','torax'],4:['torax','abdomen'],6:['vasos'],7:['cuello'],8:['cabeza'],9:['columna'],10:['torax'],11:['abdomen'],12:['extinf','pelvis','extsup'],13:['piel'],14:['abdomen','cabeza'],15:['pelvis','cabeza'],18:['torax'],19:['piel'],22:['vasos','extinf']};
+let pending=null;
+function goThen(v,fn){pending=fn;if(location.hash!=="#"+v)location.hash=v;else show(v)}
+const prog={ch:ST.get("ch",{}),cs:ST.get("cs",{}),qz:ST.get("qz",0)};
+function saveProg(){ST.set("ch",prog.ch);ST.set("cs",prog.cs);ST.set("qz",prog.qz)}
+
+const VIEWS=[["inicio","🏠","Inicio"],["taller","🚑","Taller"],["anatomia","🫀","Anatomía"],["capitulos","📘","Capítulos"],["herramientas","🧮","Herramientas"],["repaso","✅","Repaso"]];
+function buildNav(){
+ $("#tabs").innerHTML=VIEWS.map(([k,,l])=>`<button data-v="${k}">${l}</button>`).join("");
+ $("#bnav").innerHTML=VIEWS.map(([k,i,l])=>`<button data-v="${k}"><span>${i}</span>${l}</button>`).join("");
+ $$("[data-v]").forEach(b=>b.onclick=()=>go(b.dataset.v));
+}
+function go(v){ if(location.hash!=="#"+v) location.hash=v; else show(v); }
+function show(v){
+ if(v!=="taller"&&typeof stopSim==="function")stopSim();
+ if(!VIEWS.find(x=>x[0]===v)) v="inicio";
+ $$(".view").forEach(s=>s.classList.toggle("on",s.id==="v-"+v));
+ $$("[data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+ window.scrollTo(0,0); if(pending){const p=pending;pending=null;p();return} const r=R[v]; if(r) r();
+}
+window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+
+// ---------- MEDIOS DEL USUARIO (IndexedDB) ----------
+const DB={db:null,
+ open(){return new Promise(res=>{try{const q=indexedDB.open("phtls_media",1);q.onupgradeneeded=()=>q.result.createObjectStore("m",{keyPath:"id",autoIncrement:true}).createIndex("k","k");q.onsuccess=()=>{this.db=q.result;res(true)};q.onerror=()=>res(false)}catch(e){res(false)}})},
+ async list(k){if(!this.db&&!(await this.open()))return[];return new Promise(res=>{try{const t=this.db.transaction("m").objectStore("m").index("k").getAll(k);t.onsuccess=()=>res(t.result);t.onerror=()=>res([])}catch(e){res([])}})},
+ async add(k,f){if(!this.db&&!(await this.open()))return false;return new Promise(res=>{try{const t=this.db.transaction("m","readwrite");t.objectStore("m").add({k,name:f.name,type:f.type,blob:f});t.oncomplete=()=>res(true);t.onerror=()=>res(false)}catch(e){res(false)}})},
+ async del(id){return new Promise(res=>{try{const t=this.db.transaction("m","readwrite");t.objectStore("m").delete(id);t.oncomplete=()=>res(true)}catch(e){res(false)}})}
+};
+const tmpMedia={}; // si IndexedDB no está disponible
+function mediaBox(key,label){
+ return `<div class="media" data-mk="${key}"><div class="row"><b>📷 Fotos y vídeos reales</b><span class="small mute">${label||"Añade imágenes de tu banco docente (anatomía, casos, técnicas)."}</span></div>
+ <label class="btn" style="margin-top:8px">➕ Añadir foto o vídeo<input type="file" accept="image/*,video/*" multiple hidden></label>
+ <div class="thumbs"></div></div>`;
+}
+async function wireMedia(root){
+ for(const box of $$(".media",root)){
+  const k=box.dataset.mk, inp=$("input",box), th=$(".thumbs",box);
+  const render=async()=>{
+   let items=await DB.list(k); if(!DB.db) items=tmpMedia[k]||[];
+   th.innerHTML=""; if(!items.length){th.innerHTML=`<div class="small mute">Aún no hay medios en esta estación.</div>`;return}
+   items.forEach(it=>{const u=URL.createObjectURL(it.blob);const f=document.createElement("figure");
+    f.innerHTML=(it.type||"").startsWith("video")?`<video src="${u}" muted playsinline></video>`:`<img src="${u}" alt="${it.name}">`;
+    f.firstChild.onclick=()=>openLB(u,it.type);
+    const x=document.createElement("button");x.textContent="✕";x.title="Quitar";x.onclick=async()=>{if(DB.db)await DB.del(it.id);else tmpMedia[k]=tmpMedia[k].filter(z=>z!==it);render()};
+    f.appendChild(x);th.appendChild(f)});
+  };
+  inp.onchange=async()=>{for(const f of inp.files){const ok=await DB.add(k,f);if(!ok){(tmpMedia[k]=tmpMedia[k]||[]).push({k,name:f.name,type:f.type,blob:f})}}inp.value="";render()};
+  render();
+ }
+}
+function openLB(u,type){const lb=$("#lb");lb.innerHTML=`<button class="lbx">✕</button>`+((type||"").startsWith("video")?`<video src="${u}" controls autoplay playsinline></video>`:`<img src="${u}" title="Toca para acercar">`);lb.classList.add("on");
+ const close=()=>{lb.classList.remove("on","zm");lb.innerHTML=""};$(".lbx",lb).onclick=close;const im=$("img",lb);if(im)im.onclick=e=>{e.stopPropagation();lb.classList.toggle("zm")};lb.onclick=e=>{if(e.target===lb)close()}}
+
+// ---------- ATLAS ----------
+const GAL_N={cabeza:'Cabeza',cuello:'Cuello',torax:'Tórax',abdomen:'Abdomen',pelvis:'Pelvis',extsup:'Ext. superior',extinf:'Ext. inferior',columna:'Columna',piel:'Piel y quemaduras',vasos:'Vasos'};
+function atlasBox(regs){const L=regs.flatMap(r=>GRAY[r]||[]);if(!L.length)return"";
+ return `<div class="atlas"><div class="row" style="justify-content:space-between"><b>🖼️ Láminas de atlas abiertos</b><span class="small mute">${L.length} láminas · OpenStax y Gray's</span></div>
+ <figure class="main"><img src="${L[0].u}" alt="${L[0].c}"><figcaption>${capOf(L[0])}</figcaption></figure>
+ <div class="strip">${L.map((x,i)=>`<img src="${x.u}" loading="lazy" data-i="${i}" class="${i?'':'on'}" alt="${x.c}">`).join("")}</div></div>`}
+function capOf(x){return `${x.c}<div class="small mute" style="font-weight:400">${x.s==="Gray"?"Gray's Anatomy (1918) · dominio público":"OpenStax, <i>Anatomy and Physiology</i> · CC BY-NC-SA 4.0"+(x.cr?" · "+x.cr:"")} · toca para ampliar</div>`}
+function wireAtlas(root,regs){const L=regs.flatMap(r=>GRAY[r]||[]);const a=$(".atlas",root);if(!a)return;const m=$(".main img",a),c=$(".main figcaption",a);
+ $$(".strip img",a).forEach(t=>t.onclick=()=>{const x=L[+t.dataset.i];m.src=x.u;m.alt=x.c;c.innerHTML=capOf(x);$$(".strip img",a).forEach(z=>z.classList.toggle("on",z===t))});
+ m.onclick=()=>openLB(m.src,"image")}
+
+// ---------- INICIO ----------
+const ABC={X:["Hemorragia eXsanguinante","Busca y controla primero el sangrado externo masivo: torniquete, empaquetamiento con gasa hemostática, presión directa, faja pélvica."],
+ A:["Vía aérea (Airway)","¿Habla? Permeable. Si no: tracción mandibular, aspiración, cánulas, supraglótico o intubación con capnografía. Restricción cervical si el mecanismo lo indica."],
+ B:["Ventilación (Breathing)","FR, trabajo respiratorio, SpO₂ ≥ 94 %, simetría del murmullo. Trata neumotórax a tensión (descompresión) y heridas abiertas (apósito oclusivo)."],
+ C:["Circulación","Pulso (radial/carotídeo), piel, relleno capilar, otras hemorragias (tórax, abdomen, pelvis, fémur). Hipotensión permisiva salvo TCE."],
+ D:["Discapacidad neurológica","AVDN o GCS, pupilas, movilidad de las 4 extremidades, glucemia."],
+ E:["Exposición / Entorno","Desvestir para ver todas las lesiones y luego proteger del frío: la hipotermia mata al traumatizado."]};
+R.inicio=()=>{
+ const nc=Object.keys(prog.ch).length, ns=Object.keys(prog.cs).length;
+ $("#v-inicio").innerHTML=`
+ <div class="hero"><svg class="ekg" viewBox="0 0 400 80"><path d="M0 50 H120 l10 -6 l8 6 h14 l6 -40 l8 64 l6 -24 h22 l10 -8 l10 8 H400" fill="none" stroke="#fff" stroke-width="3"/></svg>
+  <span class="chip" style="background:#ffffff22;color:#fff">Soporte vital prehospitalario en trauma · 10.ª ed.</span>
+  <h1>Aprende PHTLS practicando</h1>
+  <p>Estaciones de simulación con monitor en tiempo real, anatomía interactiva y los 22 capítulos resumidos para estudiar en minutos.</p>
+  <div class="row"><button class="btn pri" onclick="go('taller')">🚑 Empezar simulación</button><button class="btn" onclick="go('anatomia')">🫀 Explorar anatomía</button></div>
+  <div class="stats"><div class="stat"><b>${nc}/22</b>capítulos</div><div class="stat"><b>${ns}/${CASES.length}</b>simulaciones</div><div class="stat"><b>${prog.qz}%</b>mejor test</div></div>
+ </div>
+ <div class="spacer"></div>
+ <div class="card"><h2>La evaluación primaria: XABCDE</h2><p class="mute small">Toca cada letra. Trata cada problema en cuanto lo encuentres, en este orden.</p>
+  <div class="abc">${Object.keys(ABC).map(k=>`<button data-k="${k}" style="background:${PH[k]}">${k}</button>`).join("")}</div>
+  <div id="abcInfo" class="sec r" style="margin-top:12px"></div></div>
+ <div class="spacer"></div>
+ <div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🖼️ Atlas de anatomía</h2><button class="btn" onclick="go('anatomia')">Ver las ${Object.values(GRAY).flat().length} láminas</button></div><p class="small mute">Láminas de OpenStax <i>Anatomy and Physiology</i> y Gray's Anatomy (1918), integradas en cada región, capítulo y estación.</p>
+ <div class="homegal">${[GRAY.torax[1],GRAY.cabeza[0],GRAY.torax[4],GRAY.extinf[0],GRAY.pelvis[0],GRAY.piel[0]].map(x=>`<img src="${x.u}" loading="lazy" alt="${x.c}" onclick="openLB(this.src,'image')">`).join("")}</div></div>
+ <div class="spacer"></div>
+ <div class="grid g3">
+  <div class="card"><h3>🚑 Taller de simulación</h3><p class="small mute">${CASES.length} estaciones clínicas + triaje START. Cada decisión cambia las constantes y consume tiempo en escena.</p><button class="btn" onclick="go('taller')">Abrir</button></div>
+  <div class="card"><h3>🫀 Anatomía aplicada</h3><p class="small mute">Capas de esqueleto, órganos y vasos; zonas de torniquete, puntos de unión y de descompresión. Sube tus fotos y vídeos.</p><button class="btn" onclick="go('anatomia')">Abrir</button></div>
+  <div class="card"><h3>🧮 Calculadoras</h3><p class="small mute">GCS, clases de shock, índice de shock, quemados (regla de los 9, Parkland, Brooke, regla de 10), pediatría y cronómetro de torniquete.</p><button class="btn" onclick="go('herramientas')">Abrir</button></div>
+ </div>`;
+ const info=k=>{$$(".abc button").forEach(b=>b.classList.toggle("on",b.dataset.k===k));const [t,d]=ABC[k];const el=$("#abcInfo");el.style.borderColor=PH[k];el.innerHTML=`<h4>${k} · ${t}</h4><div>${d}</div>`};
+ $$(".abc button").forEach(b=>b.onclick=()=>info(b.dataset.k)); info("X");
+};
+
+// ---------- ANATOMÍA ----------
+let anatSel="torax";
+R.anatomia=()=>{
+ $("#v-anatomia").innerHTML=`<h2>Anatomía aplicada al trauma</h2><p class="mute small">Toca una región del cuerpo (o la columna). Activa capas para ver qué hay debajo.</p>
+ <div class="anat"><div class="card">
+  <div class="layers">${[["esq","🦴 Esqueleto"],["org","🫁 Órganos"],["vas","🩸 Arterias"],["pts","📍 Puntos clave"]].map(([k,l],i)=>`<button class="tog ${k==='org'?'on':''}" data-l="${k}">${l}</button>`).join("")}</div>
+  ${bodySVG({id:"anatBody"})}
+  <div class="legend" id="lgd"><span><i style="background:#2563eb"></i>Pulsos</span><span><i style="background:#f4a100"></i>Zonas de unión</span><span><i style="background:#111"></i>Torniquete</span><span><i style="background:#10b981"></i>Descompresión</span></div>
+  <div class="row" style="margin-top:8px"><button class="btn" id="btnCol">🦴 Columna</button></div>
+ </div><div class="card" id="regInfo"></div></div>
+ <div class="spacer"></div><div class="card"><h2>📚 Atlas completo</h2><p class="small mute">Todas las láminas por región. Toca una para ampliarla.</p>
+ <div class="seg" id="galF"><button data-f="all" class="on">Todas</button>${Object.keys(GAL_N).map(k=>`<button data-f="${k}">${GAL_N[k]}</button>`).join("")}</div><div class="gal" id="gal"></div></div>`;
+ const drawGal=f=>{const ks=f==="all"?Object.keys(GAL_N):[f];$("#gal").innerHTML=ks.flatMap(k=>(GRAY[k]||[]).map(x=>`<figure><img src="${x.u}" loading="lazy" alt="${x.c}" data-u="${x.u}"><figcaption>${x.c}<span>${x.s==="Gray"?"Gray 1918":"OpenStax"}</span></figcaption></figure>`)).join("");$$("#gal img").forEach(i=>i.onclick=()=>openLB(i.dataset.u,"image"))};
+ $$("#galF button").forEach(b=>b.onclick=()=>{$$("#galF button").forEach(x=>x.classList.toggle("on",x===b));drawGal(b.dataset.f)});drawGal("all");
+ const svg=$("#anatBody");
+ const setL=()=>{$$(".tog").forEach(t=>{$(".L-"+t.dataset.l,svg).classList.toggle("off",!t.classList.contains("on"))});$("#lgd").style.display=$('.tog[data-l="pts"]').classList.contains("on")?"flex":"none"};
+ $$(".tog").forEach(t=>t.onclick=()=>{t.classList.toggle("on");setL()}); setL();
+ $$("[data-r]",svg).forEach(g=>{g.onclick=()=>pickReg(g.dataset.r,1);g.onkeydown=e=>{if(e.key==="Enter")pickReg(g.dataset.r,1)}});
+ $("#btnCol").onclick=()=>{pickReg("columna",1);const t=$('.tog[data-l="esq"]');if(!t.classList.contains("on")){t.classList.add("on");setL()}};
+ pickReg(anatSel);
+};
+function pickReg(k,user){
+ anatSel=k; const r=REGIONS[k]; $$("#anatBody .rg").forEach(g=>g.classList.toggle("sel",g.dataset.r===k));
+ const ch=CHAPTERS.find(c=>c.n===r.ch); const cs=CASES.filter(c=>c.reg.includes(k));
+ $("#regInfo").innerHTML=`<span class="chip">Región</span><h2>${r.t}</h2>
+ ${atlasBox([k])}
+ <div class="sec b"><h4>Anatomía clave</h4><ul class="clean">${r.anat.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+ <div class="sec r"><h4>Lesiones que amenazan la vida</h4><ul class="clean">${r.les.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+ <div class="sec a"><h4>Qué buscar</h4><ul class="clean">${r.sig.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+ <div class="sec g"><h4>Qué hacer (PHTLS)</h4><ul class="clean">${r.acc.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+ <div class="row"><button class="btn" onclick="openCh(${r.ch})">📘 Cap. ${r.ch}: ${ch.t}</button>${cs.map(c=>`<button class="btn" onclick="startCase('${c.id}')">${c.ic} Simular</button>`).join("")}</div>
+ ${mediaBox("reg-"+k,"Ej.: láminas de anatomía, fotos de disección, ecografía, técnica en maniquí.")}`;
+ wireMedia($("#regInfo")); wireAtlas($("#regInfo"),[k]);
+ if(user&&innerWidth<760) $("#regInfo").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+// ---------- CAPÍTULOS ----------
+R.capitulos=()=>{
+ let h=`<h2>Los 22 capítulos en resumen</h2><p class="mute small">Cada ficha tiene ideas clave, perlas, números que debes saber y un mini-test.</p><div class="chl">`;
+ let last=0;
+ CHAPTERS.forEach(c=>{if(c.d!==last){h+=`<div class="divh">División ${c.d} · ${DIVS[c.d]}</div>`;last=c.d}
+  const th=CH_ATLAS[c.n]&&GRAY[CH_ATLAS[c.n][0]][0];
+  h+=`<div class="card chi" onclick="openCh(${c.n})">${th?`<img class="chth" src="${th.u}" loading="lazy" alt="">`:`<div class="n">${c.n}</div>`}<div><b>${c.n}. ${c.ic} ${c.t}</b><div class="small mute">${c.res[0].slice(0,90)}…</div></div><div class="tick">${prog.ch[c.n]?"✓":""}</div></div>`});
+ $("#v-capitulos").innerHTML=h+"</div>";
+};
+function openCh(n){goThen("capitulos",()=>renderCh(n))}
+function renderCh(n){{
+ const c=CHAPTERS.find(x=>x.n===n); const cs=CASES.filter(k=>k.ch.includes(n));
+ $("#v-capitulos").innerHTML=`<button class="btn" onclick="R.capitulos()">← Todos los capítulos</button><div class="spacer"></div>
+ <div class="card"><span class="chip">Capítulo ${c.n} · ${DIVS[c.d]}</span><h1>${c.ic} ${c.t}</h1>
+ <div class="sec b"><h4>Lo esencial</h4><ul class="clean">${c.res.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+ <div class="sec r"><h4>Perlas clínicas</h4><ul class="clean">${c.per.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+ <div class="sec a"><h4>Números que debes saber</h4><div class="nums">${c.num.map(x=>`<span>${x}</span>`).join("")}</div></div>
+ <div class="row">${c.reg?`<button class="btn" onclick="anatSel='${c.reg}';go('anatomia')">🫀 Ver anatomía</button>`:""}${cs.map(k=>`<button class="btn" onclick="startCase('${k.id}')">${k.ic} ${k.t}</button>`).join("")}</div></div>
+ ${CH_ATLAS[n]?`<div class="spacer"></div><div class="card" id="chAtlas">${atlasBox(CH_ATLAS[n])}</div>`:""}
+ <div class="spacer"></div><div class="card"><h3>Mini-test</h3><div id="chq"></div></div>`;
+ if(CH_ATLAS[n]) wireAtlas($("#chAtlas"),CH_ATLAS[n]);
+ runQuiz($("#chq"),c.q,()=>{prog.ch[n]=1;saveProg()},false);
+ window.scrollTo(0,0)}
+}
+
+// ---------- QUIZ GENÉRICO ----------
+function runQuiz(el,qs,onDone,record){
+ let i=0,ok=0;
+ const draw=()=>{
+  if(i>=qs.length){const p=Math.round(ok/qs.length*100);el.innerHTML=`<div class="big">${p}%</div><p>${ok} de ${qs.length} correctas. ${p>=80?"¡Excelente!":"Repasa las perlas y vuelve a intentarlo."}</p><button class="btn" id="qr">↻ Repetir</button>`;$("#qr",el).onclick=()=>{i=0;ok=0;draw()};onDone&&onDone(p);return}
+  const q=qs[i];
+  el.innerHTML=`<div class="prog"><i style="width:${i/qs.length*100}%"></i></div><p class="small mute">Pregunta ${i+1} de ${qs.length}${q.cap?` · Cap. ${q.cap}`:""}</p><b>${q.p}</b><div class="opts">${q.o.map((o,j)=>`<button class="opt" data-j="${j}">${o}</button>`).join("")}</div><div id="qfb"></div>`;
+  $$(".opt",el).forEach(b=>b.onclick=()=>{const j=+b.dataset.j;$$(".opt",el).forEach(x=>x.disabled=true);
+   const good=j===q.a; if(good)ok++; b.classList.add(good?"good":"bad"); $$(".opt",el)[q.a].classList.add("good");
+   $("#qfb",el).innerHTML=`<div class="fb ${good?"good":"bad"}">${good?"✔ Correcto. ":"✘ "}${q.e}</div><div class="spacer"></div><button class="btn dark" id="qn">Siguiente →</button>`;
+   $("#qn",el).onclick=()=>{i++;draw()}});
+ }; draw();
+}
+
+// ---------- REPASO ----------
+R.repaso=()=>{
+ const all=CHAPTERS.flatMap(c=>c.q.map(q=>({...q,cap:c.n})));
+ $("#v-repaso").innerHTML=`<h2>Repaso y autoevaluación</h2>
+ <div class="grid g2"><div class="card"><h3>Test aleatorio</h3><div class="row"><select id="qsel"><option value="0">Todos los capítulos</option>${CHAPTERS.map(c=>`<option value="${c.n}">Cap. ${c.n} · ${c.t}</option>`).join("")}</select><button class="btn pri" id="qgo">Empezar</button></div><div class="spacer"></div><div id="qbox" class="small mute">${all.length} preguntas en el banco. Tu mejor nota: ${prog.qz}%.</div></div>
+ <div class="card"><h3>🧾 Chuleta: números clave</h3><div style="max-height:420px;overflow:auto">${CHAPTERS.map(c=>`<div class="small" style="margin:6px 0"><b>${c.n}. ${c.t}</b><div class="nums" style="margin-top:4px">${c.num.map(x=>`<span>${x}</span>`).join("")}</div></div>`).join("")}</div></div></div>`;
+ $("#qgo").onclick=()=>{const n=+$("#qsel").value;let pool=n?all.filter(q=>q.cap===n):all;pool=pool.sort(()=>Math.random()-.5).slice(0,10);
+  runQuiz($("#qbox"),pool,p=>{if(!n&&p>prog.qz){prog.qz=p;saveProg()}})};
+};
+
+// ---------- TALLER ----------
+R.taller=()=>{
+ $("#v-taller").innerHTML=`<h2>Taller de simulación</h2><p class="mute small">Elige una estación. Lee el caso, observa el monitor y decide. Cada acción consume tiempo; los errores empeoran al paciente. El objetivo: ≤ 10 min en escena con el paciente crítico.</p>
+ <div class="cases">${CASES.map(c=>`<div class="card case" onclick="startCase('${c.id}')"><div class="ic">${c.ic}</div>${prog.cs[c.id]!=null?`<div class="done">✓ ${prog.cs[c.id]}%</div>`:""}<h3>${c.t}</h3><div class="row"><span class="chip">${c.lvl}</span><span class="chip">Cap. ${c.ch.join(", ")}</span></div><p class="small mute">${c.brief.slice(0,110)}…</p></div>`).join("")}
+ <div class="card case" onclick="startTriage()"><div class="ic">🚨</div>${prog.cs.triage!=null?`<div class="done">✓ ${prog.cs.triage}%</div>`:""}<h3>Múltiples víctimas: triaje START</h3><div class="row"><span class="chip">Básico</span><span class="chip">Cap. 5, 17</span></div><p class="small mute">Explosión en un mercado: clasifica a 10 víctimas lo más rápido posible.</p></div></div>`;
+};
+let SIM=null, raf=null;
+function startCase(id){goThen("taller",()=>runCase(id))}
+function runCase(id){{
+ const c=CASES.find(x=>x.id===id);
+ SIM={c,v:{...c.v},i:-1,t:0,first:0,miss:false};
+ $("#v-taller").innerHTML=`<button class="btn" onclick="stopSim();R.taller()">← Estaciones</button><div class="spacer"></div>
+ <div class="sim"><div>
+  <div class="monitor"><div class="mon-top"><span>MONITOR · ${c.ic}</span><span id="clk">⏱ 00:00</span></div>
+   <canvas class="wave" id="wEcg"></canvas><canvas class="wave" id="wPl" style="height:36px"></canvas>
+   <div class="vgrid" id="vit"></div>
+   <div class="golden">Tiempo en escena (objetivo ≤ 10 min)<div class="bar"><i id="gbar"></i></div></div></div>
+  <div class="card" style="margin-top:12px;padding:10px">${bodySVG({id:"simBody",hl:c.reg})}</div>
+ </div><div><div class="card" id="stage"></div>${mediaBox("case-"+id,"Añade la foto o el vídeo de la estación (maniquí, imagen real, técnica).")}</div></div>`;
+ $$("#simBody .L").forEach(l=>{if(!l.classList.contains("L-org")&&!l.classList.contains("L-esq"))l.classList.add("off")});
+ $("#simBody .L-esq").classList.add("off");
+ wireMedia($("#v-taller")); drawVit(); startWaves(); stageIntro(); window.scrollTo(0,0)}
+}
+function stopSim(){cancelAnimationFrame(raf);SIM=null}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function applyEff(e){if(!e)return;const v=SIM.v;for(const k in e){v[k]=+(v[k]+e[k]).toFixed(1)}
+ v.fc=clamp(v.fc,30,190);v.pas=clamp(v.pas,40,220);v.pad=clamp(Math.round(v.pas*0.62),25,130);v.fr=clamp(v.fr,4,50);v.spo2=clamp(v.spo2,60,100);v.etco2=clamp(v.etco2,12,70);v.gcs=clamp(v.gcs,3,15);v.temp=clamp(v.temp,30,39)}
+function drawVit(){const v=SIM.v,pam=Math.round((v.pas+2*v.pad)/3);
+ const box=(l,val,c,al,u="")=>`<div class="vb ${al?"alarm":""}"><small>${l}</small><b class="${c}">${val}</b><small>${u}</small></div>`;
+ $("#vit").innerHTML=box("FC",v.fc,"c-hr",v.fc>120||v.fc<50,"lpm")+box("SpO₂",Math.round(v.spo2),"c-sp",v.spo2<94,"%")+box("PA",`${v.pas}/${v.pad}`,"c-bp",v.pas<90,`PAM ${pam}`)+box("EtCO₂",Math.round(v.etco2),"c-co",v.etco2<30||v.etco2>45,"mm Hg")+box("FR",v.fr,"c-rr",v.fr>30||v.fr<10,"rpm")+box("GCS",v.gcs,"c-gcs",v.gcs<=8,`T ${v.temp.toFixed(1)} °C`);
+ const m=Math.floor(SIM.t),s=Math.round((SIM.t-m)*60);$("#clk").textContent=`⏱ ${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+ $("#gbar").style.width=Math.min(100,SIM.t/12*100)+"%";}
+function startWaves(){
+ const ce=$("#wEcg"),cp=$("#wPl");[ce,cp].forEach(c=>{c.width=c.clientWidth*2;c.height=c.clientHeight*2});
+ const ge=ce.getContext("2d"),gp=cp.getContext("2d");let x=0,ph=0,pp=0,last=performance.now(),ly=ce.height*.6,lp=cp.height*.7;
+ const ecg=p=>{if(p<.08)return 0;if(p<.12)return -.12*Math.sin((p-.08)/.04*Math.PI);if(p<.16)return 0;if(p<.18)return .12;if(p<.21)return -1;if(p<.24)return .3;if(p<.4)return 0;if(p<.5)return -.18*Math.sin((p-.4)/.1*Math.PI);return 0};
+ const tick=now=>{if(!SIM)return;const dt=(now-last)/1000;last=now;const hr=SIM.v.fc;ph=(ph+dt*hr/60)%1;pp=(pp+dt*hr/60)%1;
+  const sp=ce.width/4*dt; const nx=x+sp;
+  [ge,gp].forEach((g,k)=>{const c=k?cp:ce;g.fillStyle="#05080b";g.fillRect(nx%c.width,0,14,c.height)});
+  const ye=ce.height*.6+ecg(ph)*ce.height*.45; ge.strokeStyle="#3cff6b";ge.lineWidth=3;ge.beginPath();ge.moveTo(x%ce.width,ly);ge.lineTo(nx%ce.width,ye);if(nx%ce.width>x%ce.width)ge.stroke();ly=ye;
+  const amp=clamp((SIM.v.pas-40)/80,.08,1);const yp=cp.height*.75-Math.max(0,Math.sin(pp*Math.PI*2))**2*cp.height*.6*amp; gp.strokeStyle="#38d8ff";gp.lineWidth=3;gp.beginPath();gp.moveTo(x%cp.width,lp);gp.lineTo(nx%cp.width,yp);if(nx%cp.width>x%cp.width)gp.stroke();lp=yp;
+  x=nx; raf=requestAnimationFrame(tick)};
+ cancelAnimationFrame(raf); raf=requestAnimationFrame(tick);
+}
+function track(cur){const ph=SIM.c.steps.map(s=>s.ph);const u=[...new Set(ph)];return `<div class="track">${u.map(p=>{const idx=ph.indexOf(p),isOn=p===cur,done=ph.lastIndexOf(p)<SIM.i;return `<span class="${isOn?"on":done?"ok":""}" style="${isOn||done?`background:${PH[p]}`:""}">${p}</span>`}).join("")}</div>`}
+function stageIntro(){const c=SIM.c;$("#stage").innerHTML=`<span class="chip">${c.lvl}</span><h2>${c.ic} ${c.t}</h2><div class="sec r"><h4>Aviso de la central</h4><p style="margin:0">${c.brief}</p></div><p class="small mute">Observa el monitor y la región lesionada (en rojo). Repasa la anatomía real de la zona y entra en la escena.</p><button class="btn pri" id="go">▶ Entrar en escena</button><div class="spacer"></div>${atlasBox(c.atlas||c.reg)}`;$("#go").onclick=nextStep;wireAtlas($("#stage"),c.atlas||c.reg)}
+function nextStep(){
+ SIM.i++; SIM.miss=false; const c=SIM.c;
+ if(SIM.i>=c.steps.length) return endCase();
+ const s=c.steps[SIM.i]; if(s.pre){applyEff(s.pre);drawVit()}
+ $("#stage").innerHTML=`${track(s.ph)}<span class="phase" style="background:${PH[s.ph]}">${s.ph}</span><span class="small mute">Paso ${SIM.i+1} de ${c.steps.length}</span><h3>${s.q}</h3><div class="opts">${s.o.map((o,j)=>`<button class="opt" data-j="${j}">${o.t}</button>`).join("")}</div><div id="sfb"></div><details class="small" style="margin-top:12px"><summary>🖼️ Ver anatomía real de la zona</summary>${atlasBox(c.atlas||c.reg)}</details>`;
+ wireAtlas($("#stage"),c.atlas||c.reg);
+ $$("#stage .opt").forEach(b=>b.onclick=()=>choose(+b.dataset.j,b));
+}
+function choose(j,b){
+ const s=SIM.c.steps[SIM.i],o=s.o[j]; SIM.t+=o.min||0; applyEff(o.eff); drawVit();
+ if(o.ok){ if(!SIM.miss)SIM.first++; b.classList.add("good"); $$("#stage .opt").forEach(x=>x.disabled=true);
+  $("#sfb").innerHTML=`<div class="fb good">✔ ${o.fb}</div><div class="spacer"></div><button class="btn dark" id="nx">${SIM.i+1<SIM.c.steps.length?"Siguiente →":"Ver resultado"}</button>`; $("#nx").onclick=nextStep;
+ } else { SIM.miss=true; b.classList.add("bad"); b.disabled=true; $("#sfb").innerHTML=`<div class="fb bad">✘ ${o.fb} <b>Inténtalo de nuevo.</b></div>`; }
+}
+function endCase(){
+ const c=SIM.c,p=Math.round(SIM.first/c.steps.length*100),t=SIM.t;
+ prog.cs[c.id]=Math.max(prog.cs[c.id]||0,p); saveProg();
+ $("#stage").innerHTML=`<span class="chip">Debriefing</span><h2>${p>=80?"🏅":"📋"} Resultado: ${p}%</h2>
+ <p>${SIM.first} de ${c.steps.length} decisiones correctas a la primera · tiempo simulado en escena <b>${t.toFixed(0)} min</b> ${t<=10?"✅ dentro del objetivo":"⚠️ por encima de 10 min"}.</p>
+ <div class="sec g"><h4>Mensajes clave</h4><ul class="clean">${c.debrief.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+ <div class="row"><button class="btn pri" onclick="startCase('${c.id}')">↻ Repetir</button>${c.ch.map(n=>`<button class="btn" onclick="stopSim();openCh(${n})">📘 Cap. ${n}</button>`).join("")}<button class="btn" onclick="stopSim();R.taller()">Otras estaciones</button></div>`;
+}
+
+// ---------- TRIAJE START ----------
+function startTriage(){goThen("taller",runTriage)}
+function runTriage(){{stopSim();
+ const list=[...TRIAGE].sort(()=>Math.random()-.5); let i=0,ok=0,t0=Date.now();
+ const why=v=>v.walk?"Camina → VERDE.":v.br===0?(v.rep?"Respira tras abrir la vía aérea → ROJO.":"No respira tras abrir la vía aérea → NEGRO."):v.fr>30?"FR > 30 → ROJO.":v.cap===0?"Sin pulso radial o relleno > 2 s → ROJO.":v.obey===0?"No obedece órdenes → ROJO.":"Respira < 30, perfunde y obedece → AMARILLO.";
+ const draw=()=>{
+  if(i>=list.length){const p=Math.round(ok/list.length*100),s=Math.round((Date.now()-t0)/1000);prog.cs.triage=Math.max(prog.cs.triage||0,p);saveProg();
+   $("#v-taller").innerHTML=`<button class="btn" onclick="R.taller()">← Estaciones</button><div class="spacer"></div><div class="card"><h2>🚨 Triaje completado: ${p}%</h2><p>${ok}/${list.length} correctas en ${s} s (≈ ${(s/list.length).toFixed(0)} s por víctima; START busca &lt; 60 s).</p><div class="sec b"><h4>Algoritmo START</h4><ol class="clean"><li>¿Camina? → Verde</li><li>¿Respira? No → abrir vía aérea → si sigue sin respirar, Negro; si respira, Rojo</li><li>FR &gt; 30 → Rojo</li><li>Sin pulso radial o relleno &gt; 2 s → Rojo (controla la hemorragia)</li><li>¿Obedece órdenes simples? No → Rojo · Sí → Amarillo</li></ol></div><button class="btn pri" onclick="startTriage()">↻ Repetir</button></div>`;return}
+  const v=list[i];
+  $("#v-taller").innerHTML=`<button class="btn" onclick="R.taller()">← Estaciones</button><div class="spacer"></div><div class="card"><div class="prog"><i style="width:${i/list.length*100}%"></i></div><p class="small mute">Víctima ${i+1} de ${list.length} · Explosión en un mercado</p><h2>🧍 ${v.d}</h2>
+  <div class="triage-btns">${["rojo","amarillo","verde","negro"].map(k=>`<button class="tr-${k}" data-k="${k}">${k.toUpperCase()}</button>`).join("")}</div><div id="tfb"></div>${mediaBox("triage","Añade fotos de tarjetas de triaje o simulacros.")}</div>`;
+  wireMedia($("#v-taller"));
+  $$(".triage-btns button").forEach(b=>b.onclick=()=>{const good=b.dataset.k===v.a;if(good)ok++;$$(".triage-btns button").forEach(x=>{x.disabled=true;x.style.opacity=x.dataset.k===v.a?1:.3});
+   $("#tfb").innerHTML=`<div class="fb ${good?"good":"bad"}">${good?"✔":"✘"} ${why(v)}</div><div class="spacer"></div><button class="btn dark" id="tn">Siguiente víctima →</button>`;$("#tn").onclick=()=>{i++;draw()}});
+ }; draw(); window.scrollTo(0,0)}
+}
+
+// ---------- HERRAMIENTAS ----------
+const GCS={O:[[4,"Espontánea"],[3,"A la voz"],[2,"Al dolor"],[1,"Ninguna"]],V:[[5,"Orientado"],[4,"Confuso"],[3,"Palabras inapropiadas"],[2,"Sonidos incomprensibles"],[1,"Ninguna"]],M:[[6,"Obedece órdenes"],[5,"Localiza el dolor"],[4,"Retirada al dolor"],[3,"Flexión anormal (decorticación)"],[2,"Extensión (descerebración)"],[1,"Ninguna"]]};
+const SHK=[["Pérdida (mL)","< 750","750–1 500","1 500–2 000","> 2 000"],["% volemia","< 15 %","15–30 %","30–40 %","> 40 %"],["Frecuencia cardiaca","Normal","Normal / ↑","↑","↑ / ↑↑"],["Presión arterial","Normal","Normal","Normal / ↓","↓"],["Presión de pulso","Normal","↓","↓","↓"],["Estado mental","Algo ansioso","Ligeramente ansioso","Ansioso, confuso","Confuso, letárgico"],["Exceso de bases","0 a −2","−2 a −6","−6 a −10","< −10"],["Necesidad de sangre","Vigilar","Posible","Sí","Transfusión masiva"]];
+let burnSel=new Set(), burnAge="adulto", tqT=null, tqI=null;
+R.herramientas=()=>{
+ $("#v-herramientas").innerHTML=`<h2>Herramientas y calculadoras</h2><div class="grid g2">
+ <div class="card"><h3>🧠 Escala de Glasgow</h3>${Object.entries(GCS).map(([k,a])=>`<div class="small mute" style="margin-top:8px">${{O:"Apertura ocular",V:"Respuesta verbal",M:"Respuesta motora"}[k]}</div><div class="seg" data-g="${k}">${a.map(([v,l])=>`<button data-v="${v}">${v} · ${l}</button>`).join("")}</div>`).join("")}<div class="spacer"></div><div class="row"><div class="big" id="gcsT">–</div><div id="gcsI" class="small"></div></div></div>
+ <div class="card"><h3>🩸 Clases de shock hemorrágico</h3><p class="small mute">Desliza la pérdida estimada de volemia (adulto de 70 kg).</p><input type="range" min="0" max="50" value="20" id="shR"><div class="row"><div class="big" id="shP"></div><div id="shC" class="small"></div></div><div class="spacer"></div><div class="tw"><table class="t" id="shT"></table></div><p class="small mute">Las clases se solapan: úsalo como guía, no como regla absoluta.</p></div>
+ <div class="card"><h3>📈 Índice de shock y PAM</h3><div class="row"><label>FC <input type="number" id="siF" value="120"></label><label>PAS <input type="number" id="siS" value="95"></label><label>PAD <input type="number" id="siD" value="60"></label></div><div class="spacer"></div><div class="row"><div><div class="big" id="siV"></div><div class="small mute">Índice de shock</div></div><div><div class="big" id="pamV"></div><div class="small mute">PAM (mm Hg)</div></div></div><div id="siI" class="small" style="margin-top:8px"></div></div>
+ <div class="card"><h3>🔥 Quemados</h3><div class="row"><div class="seg" id="bAge"><button data-a="adulto" class="on">Adulto</button><button data-a="nino">Niño</button></div><button class="btn" id="bClr">Borrar</button></div><p class="small mute">Toca las zonas quemadas (2.º y 3.er grado).</p><div class="burnwrap">${burnSVG("f")}${burnSVG("b")}</div><div class="row"><div class="big" id="bT">0 %</div><label>Peso (kg) <input type="number" id="bW" value="80"></label></div><div id="bR" class="small" style="margin-top:8px"></div></div>
+ <div class="card"><h3>🧒 Pediatría rápida</h3><label>Edad (años, 1–10) <input type="number" id="pA" value="5" min="1" max="10"></label><div id="pR" class="small" style="margin-top:10px"></div></div>
+ <div class="card"><h3>⏱ Cronómetro de torniquete</h3><p class="small mute">Pulsa al colocarlo: anota la hora en el paciente.</p><div class="big" id="tqV">--:--</div><div class="small mute" id="tqH"></div><div class="spacer"></div><div class="row"><button class="btn pri" id="tqS">Torniquete colocado</button><button class="btn" id="tqX">Reiniciar</button></div></div>
+ </div>`;
+ // GCS
+ const g={};const gc=()=>{const t=(g.O||0)+(g.V||0)+(g.M||0);const all=g.O&&g.V&&g.M;$("#gcsT").textContent=all?t:"–";$("#gcsI").innerHTML=all?`${t<=8?"<b style='color:var(--red)'>TCE grave</b> · proteger vía aérea":t<=12?"<b style='color:var(--amb)'>TCE moderado</b>":"<b style='color:var(--grn)'>TCE leve</b>"}<br>O${g.O} V${g.V} M${g.M}`:"Selecciona las tres respuestas"};
+ $$("[data-g]").forEach(s=>$$("button",s).forEach(b=>b.onclick=()=>{$$("button",s).forEach(x=>x.classList.remove("on"));b.classList.add("on");g[s.dataset.g]=+b.dataset.v;gc()}));gc();
+ // Shock
+ const sh=()=>{const p=+$("#shR").value,cl=p<15?1:p<30?2:p<=40?3:4;$("#shP").textContent=p+"%";$("#shC").innerHTML=`<b>Clase ${["","I","II","III","IV"][cl]}</b><br>≈ ${Math.round(p/100*5000)} mL de 5 L`;
+  $("#shT").innerHTML=`<tr><th></th>${["I","II","III","IV"].map((x,i)=>`<th class="${i+1===cl?"hl":""}">${x}</th>`).join("")}</tr>`+SHK.map(r=>`<tr><td>${r[0]}</td>${r.slice(1).map((x,i)=>`<td class="${i+1===cl?"hl":""}">${x}</td>`).join("")}</tr>`).join("")};
+ $("#shR").oninput=sh;sh();
+ // SI
+ const si=()=>{const f=+$("#siF").value,s=+$("#siS").value,d=+$("#siD").value;if(!s){return}const v=f/s,p=Math.round((s+2*d)/3);$("#siV").textContent=v.toFixed(2);$("#pamV").textContent=p;
+  $("#siI").innerHTML=(v>=0.9?"<b style='color:var(--red)'>≥ 0,9: mayor riesgo de hemorragia crítica y mortalidad.</b>":v<0.7?"<b style='color:var(--grn)'>< 0,7: rango normal.</b>":"<b style='color:var(--amb)'>0,7–0,9: vigilar tendencia.</b>")+`<br>PAM normal 70–100. Objetivo en hemorragia no controlada: 60–65. En lesión medular: 85–90.`};
+ ["siF","siS","siD"].forEach(i=>$("#"+i).oninput=si);si();
+ // Burns
+ const bt=()=>{const m=BURN[burnAge];let t=0;burnSel.forEach(z=>{const[s,k]=z.split("-");t+=(m[s][k]||0)});$$(".bz").forEach(e=>e.classList.toggle("on",burnSel.has(e.dataset.z)));
+  if(burnAge==="nino")$$('.bz[data-z="f-per"]').forEach(e=>e.classList.remove("on"));
+  $("#bT").textContent=t+" %";const w=+$("#bW").value||70;const pk=4*w*t,br=2*w*t,rd=Math.round(t/10)*10;let r10=rd*10;if(w>70)r10+=Math.floor((w-70)/10)*100;
+  $("#bR").innerHTML=t?`<div class="sec a"><h4>Reanimación con Ringer lactato</h4>
+  <b>Regla de 10 (adulto):</b> ${t}% → ${rd}% × 10 = ${rd*10} mL/h${w>70?` + ${Math.floor((w-70)/10)*100} (peso) = <b>${r10} mL/h</b>`:""}${w<40?" (no aplica < 40 kg)":""}<br>
+  <b>Brooke (2 mL/kg/%):</b> ${br.toLocaleString("es")} mL/24 h → ${Math.round(br/2/8)} mL/h las primeras 8 h<br>
+  <b>Parkland (4 mL/kg/%):</b> ${pk.toLocaleString("es")} mL/24 h → ${Math.round(pk/2/8)} mL/h las primeras 8 h<br>
+  <span class="mute">Las 8 h cuentan desde la quemadura. Ajustar por diuresis: 0,5–1 mL/kg/h en adultos.</span></div>`:"Marca las zonas quemadas para calcular."};
+ $$(".bz").forEach(e=>e.onclick=()=>{const z=e.dataset.z;if(burnAge==="nino"&&z==="f-per")return;burnSel.has(z)?burnSel.delete(z):burnSel.add(z);bt()});
+ $$("#bAge button").forEach(b=>b.onclick=()=>{$$("#bAge button").forEach(x=>x.classList.remove("on"));b.classList.add("on");burnAge=b.dataset.a;bt()});
+ $("#bClr").onclick=()=>{burnSel.clear();bt()};$("#bW").oninput=bt;bt();
+ // Ped
+ const pd=()=>{const a=clamp(+$("#pA").value||1,1,10),w=(a+4)*2;$("#pR").innerHTML=`<div class="nums"><span>Peso ≈ ${w} kg</span><span>PAS mín ≈ ${70+2*a} mm Hg</span><span>Bolo 20 mL/kg = ${w*20} mL</span><span>FR hiperventilación leve: 25</span></div><p class="mute">Peso estimado con (edad + 4) × 2; usa siempre la cinta por longitud si la tienes. Acceso IV: 2 intentos o 90 s, después intraósea. En TCE, los umbrales de PAS recomendados son más altos.</p>`};
+ $("#pA").oninput=pd;pd();
+ // TQ
+ const tq=()=>{if(!tqT){$("#tqV").textContent="--:--";$("#tqH").textContent="";return}const s=Math.floor((Date.now()-tqT)/1000);$("#tqV").textContent=`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;$("#tqH").textContent="Colocado a las "+new Date(tqT).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})};
+ clearInterval(tqI);tqI=setInterval(tq,1000);$("#tqS").onclick=()=>{tqT=Date.now();tq()};$("#tqX").onclick=()=>{tqT=null;tq()};tq();
+};
+
+buildNav(); show(location.hash.slice(1)||"inicio");
+
+</script>
+</body>
+</html>

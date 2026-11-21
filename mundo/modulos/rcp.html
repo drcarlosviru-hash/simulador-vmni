@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador PCR · Algoritmo SVA ERC 2025</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e13;--panel:#111821;--panel2:#16202b;--line:#223041;--txt:#d8e1ea;--mut:#8394a6;
+  --acc:#39c7ff;--ecg:#41ff86;--cap:#ffd23c;--spo:#3ad7ff;--bp:#ff6b6b;--red:#ff3b4e;--amb:#ffb020;
+  --shock:#ff8a1f;--nonshock:#8f7dff;--rosc:#2fd47a;--ok:#2fd47a;--bad:#ff4d5e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:14px}
+button{font-family:inherit;cursor:pointer}
+.mono{font-family:'IBM Plex Mono',monospace}
+header{display:flex;align-items:center;gap:18px;padding:10px 18px;border-bottom:1px solid var(--line);background:#0d131a;position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
+.brand .dot{width:12px;height:12px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red);animation:pulse 1.1s infinite}
+@keyframes pulse{50%{opacity:.35}}
+.brand small{display:block;font-weight:400;color:var(--mut);font-size:11.5px}
+nav{display:flex;gap:6px;margin-left:auto}
+nav button{background:transparent;border:1px solid var(--line);color:var(--mut);padding:7px 14px;border-radius:8px;font-weight:600}
+nav button.on{color:#001018;background:var(--acc);border-color:var(--acc)}
+main{padding:14px 16px 40px;max-width:1600px;margin:0 auto}
+.view{display:none}.view.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+h2{font-size:18px;margin:0 0 8px}h3{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin:0 0 8px;font-weight:600}
+.muted{color:var(--mut)}
+.disclaimer{font-size:12px;color:var(--mut);border-left:3px solid var(--amb);padding:6px 10px;margin:10px 0;background:#15120a}
+
+/* ---------- ALGORITHM ---------- */
+.algo-wrap{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px}
+.flow{display:flex;flex-direction:column;align-items:center;gap:0;padding:8px 0}
+.node{border:2px solid var(--line);background:var(--panel2);border-radius:12px;padding:10px 14px;text-align:center;font-weight:600;cursor:pointer;transition:.18s;max-width:520px;width:100%;position:relative}
+.node:hover{border-color:var(--acc)}
+.node.sel{outline:3px solid var(--acc);outline-offset:2px}
+.node.hl{border-color:#fff;box-shadow:0 0 0 4px rgba(57,199,255,.35),0 0 26px rgba(57,199,255,.35);transform:scale(1.02)}
+.node small{display:block;font-weight:400;color:var(--mut);font-size:12px;margin-top:3px}
+.node.start{border-color:#c7d2de}
+.node.call{border-color:#4d6a85}
+.node.cpr{border-color:var(--acc)}
+.node.assess{border-color:#fff;background:#1a2532}
+.node.sh{border-color:var(--shock);background:#2a1a0c}
+.node.nsh{border-color:var(--nonshock);background:#1a1630}
+.node.ro{border-color:var(--rosc);background:#0e2a1c}
+.arrow{width:2px;height:18px;background:#4a5d72;position:relative;margin:0 auto}
+.arrow:after{content:"";position:absolute;bottom:-5px;left:-5px;border:6px solid transparent;border-top-color:#4a5d72}
+.branches{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;width:100%;margin-top:4px}
+.branch{display:flex;flex-direction:column;align-items:center}
+.loop{font-size:12px;color:var(--mut);margin-top:8px;text-align:center;border:1px dashed #3a4c60;border-radius:8px;padding:5px 8px}
+.side-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+.side-cards .node{text-align:left;font-weight:500;max-width:none}
+.side-cards .node b{display:block;margin-bottom:4px}
+.side-cards ul{margin:4px 0 0 16px;padding:0;font-size:12.5px;color:#c4cfda;font-weight:400}
+.detail{position:sticky;top:70px;align-self:start}
+.detail h2{color:var(--acc)}
+.detail ul{padding-left:18px;margin:6px 0}
+.detail li{margin:4px 0;line-height:1.4}
+.pearl{background:#0f2230;border:1px solid #1d4660;border-radius:8px;padding:8px 10px;font-size:13px;margin-top:10px}
+.guide{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:8px 12px;border-radius:8px;font-weight:600;font-size:13px}
+.btn:hover:not(:disabled){border-color:var(--acc)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.pri{background:var(--acc);color:#001018;border-color:var(--acc)}
+.btn.red{background:#3a0f16;border-color:var(--red);color:#ffd5da}
+.btn.or{background:#3a2208;border-color:var(--shock);color:#ffe0c0}
+.btn.gr{background:#0c2b1b;border-color:var(--rosc);color:#c9ffe0}
+.btn.done{border-color:var(--ok);color:var(--ok)}
+.btn.active{background:#123a24;border-color:var(--ok);color:#c9ffe0}
+
+/* ---------- SIMULATOR ---------- */
+.setup{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px}
+.scen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.scen{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:12px;cursor:pointer;transition:.15s}
+.scen:hover{border-color:var(--acc)}
+.scen.sel{border-color:var(--acc);box-shadow:0 0 0 2px rgba(57,199,255,.3)}
+.scen b{display:block;margin-bottom:4px}
+.scen .tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;margin-top:6px;border:1px solid var(--line);color:var(--mut)}
+.opt{display:flex;gap:8px;align-items:flex-start;margin:8px 0;cursor:pointer}
+.opt input{margin-top:3px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;background:transparent;border:0;color:var(--mut);padding:8px;font-weight:600}
+.seg button.on{background:var(--acc);color:#001018}
+
+.topbar{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.tm{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 10px}
+.tm .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--mut)}
+.tm .v{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600}
+.tm.warn{border-color:var(--amb)}.tm.warn .v{color:var(--amb)}
+.tm.alarm{border-color:var(--red);animation:blink 1s infinite}.tm.alarm .v{color:var(--red)}
+@keyframes blink{50%{background:#2a0d12}}
+.simgrid{display:grid;grid-template-columns:270px minmax(0,1fr) 380px;gap:12px}
+.patient svg{width:100%;height:auto;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.chip{font-size:11.5px;border:1px solid var(--line);border-radius:20px;padding:3px 8px;color:#c4cfda;background:#0f161e}
+.chip.r{border-color:var(--red);color:#ffc2c8}.chip.g{border-color:var(--ok);color:#c9ffe0}.chip.a{border-color:var(--amb);color:#ffe2a8}
+.monitor{background:#03070a;border:2px solid #263547;border-radius:14px;padding:8px;box-shadow:inset 0 0 40px rgba(0,0,0,.6)}
+.mon-row{display:grid;grid-template-columns:minmax(0,1fr) 128px;gap:6px;align-items:stretch}
+.mon-row canvas{width:100%;display:block;background:#020507;border-radius:6px}
+.num{border-left:1px solid #13202c;padding:2px 8px;display:flex;flex-direction:column;justify-content:center}
+.num .l{font-size:11px;font-weight:600;letter-spacing:.5px}
+.num .v{font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:600;line-height:1}
+.num .u{font-size:10px;color:var(--mut)}
+.mon-status{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut);padding:2px 4px 6px}
+.mon-status .alarm{color:var(--red);font-weight:600;animation:pulse 1s infinite}
+.defib{margin-top:10px;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;background:#1a1d22;border:2px solid #3a3f47;border-radius:14px;padding:10px}
+.defib .screen{font-family:'IBM Plex Mono',monospace;background:#0c1a10;color:#9dffb9;border-radius:8px;padding:8px 12px;min-width:190px;font-size:13px;line-height:1.5}
+.defib .ctrl{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.energy{display:flex;gap:4px}
+.energy button{background:#262b33;border:1px solid #444b55;color:#ddd;padding:7px 9px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-weight:600}
+.energy button.on{background:var(--amb);color:#1a1000;border-color:var(--amb)}
+.bigbtn{width:78px;height:78px;border-radius:50%;font-weight:700;font-size:13px;border:3px solid}
+.bigbtn.charge{background:#3b2a05;border-color:var(--amb);color:#ffe2a8}
+.bigbtn.shockb{background:#4a0b12;border-color:var(--red);color:#fff}
+.bigbtn.shockb.ready{animation:glow .6s infinite alternate}
+@keyframes glow{to{box-shadow:0 0 22px var(--red);background:#8a0f1e}}
+.interp{margin-top:10px;border:1px solid var(--acc);border-radius:10px;padding:8px 10px;background:#0b1c26;display:none}
+.interp.on{display:block}
+.interp .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.actions .grp{margin-bottom:10px}
+.actions .grp .bs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.actions .btn{text-align:left;font-size:12.5px;padding:8px 10px;position:relative}
+.actions .btn kbd{position:absolute;right:6px;top:6px;font-size:10px;color:var(--mut);font-family:'IBM Plex Mono',monospace}
+.hint{background:#0f2230;border:1px solid #1d4660;border-radius:10px;padding:9px 11px;margin-bottom:10px;font-size:13px;min-height:42px}
+.hint b{color:var(--acc)}
+.tasks{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.task{font-size:12px;background:#0f161e;border:1px solid var(--line);border-radius:8px;padding:4px 8px}
+.task .bar{height:3px;background:#1c2a38;border-radius:3px;margin-top:3px;overflow:hidden}
+.task .bar i{display:block;height:100%;background:var(--acc)}
+.log{max-height:230px;overflow:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;margin-top:10px}
+.log div{padding:3px 0;border-bottom:1px solid #16212c}
+.log .t{color:var(--mut);margin-right:8px}
+.log .sh{color:var(--shock)}.log .dr{color:#c9a7ff}.log .er{color:var(--bad)}.log .ok{color:var(--ok)}.log .in{color:var(--acc)}
+.toast-wrap{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:6px;z-index:50;max-width:380px}
+.toast{background:#13202c;border:1px solid var(--line);border-left:4px solid var(--acc);border-radius:8px;padding:8px 12px;font-size:13px;box-shadow:0 6px 24px rgba(0,0,0,.5);animation:tin .2s}
+.toast.e{border-left-color:var(--bad)}.toast.o{border-left-color:var(--ok)}.toast.w{border-left-color:var(--amb)}
+@keyframes tin{from{transform:translateY(10px);opacity:0}}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
+.modal-bg.on{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:720px;width:100%;max-height:88vh;overflow:auto;padding:16px}
+.causes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cause{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel2)}
+.cause.on{border-color:var(--amb);background:#2a1f08}
+.cause b{display:block}
+.cause .row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:70}
+.flash.go{animation:fl .35s}
+@keyframes fl{0%{opacity:.75}100%{opacity:0}}
+.jolt{animation:jolt .3s}
+@keyframes jolt{30%{transform:translateY(-6px)}60%{transform:translateY(3px)}}
+#ptHands{transform-origin:120px 185px}
+.comp #ptHands{animation:press .545s infinite}
+.comp #ptChest{animation:chest .545s infinite;transform-origin:120px 200px}
+@keyframes press{50%{transform:translateY(7px) scale(.97)}}
+@keyframes chest{50%{transform:scaleY(.965)}}
+.qbar{height:8px;background:#1b2632;border-radius:6px;overflow:hidden;margin-top:4px}
+.qbar i{display:block;height:100%;background:var(--ok);transition:width .4s}
+
+/* ---------- EVAL ---------- */
+.eval-head{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:center}
+.ring{width:170px;height:170px}
+.cats{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.cat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.cat .qbar i{background:var(--acc)}
+.items{margin-top:12px}
+.item{display:grid;grid-template-columns:26px 1fr auto;gap:8px;padding:7px 4px;border-bottom:1px solid #1a2531;align-items:start}
+.item .ic{font-weight:700;font-size:15px}
+.item.ok .ic{color:var(--ok)}.item.ko .ic{color:var(--bad)}.item.pa .ic{color:var(--amb)}
+.item .d{font-size:12.5px;color:var(--mut)}
+.item .pts{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--mut)}
+.crit{border:1px solid var(--bad);background:#2a0d12;border-radius:10px;padding:10px;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:6px 8px;border-bottom:1px solid #1d2935;text-align:left;vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.ref-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+textarea{width:100%;background:#0b1118;color:var(--txt);border:1px solid var(--line);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px}
+@media (max-width:1250px){.simgrid{grid-template-columns:240px minmax(0,1fr)}.actions{grid-column:1/-1}.topbar{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:900px){.algo-wrap,.setup,.ref-grid{grid-template-columns:1fr}.simgrid{grid-template-columns:1fr}.branches,.side-cards{grid-template-columns:1fr}.detail{position:static}.eval-head{grid-template-columns:1fr}.causes{grid-template-columns:1fr}.mon-row{grid-template-columns:1fr 92px}.num .v{font-size:26px}.topbar{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="dot"></span><div>Simulador PCR · SVA adulto<small>Basado en las Guías ERC 2025 · uso docente</small></div></div>
+  <nav>
+    <button data-view="algo" class="on">Algoritmo interactivo</button>
+    <button data-view="sim">Simulador clínico</button>
+    <button data-view="ref">Referencia rápida</button>
+  </nav>
+</header>
+<main>
+
+<!-- ================= ALGORITMO ================= -->
+<section id="view-algo" class="view on">
+  <div class="algo-wrap">
+    <div class="card">
+      <div class="guide">
+        <button class="btn" data-path="sh">▶ Recorrer rama desfibrilable</button>
+        <button class="btn" data-path="nsh">▶ Recorrer rama no desfibrilable</button>
+        <button class="btn" data-path="ro">▶ Recorrer RCE</button>
+        <button class="btn" id="gPrev" disabled>◀ Anterior</button>
+        <button class="btn pri" id="gNext" disabled>Siguiente ▶</button>
+        <span class="muted" id="gInfo" style="align-self:center;font-size:12px">Pulsa cualquier caja para ver el detalle.</span>
+      </div>
+      <div class="flow">
+        <div class="node start" data-n="n1">¿No responde y no respira con normalidad?</div><div class="arrow"></div>
+        <div class="node call" data-n="n2">Llame al equipo de resucitación<small>Intrahospitalario: número de PCR · Extrahospitalario: 112</small></div><div class="arrow"></div>
+        <div class="node cpr" data-n="n3">RCP 30:2<small>Coloque parches del desfibrilador/monitor · Minimice las interrupciones</small></div><div class="arrow"></div>
+        <div class="node assess" data-n="n4">Evalúe el ritmo</div><div class="arrow"></div>
+        <div class="branches">
+          <div class="branch">
+            <div class="node sh" data-n="n5">Desfibrilable<small>FV / TV sin pulso</small></div><div class="arrow"></div>
+            <div class="node sh" data-n="n6">1 descarga<small>Bifásica ≥150 J · escalar si el equipo lo permite</small></div><div class="arrow"></div>
+            <div class="node sh" data-n="n7">Reanude RCP inmediatamente 2 min<small>Minimice interrupciones</small></div><div class="arrow"></div>
+            <div class="node sh" data-n="n8">Tras la 3.ª descarga<small>Adrenalina 1 mg + amiodarona 300 mg · cambio de vector AP</small></div>
+            <div class="loop">↺ Reevalúe el ritmo cada 2 min</div>
+          </div>
+          <div class="branch">
+            <div class="node ro" data-n="n9">Recuperación de la circulación espontánea (RCE)</div><div class="arrow"></div>
+            <div class="node ro" data-n="n10">Tratamiento inmediato post-RCE<small>ABCDE · SpO₂ 94–98 % · normocapnia · ECG 12 d · causa · temperatura</small></div>
+          </div>
+          <div class="branch">
+            <div class="node nsh" data-n="n11">No desfibrilable<small>AESP / asistolia</small></div><div class="arrow"></div>
+            <div class="node nsh" data-n="n12">Reanude RCP inmediatamente 2 min<small>Minimice interrupciones</small></div><div class="arrow"></div>
+            <div class="node nsh" data-n="n13">Adrenalina 1 mg IV lo antes posible<small>Repetir cada 3–5 min</small></div>
+            <div class="loop">↺ Reevalúe el ritmo cada 2 min</div>
+          </div>
+        </div>
+        <div class="side-cards">
+          <div class="node" data-n="n14"><b>Durante la RCP</b><ul><li>Compresiones de alta calidad</li><li>O₂ a la máxima concentración posible</li><li>Capnografía en forma de onda</li><li>Compresiones continuas con vía aérea avanzada</li><li>Acceso IV (IO si fallan 2 intentos)</li><li>Ecografía sin prolongar pausas</li></ul></div>
+          <div class="node" data-n="n15"><b>Causas reversibles (4H · 4T)</b><ul><li>Hipoxia · Hipovolemia</li><li>Hipo/hiperpotasemia/metabólicas</li><li>Hipo/hipertermia</li><li>Trombosis coronaria o pulmonar</li><li>Neumotórax a tensión · Taponamiento</li><li>Tóxicos</li></ul></div>
+          <div class="node" data-n="n16"><b>Considerar</b><ul><li>Coronariografía / ICP</li><li>Compresiones mecánicas para traslado o procedimiento</li><li>ECPR en casos seleccionados</li><li>Trombólisis si TEP sospechado/confirmado</li></ul></div>
+        </div>
+      </div>
+    </div>
+    <div class="card detail" id="detail">
+      <h3>Detalle del paso</h3>
+      <h2 id="dTitle">Selecciona un paso</h2>
+      <div id="dBody" class="muted">Cada caja del algoritmo contiene las recomendaciones clave y una perla docente. Usa los botones de recorrido para una revisión guiada por ramas.</div>
+    </div>
+  </div>
+  <div class="disclaimer">Herramienta docente. Adaptación propia del algoritmo de SVA del adulto (ERC Guidelines 2025, Soar J et al. Resuscitation 2025;215 Suppl 1:110769). No sustituye las guías oficiales ni los protocolos de tu centro.</div>
+</section>
+
+<!-- ================= SIMULADOR ================= -->
+<section id="view-sim" class="view">
+  <!-- setup -->
+  <div id="simSetup" class="setup">
+    <div class="card">
+      <h2>Elige un escenario</h2>
+      <p class="muted" style="margin-top:0">Cada caso se ramifica según tus decisiones: la calidad de la RCP, el momento de las descargas y fármacos, la vía aérea y el tratamiento de la causa determinan si el paciente recupera la circulación.</p>
+      <div class="scen-grid" id="scenGrid"></div>
+    </div>
+    <div class="card">
+      <h3>Modo</h3>
+      <div class="seg" id="modeSeg"><button data-m="train" class="on">Formación (con pistas)</button><button data-m="exam">Evaluación (sin pistas)</button></div>
+      <label class="opt"><input type="checkbox" id="optSound" checked> <span>Sonido (metrónomo 110/min, carga, alarmas)</span></label>
+      <label class="opt"><input type="checkbox" id="optHideScen"> <span>Ocultar el nombre del caso (solo historia clínica)</span></label>
+      <div class="pearl" style="margin-top:6px"><b>Atajos de teclado</b><br><span class="mono">C</span> compresiones on/off · <span class="mono">A</span> pausa y análisis · <span class="mono">G</span> cargar · <span class="mono">D</span> descargar · <span class="mono">P</span> pulso · <span class="mono">E</span> adrenalina · <span class="mono">R</span> relevar compresor · <span class="mono">Esc</span> pausar simulación</div>
+      <button class="btn pri" id="startBtn" style="width:100%;margin-top:12px;padding:12px" disabled>Iniciar simulación</button>
+      <h3 style="margin-top:16px">Historial de intentos</h3>
+      <div id="hist" class="muted" style="font-size:12.5px">Sin intentos guardados en este navegador.</div>
+    </div>
+  </div>
+
+  <!-- running -->
+  <div id="simRun" style="display:none">
+    <div class="topbar">
+      <div class="tm"><div class="l">Tiempo de PCR</div><div class="v" id="tTotal">00:00</div></div>
+      <div class="tm" id="tmCycle"><div class="l">Ciclo RCP (2 min)</div><div class="v" id="tCycle">--:--</div></div>
+      <div class="tm" id="tmPause"><div class="l">Pausa actual</div><div class="v" id="tPause">—</div></div>
+      <div class="tm" id="tmAdr"><div class="l">Desde adrenalina</div><div class="v" id="tAdr">--:--</div></div>
+      <div class="tm"><div class="l">Fracción compresión</div><div class="v" id="tCCF">--%</div></div>
+      <div class="tm"><div class="l">Descargas</div><div class="v" id="tShocks">0</div></div>
+      <div class="tm"><div class="l">Adrenalina</div><div class="v" id="tAdrN">0 mg</div></div>
+      <div class="tm"><div class="l">Antiarrítmico</div><div class="v" id="tAA" style="font-size:15px;padding-top:4px">—</div></div>
+    </div>
+    <div class="simgrid">
+      <!-- patient -->
+      <div class="card patient">
+        <h3 id="scTitle">Paciente</h3>
+        <div id="ptWrap">
+        <svg viewBox="0 0 240 360" aria-label="Paciente virtual">
+          <defs>
+            <radialGradient id="gl" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#fff" stop-opacity=".15"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+          </defs>
+          <rect x="10" y="4" width="220" height="352" rx="18" fill="#0e151d" stroke="#1d2a38"/>
+          <g id="ptBody">
+            <g id="ptAP-post" style="display:none"><rect x="108" y="150" width="40" height="46" rx="6" fill="none" stroke="#ffb020" stroke-dasharray="4 3"/><text x="128" y="208" text-anchor="middle" fill="#ffb020" font-size="8">posterior</text></g>
+            <rect class="skin" x="26" y="104" width="30" height="190" rx="14"/>
+            <rect class="skin" x="184" y="104" width="30" height="190" rx="14"/>
+            <rect class="skin" x="104" y="74" width="32" height="32" rx="8"/>
+            <path id="ptChest" class="skin" d="M58 104 Q120 88 182 104 L176 300 Q120 312 64 300 Z"/>
+            <path d="M58 104 Q120 88 182 104 L176 300 Q120 312 64 300 Z" fill="url(#gl)"/>
+            <circle class="skin" cx="120" cy="48" r="30"/>
+            <line x1="120" y1="130" x2="120" y2="210" stroke="#00000033" stroke-width="2"/>
+            <path d="M108 60 q12 7 24 0" stroke="#00000055" fill="none" stroke-width="2"/>
+            <circle cx="109" cy="42" r="2.4" fill="#00000077"/><circle cx="131" cy="42" r="2.4" fill="#00000077"/>
+          </g>
+          <!-- pads -->
+          <g id="padAL1" style="display:none"><rect x="70" y="112" width="34" height="26" rx="5" fill="#e8eef5" stroke="#ff8a1f" stroke-width="2"/><text x="87" y="129" text-anchor="middle" font-size="9" fill="#333">STERN</text></g>
+          <g id="padAL2" style="display:none"><rect x="160" y="176" width="26" height="40" rx="5" fill="#e8eef5" stroke="#ff8a1f" stroke-width="2"/><text x="173" y="200" text-anchor="middle" font-size="9" fill="#333">APEX</text></g>
+          <g id="padAP1" style="display:none"><rect x="126" y="140" width="38" height="36" rx="6" fill="#e8eef5" stroke="#ffb020" stroke-width="2"/><text x="145" y="162" text-anchor="middle" font-size="9" fill="#333">ANT</text></g>
+          <!-- hands -->
+          <g id="ptHands" style="display:none"><ellipse cx="120" cy="188" rx="20" ry="13" fill="#5b6f86" stroke="#9bb0c6"/><ellipse cx="120" cy="182" rx="18" ry="11" fill="#7088a3" stroke="#b9cbe0"/></g>
+          <!-- airway -->
+          <g id="awBVM" style="display:none"><ellipse cx="120" cy="58" rx="17" ry="12" fill="#9fd3ff55" stroke="#9fd3ff"/><rect x="108" y="6" width="24" height="44" rx="10" fill="#3a6ea5" stroke="#9fd3ff"/></g>
+          <g id="awIGEL" style="display:none"><path d="M112 66 q8 8 16 0 v-8 h-16z" fill="#46d17e"/><rect x="116" y="10" width="8" height="52" fill="#46d17e"/></g>
+          <g id="awETT" style="display:none"><rect x="117" y="10" width="6" height="56" fill="#dfe8f0"/><rect x="110" y="22" width="20" height="10" rx="2" fill="#ffd23c"/><text x="138" y="30" font-size="8" fill="#ffd23c">CO₂</text></g>
+          <!-- access -->
+          <g id="acIV" style="display:none"><rect x="186" y="230" width="26" height="8" rx="3" fill="#39c7ff"/><line x1="199" y1="230" x2="214" y2="200" stroke="#39c7ff" stroke-width="2"/><text x="200" y="252" font-size="8" fill="#39c7ff" text-anchor="middle">IV</text></g>
+          <g id="acIO" style="display:none"><circle cx="64" cy="112" r="7" fill="#c9a7ff"/><text x="64" y="98" font-size="8" fill="#c9a7ff" text-anchor="middle">IO húmero</text></g>
+          <text id="ptLabel" x="120" y="342" text-anchor="middle" font-size="11" fill="#8394a6">En PCR</text>
+        </svg>
+        </div>
+        <div class="chips" id="ptChips"></div>
+        <div style="margin-top:10px">
+          <div class="muted" style="font-size:12px">Calidad de compresiones (sensor CPR)</div>
+          <div class="mono" style="font-size:12px" id="qTxt">—</div>
+          <div class="qbar"><i id="qBar" style="width:0"></i></div>
+        </div>
+        <div class="tasks" id="tasks"></div>
+        <div class="pearl" id="story" style="font-size:12.5px"></div>
+      </div>
+
+      <!-- monitor -->
+      <div>
+        <div class="monitor">
+          <div class="mon-status"><span id="monL">II · 25 mm/s</span><span id="monAlarm"></span><span id="monR">ERC 2025 · SVA</span></div>
+          <div class="mon-row"><canvas id="cvECG" height="150"></canvas><div class="num"><span class="l" style="color:var(--ecg)">FC</span><span class="v" style="color:var(--ecg)" id="nHR">---</span><span class="u">lpm</span></div></div>
+          <div class="mon-row" style="margin-top:6px"><canvas id="cvPL" height="60"></canvas><div class="num"><span class="l" style="color:var(--spo)">SpO₂</span><span class="v" style="color:var(--spo)" id="nSpO2">--</span><span class="u">%</span></div></div>
+          <div class="mon-row" style="margin-top:6px"><canvas id="cvCO2" height="70"></canvas><div class="num"><span class="l" style="color:var(--cap)">EtCO₂</span><span class="v" style="color:var(--cap)" id="nCO2">--</span><span class="u">mmHg · FR <span id="nRR">--</span></span></div></div>
+          <div class="mon-row" style="margin-top:6px"><div class="mono muted" style="font-size:12px;padding:6px" id="monFoot">PANI: --/-- · T: -- °C</div><div class="num"><span class="l" style="color:var(--bp)">PA</span><span class="v" style="color:var(--bp);font-size:22px" id="nBP">--/--</span><span class="u" id="nMAP">PAM --</span></div></div>
+        </div>
+        <div class="defib">
+          <div class="screen" id="dfScreen">DESFIBRILADOR MANUAL<br>Parches: no conectados</div>
+          <div class="ctrl">
+            <div class="energy" id="energy"><button data-e="150" class="on">150</button><button data-e="200">200</button><button data-e="360">360</button></div>
+            <button class="bigbtn charge" data-act="charge" id="bCharge">CARGAR<br><span style="font-size:10px">(G)</span></button>
+            <button class="bigbtn shockb" data-act="shock" id="bShock">⚡ DESCARGA<br><span style="font-size:10px">(D)</span></button>
+            <button class="btn" data-act="disarm" id="bDisarm">Desarmar</button>
+          </div>
+        </div>
+        <div class="interp" id="interp">
+          <b>Pausa de análisis en curso — ¿qué ritmo ves?</b> <span class="muted" style="font-size:12px">(el reloj de pausa sigue corriendo)</span>
+          <div class="row">
+            <button class="btn or" data-int="FV">FV (gruesa o fina)</button>
+            <button class="btn or" data-int="TV">TV sin pulso</button>
+            <button class="btn" data-int="ASI">Asistolia</button>
+            <button class="btn" data-int="ORG">Ritmo organizado</button>
+          </div>
+        </div>
+        <div class="card" style="margin-top:10px">
+          <h3>Registro de eventos</h3>
+          <div class="log" id="log"></div>
+        </div>
+      </div>
+
+      <!-- actions -->
+      <div class="card actions" id="actions">
+        <div class="hint" id="hint"></div>
+        <div id="actArrest">
+          <div class="grp"><h3>Valoración y RCP</h3><div class="bs">
+            <button class="btn" data-act="assess">Valorar respuesta y respiración</button>
+            <button class="btn" data-act="help">Activar equipo / pedir desfibrilador</button>
+            <button class="btn" data-act="cpr" id="bCPR">Iniciar compresiones<kbd>C</kbd></button>
+            <button class="btn" data-act="swap">Relevar compresor<kbd>R</kbd></button>
+            <button class="btn" data-act="analyze">Pausa · analizar ritmo<kbd>A</kbd></button>
+            <button class="btn" data-act="pulse">Comprobar pulso (≤10 s)<kbd>P</kbd></button>
+            <button class="btn" data-act="padsAL">Parches anterolaterales</button>
+            <button class="btn" data-act="padsAP">Cambiar a anteroposterior</button>
+          </div></div>
+          <div class="grp"><h3>Vía aérea y ventilación</h3><div class="bs">
+            <button class="btn" data-act="bvm">BVM + O₂ 100 % (30:2)</button>
+            <button class="btn" data-act="igel">Supraglótico (i-gel)</button>
+            <button class="btn" data-act="ett">Intubación orotraqueal</button>
+            <button class="btn" data-act="pullett">Retirar TOT / reintubar</button>
+          </div></div>
+          <div class="grp"><h3>Acceso vascular</h3><div class="bs">
+            <button class="btn" data-act="iv">Vía IV periférica</button>
+            <button class="btn" data-act="io">Vía intraósea</button>
+          </div></div>
+          <div class="grp"><h3>Fármacos</h3><div class="bs">
+            <button class="btn" data-act="d_adr">Adrenalina 1 mg IV<kbd>E</kbd></button>
+            <button class="btn" data-act="d_amio300">Amiodarona 300 mg</button>
+            <button class="btn" data-act="d_amio150">Amiodarona 150 mg</button>
+            <button class="btn" data-act="d_lido100">Lidocaína 100 mg</button>
+            <button class="btn" data-act="d_lido50">Lidocaína 50 mg</button>
+            <button class="btn" data-act="d_ca">Cloruro cálcico 10 % 10 mL</button>
+            <button class="btn" data-act="d_bic">Bicarbonato 1 M 50 mL</button>
+            <button class="btn" data-act="d_insg">Insulina 10 UI + glucosa 25 g</button>
+            <button class="btn" data-act="d_ssf">Cristaloide 500 mL</button>
+            <button class="btn" data-act="d_lysis">Trombolítico (TEP)</button>
+          </div></div>
+          <div class="grp"><h3>Diagnóstico y causas</h3><div class="bs">
+            <button class="btn" data-act="hist">Antecedentes / testigos</button>
+            <button class="btn" data-act="gas">Gasometría + iones</button>
+            <button class="btn" data-act="pocus">Ecografía POCUS (en pausa)</button>
+            <button class="btn or" data-act="causes">Causas reversibles 4H·4T</button>
+          </div></div>
+          <div class="grp"><h3>Simulación</h3><div class="bs">
+            <button class="btn" data-act="pause" id="bPause">Pausar simulación<kbd>Esc</kbd></button>
+            <button class="btn red" data-act="end">Finalizar RCP / caso</button>
+          </div></div>
+        </div>
+        <div id="actRosc" style="display:none">
+          <div class="grp"><h3>Cuidados inmediatos post-RCE</h3><div class="bs">
+            <button class="btn" data-act="r_ecg">ECG de 12 derivaciones</button>
+            <button class="btn" data-act="r_fio2">Titular O₂ (SpO₂ 94–98 %)</button>
+            <button class="btn" data-act="r_vent">Ventilar a normocapnia</button>
+            <button class="btn" data-act="r_nora">Noradrenalina en perfusión</button>
+            <button class="btn" data-act="r_fluid">Cristaloide 500 mL</button>
+            <button class="btn" data-act="r_glu">Glucemia capilar</button>
+            <button class="btn" data-act="r_temp">Control de temperatura</button>
+            <button class="btn" data-act="r_sed">Sedoanalgesia / VM protectora</button>
+            <button class="btn gr" data-act="r_plan">Tratamiento definitivo de la causa</button>
+            <button class="btn" data-act="gas">Gasometría + iones</button>
+          </div></div>
+          <div class="grp"><h3>Simulación</h3><div class="bs">
+            <button class="btn" data-act="pause">Pausar simulación</button>
+            <button class="btn pri" data-act="end">Finalizar y evaluar</button>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- evaluation -->
+  <div id="simEval" style="display:none"></div>
+</section>
+
+<!-- ================= REFERENCIA ================= -->
+<section id="view-ref" class="view">
+  <div class="ref-grid">
+    <div class="card">
+      <h2>Fármacos en la PCR (adulto)</h2>
+      <table>
+        <tr><th>Fármaco</th><th>Dosis / momento</th></tr>
+        <tr><td><b>Adrenalina</b></td><td>No desfibrilable: 1 mg IV/IO lo antes posible, luego cada 3–5 min.<br>Desfibrilable: 1 mg tras la 3.ª descarga, luego cada 3–5 min.<br>Con monitorización arterial continua: bolos pequeños (≈50–100 µg) inicialmente.</td></tr>
+        <tr><td><b>Amiodarona</b></td><td>300 mg IV tras 3 descargas; 150 mg tras 5 descargas (FV/TVSP refractaria o recurrente).</td></tr>
+        <tr><td><b>Lidocaína</b> (alternativa)</td><td>100 mg IV; 50 mg adicionales tras 5 descargas.</td></tr>
+        <tr><td><b>Calcio, bicarbonato, corticoides</b></td><td>No de rutina. Calcio/bicarbonato en circunstancias especiales (p. ej., hiperpotasemia, ciertos tóxicos).</td></tr>
+        <tr><td><b>Trombolítico</b></td><td>Considerar de inmediato ante TEP sospechado o confirmado; en casos seleccionados mantener RCP 60–90 min tras administrarlo.</td></tr>
+      </table>
+      <h2 style="margin-top:16px">Desfibrilación</h2>
+      <table>
+        <tr><td>Estrategia</td><td>Descarga única seguida de 2 min de compresiones. Hasta 3 descargas seguidas solo en entornos monitorizados (p. ej., hemodinámica).</td></tr>
+        <tr><td>Energía</td><td>Bifásica: 1.ª ≥150 J (pulsada 130–150 J). Escalar si el equipo lo permite. Si dudas: máxima energía.</td></tr>
+        <tr><td>Pausas</td><td>Pausa pre-descarga y total peri-descarga &lt;5 s. No desfibrilar con compresiones manuales en curso.</td></tr>
+        <tr><td>Parches</td><td>Anterolateral por defecto (bajo clavícula derecha + línea medioaxilar izquierda, posición apical correcta). Anteroposterior si FV refractaria o colocación inicial fallida. &gt;8 cm de un DAI.</td></tr>
+        <tr><td>FV refractaria</td><td>Tras 3 descargas fallidas con parches AL bien colocados: cambiar a vector AP. Doble desfibrilación secuencial: no recomendada fuera de investigación.</td></tr>
+        <tr><td>Carga anticipada</td><td>Aceptable solo si no prolonga la pausa peri-descarga (equipos entrenados).</td></tr>
+        <tr><td>FV fina</td><td>Debe desfibrilarse. Un ritmo dudoso no justifica retrasar la descarga.</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Vía aérea y ventilación</h2>
+      <ul>
+        <li>Empezar con técnicas básicas y progresar según la pericia del reanimador.</li>
+        <li>i-gel preferible al tubo laríngeo. IOT solo si tasa de éxito alta (&gt;95 % en 2 intentos); interrupción &lt;5 s.</li>
+        <li>Confirmar el tubo con capnografía en onda sostenida.</li>
+        <li>Con vía aérea avanzada: 10 ventilaciones/min sin detener compresiones, cada una ≈1 s con elevación torácica visible.</li>
+        <li>VM durante RCP: volumen control, VT 6–8 mL/kg peso predicho, FR 10, Ti 1–2 s, PEEP 0–5, alarma de presión 60–70 cmH₂O, trigger de flujo apagado.</li>
+      </ul>
+      <h2>RCP guiada por fisiología</h2>
+      <ul>
+        <li>Objetivo pragmático: EtCO₂ ≈25 mmHg (3,3 kPa); PA diastólica ≈30 mmHg si hay línea arterial.</li>
+        <li>Una caída brusca de EtCO₂ puede indicar parada o gasto muy bajo; un ascenso puede sugerir RCE (confirmar antes de pausar).</li>
+        <li>No finalizar la RCP basándose solo en un EtCO₂ bajo.</li>
+      </ul>
+      <h2>Acceso vascular</h2>
+      <p>IV preferente. IO razonable si la vía IV falla tras 2 intentos.</p>
+      <h2>Causas reversibles</h2>
+      <table>
+        <tr><th>4H</th><th>4T</th></tr>
+        <tr><td>Hipoxia</td><td>Trombosis (coronaria o pulmonar)</td></tr>
+        <tr><td>Hipovolemia</td><td>Neumotórax a tensión</td></tr>
+        <tr><td>Hipo/hiperpotasemia y metabólicas</td><td>Taponamiento cardiaco</td></tr>
+        <tr><td>Hipo/hipertermia</td><td>Tóxicos</td></tr>
+      </table>
+      <h2 style="margin-top:14px">Tras la RCE (objetivos docentes usados en el simulador)</h2>
+      <ul>
+        <li>ABCDE, ECG de 12 derivaciones precoz; coronariografía urgente si elevación del ST.</li>
+        <li>SpO₂ 94–98 %, evitar hipoxemia e hiperoxia; normocapnia (PaCO₂ 35–45 mmHg).</li>
+        <li>Evitar hipotensión (PAM &gt;65 mmHg como objetivo de referencia).</li>
+        <li>Control de temperatura: prevenir la fiebre (&gt;37,7 °C) al menos 72 h.</li>
+        <li>Normoglucemia, sedoanalgesia y ventilación protectora.</li>
+      </ul>
+      <p class="muted" style="font-size:12px">Los objetivos post-RCE proceden de las guías ERC-ESICM de cuidados posresucitación; verifica los valores exactos de la versión 2025 y tu protocolo local.</p>
+      <h2>Fuentes</h2>
+      <ul style="font-size:13px">
+        <li><a style="color:var(--acc)" href="https://doi.org/10.1016/j.resuscitation.2025.110769">Soar J et al. ERC Guidelines 2025 Adult Advanced Life Support. Resuscitation 2025;215 Suppl 1:110769</a></li>
+        <li><a style="color:var(--acc)" href="https://cprguidelines.eu">cprguidelines.eu — ERC Guidelines 2025</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast-wrap" id="toasts"></div>
+<div class="flash" id="flash"></div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const fmt=s=>{if(s==null||!isFinite(s))return '--:--';s=Math.max(0,Math.floor(s));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ======================= NAV ======================= */
+$$('nav button').forEach(b=>b.onclick=()=>{ $$('nav button').forEach(x=>x.classList.toggle('on',x===b)); $$('.view').forEach(v=>v.classList.toggle('on',v.id==='view-'+b.dataset.view)); if(b.dataset.view==='sim') resizeCanvases(); });
+
+/* ======================= ALGORITHM ======================= */
+const ND={
+ n1:{t:'¿No responde y no respira con normalidad?',b:['Valore respuesta (estímulo verbal y doloroso) y abra la vía aérea.','Observe la respiración ≤10 s: la respiración agónica (boqueadas) equivale a PCR.','Ante la duda, actúe como si fuera una PCR.'],p:'Las boqueadas y los movimientos convulsivos breves al inicio de una PCR son frecuentes y retrasan el reconocimiento.'},
+ n2:{t:'Llame al equipo de resucitación',b:['Intrahospitalario: active el equipo de PCR; extrahospitalario: 112.','Pida el desfibrilador/monitor y el carro de paradas.','Inicie el SVA lo antes posible: las guías 2025 insisten en el inicio precoz.'],p:'Delegue: una persona comprime, otra prepara parches y vía aérea, el líder controla tiempos.'},
+ n3:{t:'RCP 30:2 y monitorización',b:['Compresiones en el centro del tórax: 5–6 cm, 100–120/min, reexpansión completa.','30:2 con bolsa-mascarilla y O₂ hasta tener vía aérea avanzada.','Coloque los parches sin interrumpir las compresiones (anterolateral por defecto).','Releve al compresor cada 2 min.'],p:'Cada segundo sin compresiones reduce la presión de perfusión coronaria: minimice las pausas.'},
+ n4:{t:'Evalúe el ritmo',b:['Pausa breve para analizar el ritmo cada ~2 min.','Si ritmo organizado: compruebe pulso (≤10 s).','La carga anticipada antes del análisis es aceptable solo si no alarga la pausa.'],p:'Si hay dudas entre asistolia y FV fina: la FV fina debe desfibrilarse; un ritmo dudoso no justifica retrasar la descarga.'},
+ n5:{t:'Ritmo desfibrilable (FV/TVSP)',b:['Reanude compresiones mientras se carga el desfibrilador.','Seguridad: “todos fuera, oxígeno fuera”.','Pausa pre-descarga <5 s.'],p:'Nunca desfibrile con compresiones manuales en curso.'},
+ n6:{t:'1 descarga',b:['Bifásica: primera ≥150 J (pulsada 130–150 J); escalar si el equipo lo permite.','Si no se conocen los ajustes del equipo: máxima energía.','Hasta 3 descargas seguidas solo en entornos monitorizados (hemodinámica, postoperatorio cardiaco) con desfibrilador ya conectado.'],p:'En obesos se usa la misma energía estándar.'},
+ n7:{t:'Reanude RCP inmediatamente durante 2 min',b:['No compruebe ritmo ni pulso tras la descarga: comprima.','Durante el ciclo: vía aérea, acceso IV, fármacos, causas reversibles.'],p:'La pausa total peri-descarga debe ser <5 s.'},
+ n8:{t:'Fármacos y FV refractaria',b:['Tras la 3.ª descarga: adrenalina 1 mg + amiodarona 300 mg.','Adrenalina cada 3–5 min; amiodarona 150 mg tras la 5.ª descarga.','Lidocaína como alternativa: 100 mg, +50 mg tras 5 descargas.','FV refractaria: tras 3 descargas fallidas con parches AL correctos, cambiar a vector anteroposterior (nuevo juego de parches, rasurar si es preciso).','La doble desfibrilación secuencial no se recomienda fuera de investigación.'],p:'Busque activamente causas tratables: síndrome coronario agudo → considerar RCP mecánica y coronariografía, ECPR en candidatos.'},
+ n9:{t:'Recuperación de la circulación espontánea',b:['Signos: ritmo organizado con pulso palpable, ascenso brusco y sostenido de EtCO₂, movimientos/respiración.','El ascenso de EtCO₂ puede sugerir RCE, pero confírmelo antes de detener las compresiones.'],p:'Esté preparado para una nueva PCR: mantenga los parches conectados.'},
+ n10:{t:'Tratamiento inmediato post-RCE',b:['Enfoque ABCDE.','Oxigenación: SpO₂ 94–98 %. Ventilación: normocapnia.','Evitar hipotensión (objetivo de referencia PAM >65 mmHg).','ECG de 12 derivaciones; coronariografía urgente si elevación ST.','Tratar la causa precipitante. Control de temperatura: evitar fiebre.'],p:'La hiperoxia y la hipocapnia por hiperventilación manual son errores frecuentes en los primeros minutos tras la RCE.'},
+ n11:{t:'Ritmo no desfibrilable (AESP/asistolia)',b:['Reanude compresiones inmediatamente.','Si se había cargado el desfibrilador: desarme de forma segura.'],p:'En AESP busque con especial atención las causas reversibles (4H·4T) y use la ecografía sin prolongar las pausas.'},
+ n12:{t:'Reanude RCP inmediatamente 2 min',b:['Asegure vía aérea y ventilación de calidad.','Acceso IV (IO si fallan 2 intentos).'],p:'La fracción de compresión es un indicador clave de calidad del equipo.'},
+ n13:{t:'Adrenalina lo antes posible',b:['1 mg IV/IO en cuanto se disponga de acceso vascular.','Repetir cada 3–5 min (en ciclos alternos).','Con presión arterial invasiva: bolos de 50–100 µg inicialmente.'],p:'En ritmos no desfibrilables el beneficio de la adrenalina es mayor cuanto antes se administra.'},
+ n14:{t:'Durante la RCP',b:['Compresiones de alta calidad y mínimas interrupciones.','O₂ a la máxima concentración posible; capnografía en forma de onda.','Vía aérea avanzada si se domina; compresiones continuas una vez asegurada.','IV preferente; IO si fallan 2 intentos IV.','RCP guiada por fisiología: EtCO₂ objetivo ≈25 mmHg.','Ecografía por operador experto, sin prolongar las pausas.'],p:'Nuevo en 2025: secciones sobre consciencia inducida por la RCP, RCP guiada por fisiología y ecografía.'},
+ n15:{t:'Causas reversibles (4H · 4T)',b:['Hipoxia, Hipovolemia, Hipo/hiperpotasemia y metabólicas, Hipo/hipertermia.','Trombosis coronaria o pulmonar, Neumotórax a tensión, Taponamiento cardiaco, Tóxicos.'],p:'El contexto clínico (antecedentes, testigos), la gasometría y la ecografía orientan la causa.'},
+ n16:{t:'Considerar',b:['Coronariografía e ICP.','Compresiones mecánicas para traslado o procedimientos.','ECPR en adultos seleccionados si la RCP convencional fracasa y el sistema puede ofrecerla.','Trombólisis inmediata si TEP sospechado/confirmado; mantener RCP 60–90 min en casos seleccionados.'],p:'La decisión de ECPR debe tomarse precozmente para que sea útil.'}
+};
+const PATHS={sh:['n1','n2','n3','n4','n5','n6','n7','n8','n14','n15','n16'],nsh:['n1','n2','n3','n4','n11','n12','n13','n14','n15'],ro:['n4','n9','n10']};
+let gPath=null,gIdx=0;
+function showNode(id){const d=ND[id];if(!d)return;$$('.node').forEach(n=>n.classList.toggle('sel',n.dataset.n===id));$('#dTitle').textContent=d.t;$('#dBody').innerHTML='<ul>'+d.b.map(x=>'<li>'+x+'</li>').join('')+'</ul><div class="pearl"><b>Perla docente:</b> '+d.p+'</div>';}
+$$('.node[data-n]').forEach(n=>n.onclick=()=>showNode(n.dataset.n));
+function gShow(){ $$('.node').forEach(n=>n.classList.remove('hl')); if(!gPath)return; const id=PATHS[gPath][gIdx]; const el=document.querySelector('.node[data-n="'+id+'"]'); el.classList.add('hl'); el.scrollIntoView({block:'center',behavior:'smooth'}); showNode(id); $('#gPrev').disabled=gIdx===0; $('#gNext').disabled=gIdx===PATHS[gPath].length-1; $('#gInfo').textContent='Paso '+(gIdx+1)+' de '+PATHS[gPath].length; }
+$$('[data-path]').forEach(b=>b.onclick=()=>{gPath=b.dataset.path;gIdx=0;gShow();});
+$('#gPrev').onclick=()=>{gIdx--;gShow()}; $('#gNext').onclick=()=>{gIdx++;gShow()};
+
+/* ======================= AUDIO ======================= */
+let AC=null, SND=true;
+function ac(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null} } return AC; }
+function beep(f,d,v,type){ if(!SND)return; const a=ac(); if(!a)return; try{ const o=a.createOscillator(),g=a.createGain(); o.type=type||'sine'; o.frequency.value=f; const t=a.currentTime; g.gain.setValueAtTime(v||0.05,t); g.gain.exponentialRampToValueAtTime(0.0001,t+d); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+d+0.05);}catch(e){} }
+function sweep(f1,f2,d){ if(!SND)return; const a=ac(); if(!a)return; try{const o=a.createOscillator(),g=a.createGain(); const t=a.currentTime; o.frequency.setValueAtTime(f1,t); o.frequency.linearRampToValueAtTime(f2,t+d); g.gain.setValueAtTime(0.035,t); g.gain.setValueAtTime(0.035,t+d-0.05); g.gain.linearRampToValueAtTime(0.0001,t+d); o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+d+0.05);}catch(e){} }
+function thump(){ if(!SND)return; const a=ac(); if(!a)return; try{ const n=a.sampleRate*0.25, buf=a.createBuffer(1,n,a.sampleRate), ch=buf.getChannelData(0); for(let i=0;i<n;i++) ch[i]=(Math.random()*2-1)*Math.pow(1-i/n,3); const s=a.createBufferSource(); s.buffer=buf; const g=a.createGain(); g.gain.value=0.35; s.connect(g); g.connect(a.destination); s.start(); }catch(e){} }
+
+/* ======================= SCENARIOS ======================= */
+const CAUSES=[
+ {k:'hipoxia',n:'Hipoxia',tx:'Asegurar vía aérea y ventilación eficaz con O₂ 100 %'},
+ {k:'hipovolemia',n:'Hipovolemia',tx:'Control de hemorragia, cristaloides/hemoderivados',act:'d_ssf',al:'Cristaloide 500 mL'},
+ {k:'metab',n:'Hipo/hiperpotasemia · metabólicas',tx:'Hiperpotasemia: calcio, insulina-glucosa, bicarbonato, diálisis'},
+ {k:'termia',n:'Hipo/hipertermia',tx:'Calentamiento/enfriamiento activo',act:'t_warm',al:'Control térmico activo'},
+ {k:'coronaria',n:'Trombosis coronaria',tx:'Coronariografía/ICP, RCP mecánica, ECPR en candidatos'},
+ {k:'tep',n:'Trombosis pulmonar (TEP)',tx:'Trombólisis inmediata; RCP 60–90 min tras administrarla',act:'d_lysis',al:'Trombolítico'},
+ {k:'neumo',n:'Neumotórax a tensión',tx:'Descompresión torácica (toracostomía digital)',act:'t_decomp',al:'Toracostomía digital'},
+ {k:'tapo',n:'Taponamiento cardiaco',tx:'Pericardiocentesis ecoguiada / toracotomía',act:'t_peri',al:'Pericardiocentesis'},
+ {k:'toxicos',n:'Tóxicos',tx:'Antídoto específico, considerar ECPR',act:'t_antid',al:'Antídoto específico'}
+];
+const ANTIARR=S=>S.amio>=300||S.lido>=100;
+function rosc(S,hr,wide){ S.rhythm='SR'; S.hr=hr; S.wide=!!wide; S.peaked=false; S.hiddenROSC=true; S.hiddenROSCt=S.t; }
+const SCEN={
+ fv:{title:'FV presenciada en Urgencias',tag:'Desfibrilable · FV refractaria',
+   story:'Varón de 58 años con dolor torácico opresivo de 40 min. Mientras le colocabas el ECG se desploma en la camilla del box de críticos.',
+   hist:'HTA, DM2, fumador activo. El ECG que estabas registrando mostraba elevación del ST en V1–V4. Sin alergias conocidas. Peso estimado 85 kg.',
+   r0:'VF',cause:'coronaria',etMod:1,
+   gas:'pH 7,16 · pCO₂ 54 · pO₂ 68 · HCO₃⁻ 18 · K⁺ 4,1 · Na⁺ 139 · Ca²⁺i 1,16 · lactato 6,4 · Hb 14,2 · glucosa 186',
+   pocus:'Movimiento miocárdico desorganizado, sin contracción eficaz (compatible con FV). Sin derrame pericárdico. VD no dilatado. Deslizamiento pleural bilateral presente.',
+   ecg12:'Ritmo sinusal 104 lpm. Elevación del ST de 4 mm en V1–V5, I y aVL con descenso especular en III y aVF: IAMCEST anterior extenso.',
+   plan:'Activar código infarto: coronariografía urgente / ICP primaria.',
+   onShock(S,n){ if(S.energy<150) return; if(n>=4&&S.padPos==='AP'&&ANTIARR(S)&&S.q>0.55){ if(Math.random()<0.88) return rosc(S,104,false);} if(n>=6&&ANTIARR(S)&&Math.random()<0.4) return rosc(S,104,false); },
+   tick(S){ if(!S.hiddenROSC){ if(S.rhythm==='VF'&&S.noFlowRun>45) S.rhythm='fVF'; if(S.rhythm==='fVF'&&S.effComp&&S.q>0.75&&S.compRun>60) S.rhythm='VF'; } },
+   treated:S=>S.shocks.some(s=>s.ok&&s.pads==='AP')&&ANTIARR(S)},
+ pvt:{title:'TV sin pulso en planta de Cardiología',tag:'Desfibrilable · desfibrilación precoz',
+   story:'Mujer de 71 años ingresada por insuficiencia cardiaca. La telemetría alarma: está inconsciente y no respira con normalidad. Llegas con el carro de paradas.',
+   hist:'Miocardiopatía isquémica, FEVI 25 %, portadora de stent. Ayer se ajustó el diurético. Peso 62 kg.',
+   r0:'pVT',cause:'metab',etMod:1,
+   gas:'pH 7,28 · pCO₂ 44 · K⁺ 3,0 · Mg²⁺ 0,55 mmol/L · Na⁺ 133 · lactato 4,2 · Hb 11,0 · glucosa 140',
+   pocus:'Sin contracción eficaz; dilatación del VI con paredes adelgazadas. Sin derrame pericárdico.',
+   ecg12:'Ritmo sinusal 96 lpm, QT largo (QTc 520 ms), extrasistolia ventricular aislada. Sin elevación del ST.',
+   plan:'Reponer potasio y magnesio, monitorización en UCI cardiológica; valorar DAI.',
+   onShock(S,n){ if(S.energy<150) return; if(n===1&&S.t<=180) return rosc(S,96,false); if(n===1){S.rhythm='VF';return;} if(n>=2&&Math.random()<(ANTIARR(S)?0.8:0.45)) return rosc(S,96,false); },
+   tick(S){ if(!S.hiddenROSC&&S.rhythm==='pVT'&&S.t>240) S.rhythm='VF'; },
+   treated:S=>S.shocks.some(s=>s.ok)&&S.causeMarks.metab},
+ hiperk:{title:'AESP en paciente en hemodiálisis',tag:'No desfibrilable · alteración metabólica',
+   story:'Mujer de 67 años traída por su familia por debilidad progresiva. En la sala de espera de Urgencias queda inconsciente y con respiración agónica.',
+   hist:'Enfermedad renal crónica en hemodiálisis (lunes, miércoles y viernes). No acudió a la sesión del viernes. Diabética. Peso 70 kg.',
+   r0:'PEA',hr:32,wide:true,peaked:true,cause:'metab',etMod:0.9,
+   gas:'pH 7,03 · pCO₂ 48 · HCO₃⁻ 11 · K⁺ 8,6 mmol/L · Na⁺ 131 · Ca²⁺i 0,98 · lactato 5,0 · Hb 9,1 · glucosa 210',
+   pocus:'Contracciones ventriculares muy débiles, sin pulso. Sin derrame pericárdico. VD no dilatado. Vena cava inferior plétora.',
+   ecg12:'Ritmo sinusal 88 lpm, QRS 130 ms, ondas T picudas persistentes.',
+   plan:'Insulina-glucosa, salbutamol, hemodiálisis urgente; monitorización continua.',
+   tick(S){ if(S.hiddenROSC)return; const need=(S.bicT!=null||S.insT!=null)?110:150; if(S.caT!=null&&S.t-S.caT>=need&&S.adrN>=1&&S.q>0.5&&S.compSinceCa>=need*0.7) return rosc(S,88,true); if(S.caT==null&&S.t>480&&S.rhythm==='PEA') {S.rhythm='ASY';} if(S.caT!=null&&S.rhythm==='ASY'&&S.t-S.caT>40){S.rhythm='PEA';S.hr=40;} },
+   treated:S=>S.caT!=null},
+ tep:{title:'AESP por TEP masivo postoperatorio',tag:'No desfibrilable · trombosis pulmonar',
+   story:'Varón de 46 años, 7.º día tras artroplastia de cadera. Se levanta al baño, refiere disnea súbita y sufre un síncope. La enfermera lo encuentra sin respuesta.',
+   hist:'Obesidad (IMC 34). Profilaxis antitrombótica suspendida hace 48 h por sangrado de la herida, ya controlado. Taquicárdico e hipoxémico (SpO₂ 86 %) minutos antes.',
+   r0:'PEA',hr:122,wide:false,cause:'tep',etMod:0.55,
+   gas:'pH 7,12 · pCO₂ 41 · pO₂ 52 · HCO₃⁻ 13 · K⁺ 4,3 · lactato 7,8 · Hb 12,8 · glucosa 150',
+   pocus:'VD muy dilatado (VD > VI) con septo desplazado hacia la izquierda (“signo D”). Sin derrame pericárdico. Deslizamiento pleural bilateral presente. Vena cava inferior dilatada.',
+   ecg12:'Taquicardia sinusal 118 lpm, patrón S1Q3T3, bloqueo de rama derecha incompleto.',
+   plan:'UCI: anticoagulación y monitorización; valorar tratamiento endovascular si inestabilidad.',
+   tick(S){ if(S.hiddenROSC)return; if(S.lysisT!=null&&S.t-S.lysisT>=210&&S.q>0.5&&S.adrN>=1) rosc(S,116,false); },
+   treated:S=>S.lysisT!=null},
+ hipox:{title:'Asistolia tras atragantamiento',tag:'No desfibrilable · hipoxia',
+   story:'Mujer de 79 años de una residencia. Se atragantó comiendo; el equipo extrahospitalario extrajo el bolo con pinzas de Magill. Llega al box de reanimación en parada.',
+   hist:'Demencia leve, disfagia conocida. Sin voluntades anticipadas registradas. Testigos: parada hace ~4 min, sin RCP previa de calidad.',
+   r0:'ASY',cause:'hipoxia',etMod:0.8,
+   gas:'pH 6,98 · pCO₂ 92 · pO₂ 31 · HCO₃⁻ 20 · K⁺ 5,2 · lactato 8,1 · Hb 13,0 · glucosa 132',
+   pocus:'Sin actividad cardiaca organizada. Sin derrame pericárdico. VD normal. Deslizamiento pleural bilateral presente (si hay ventilación eficaz).',
+   ecg12:'Ritmo sinusal 98 lpm, alteraciones inespecíficas de la repolarización.',
+   plan:'UCI: ventilación protectora, broncoscopia para descartar restos, neuroprotección.',
+   tick(S){ if(S.hiddenROSC)return; if(S.ventEff>=110&&S.adrN>=1&&S.rhythm==='ASY'){S.rhythm='PEA';S.hr=38;S.wide=true;} if(S.ventEff>=220&&S.adrN>=1&&S.q>0.5) rosc(S,98,false); },
+   treated:S=>S.ventEff>=110},
+ neumo:{title:'AESP en paciente politraumatizado',tag:'No desfibrilable · neumotórax a tensión',
+   story:'Motorista de 34 años, impacto frontal. Intubado por el equipo extrahospitalario y ventilado con presión positiva. A la llegada al box: sin pulso central.',
+   hist:'Contusión torácica izquierda evidente, enfisema subcutáneo. Saturación en descenso progresivo y aumento de presiones de vía aérea durante el traslado.',
+   r0:'PEA',hr:132,wide:false,cause:'neumo',etMod:0.6,startAirway:'ETT',
+   gas:'pH 7,10 · pCO₂ 62 · pO₂ 48 · K⁺ 4,0 · lactato 7,2 · Hb 11,9 · glucosa 165',
+   pocus:'Hemitórax izquierdo: ausencia de deslizamiento pleural, “código de barras” en modo M, sin punto pulmón visible. Corazón: contractilidad presente, cavidades pequeñas. Sin derrame pericárdico.',
+   ecg12:'Taquicardia sinusal 124 lpm.',
+   plan:'Tubo de drenaje torácico, TC corporal total, valoración por Cirugía.',
+   tick(S){ if(S.hiddenROSC)return; if(S.decompT!=null&&S.t-S.decompT>=35&&S.q>0.45) rosc(S,124,false); },
+   treated:S=>S.decompT!=null}
+};
+SCEN.fv.hr=0;
+
+/* ======================= STATE ======================= */
+let S=null, selScen=null, MODE='train', loopTimer=null;
+const gridEl=$('#scenGrid');
+Object.entries(SCEN).forEach(([k,s])=>{ const d=document.createElement('div'); d.className='scen'; d.dataset.k=k; d.innerHTML='<b>'+s.title+'</b><span class="muted" style="font-size:12.5px">'+s.story+'</span><br><span class="tag">'+s.tag+'</span>'; d.onclick=()=>{selScen=k;$$('.scen').forEach(x=>x.classList.toggle('sel',x===d));$('#startBtn').disabled=false}; gridEl.appendChild(d); });
+(function(){const d=document.createElement('div');d.className='scen';d.dataset.k='rand';d.innerHTML='<b>🎲 Caso aleatorio</b><span class="muted" style="font-size:12.5px">Se elige un escenario al azar. Combínalo con “Ocultar el nombre del caso” para simular una evaluación real.</span><br><span class="tag">Ritmo desconocido</span>';d.onclick=()=>{selScen='rand';$$('.scen').forEach(x=>x.classList.toggle('sel',x===d));$('#startBtn').disabled=false};gridEl.appendChild(d);})();
+$$('#modeSeg button').forEach(b=>b.onclick=()=>{MODE=b.dataset.m;$$('#modeSeg button').forEach(x=>x.classList.toggle('on',x===b));});
+$('#startBtn').onclick=()=>startSim(selScen==='rand'?Object.keys(SCEN)[Math.floor(Math.random()*Object.keys(SCEN).length)]:selScen);
+renderHist();
+
+function newState(k){
+  const sc=SCEN[k];
+  return {key:k,scen:sc,t:0,paused:false,phase:'arrest',
+    assessed:null,help:null,cprOn:false,effComp:false,firstCPR:null,compTime:0,arrestTime:0,ventPauseTime:0,
+    pauseStart:0,pauseHadShock:false,pauseHadAna:false,pauses:[],periShock:[],
+    stint:0,maxStint:0,swaps:0,q:0,qSum:0,qN:0,compRun:0,noFlowRun:0,
+    padsOn:false,padsT:null,padPos:'AL',padsAPT:null,
+    rhythm:sc.r0,hr:sc.hr||0,wide:!!sc.wide,peaked:!!sc.peaked,hiddenROSC:false,hiddenROSCt:null,
+    analyzing:false,analyses:[],cycleStart:null,interpPending:false,
+    energy:150,charging:false,charged:false,chargedT:null,shockCount:0,shocks:[],disarms:0,
+    airway:sc.startAirway||'none',airwayT:sc.startAirway?0:null,ettEso:false,ettChecked:sc.startAirway?true:false,ventEff:0,ventRef:0,bvmT:null,
+    access:'none',accessT:null,ivFails:0,
+    drugs:[],adrN:0,adrT:[],amio:0,lido:0,caT:null,bicT:null,insT:null,lysisT:null,ssf:0,compSinceCa:0,
+    decompT:null,periT:null,warmT:null,antidT:null,
+    gasT:null,pocusN:0,histT:null,causeMarks:{},
+    roscT:null,etco2:0,
+    v:{hr:0,sbp:0,dbp:0,spo2:0,et:0,temp:36.2,fio2:1,vent:'hyper',nora:false},
+    rDone:{},log:[],crit:[],notes:[],samples:[],tasks:[],lastHint:'',
+    lastMet:0,rngSeed:Math.random()*100};
+}
+
+function startSim(k){
+  ac(); SND=$('#optSound').checked;
+  S=newState(k);
+  $('#simSetup').style.display='none'; $('#simEval').style.display='none'; $('#simRun').style.display='block';
+  const hide=$('#optHideScen').checked;
+  $('#scTitle').textContent=hide?'Paciente':S.scen.title;
+  $('#story').innerHTML='<b>Situación:</b> '+S.scen.story;
+  $('#log').innerHTML=''; $('#tasks').innerHTML='';
+  $('#actArrest').style.display='block'; $('#actRosc').style.display='none';
+  $('#interp').classList.remove('on');
+  setEnergy(150);
+  log('Inicio del caso: '+(hide?'paciente en parada':S.scen.title),'in');
+  if(S.airway==='ETT') log('El paciente llega intubado y conectado a ventilación mecánica.','in');
+  resizeCanvases(); updateUI();
+  clearInterval(loopTimer); last=performance.now(); loopTimer=setInterval(loop,100);
+  toast('Caso iniciado. El reloj de PCR está en marcha.','o');
+}
+
+/* ======================= LOG / TOAST / MODAL ======================= */
+function log(msg,cls){ if(!S)return; S.log.push({t:S.t,msg,cls:cls||''}); const d=document.createElement('div'); d.innerHTML='<span class="t">'+fmt(S.t)+'</span><span class="'+(cls||'')+'">'+msg+'</span>'; const L=$('#log'); L.prepend(d); }
+function toast(msg,type){ const d=document.createElement('div'); d.className='toast '+(type||''); d.innerHTML=msg; $('#toasts').appendChild(d); setTimeout(()=>d.remove(),4200); }
+function crit(msg){ S.crit.push({t:S.t,msg}); log('⚠ '+msg,'er'); toast('⚠ '+msg,'e'); beep(330,0.3,0.06,'square'); }
+function note(msg){ S.notes.push({t:S.t,msg}); }
+function modal(html){ $('#modal').innerHTML=html; $('#modalBg').classList.add('on'); }
+function closeModal(){ $('#modalBg').classList.remove('on'); }
+$('#modalBg').addEventListener('click',e=>{ if(e.target.id==='modalBg') closeModal(); });
+
+/* ======================= CORE ACTIONS ======================= */
+function isShock(r){return r==='VF'||r==='fVF'||r==='pVT'}
+function rhythmName(r){return {VF:'FV gruesa',fVF:'FV fina',pVT:'TV sin pulso',ASY:'asistolia',PEA:'ritmo organizado sin pulso (AESP)',SR:'ritmo sinusal'}[r]||r}
+function inArrest(){return S&&S.phase==='arrest'}
+function setCPR(on){
+  if(on===S.cprOn) return;
+  if(on){
+    const d=S.t-S.pauseStart;
+    if(S.firstCPR!=null){ S.pauses.push({s:S.pauseStart,d,shock:S.pauseHadShock,ana:S.pauseHadAna}); if(S.pauseHadShock) S.periShock.push(d); }
+    if(S.firstCPR==null){ S.firstCPR=S.t; S.cycleStart=S.t; }
+    if(S.pauseHadAna) S.cycleStart=S.t;
+    S.cprOn=true; S.ventRef=S.t; S.pauseHadShock=false; S.pauseHadAna=false; S.analyzing=false; $('#interp').classList.remove('on');
+  } else { S.cprOn=false; S.pauseStart=S.t; S.pauseHadShock=false; S.pauseHadAna=false; }
+}
+function addTask(label,dur,fn){ S.tasks.push({label,end:S.t+dur,dur,fn}); }
+function needAccess(){ if(S.access==='none'||S.accessPending){ toast('No hay acceso vascular disponible todavía.','w'); return false;} return true; }
+function giveDrug(k,label,cls){ S.drugs.push({k,t:S.t,shocks:S.shockCount,rhythm:S.rhythm,lastAna:lastAnaRhythm()}); log('💉 '+label+' ('+S.access+')','dr'); beep(660,0.08,0.03); }
+function lastAnaRhythm(){ const a=S.analyses[S.analyses.length-1]; return a?a.r:null; }
+
+const ACT={
+ assess(){ if(S.assessed!=null) return toast('Ya valorado.'); S.assessed=S.t; log('No responde. Respiración agónica/ausente → PCR confirmada.','in'); },
+ help(){ if(S.help!=null) return; S.help=S.t; log('Equipo de PCR activado; llega el carro con desfibrilador.','in'); },
+ cpr(){ if(!inArrest())return; if(S.cprOn){ setCPR(false); log('Compresiones detenidas.'); } else { if(S.assessed==null) note('Compresiones iniciadas sin confirmar la PCR'); setCPR(true); log('Compresiones torácicas en marcha (100–120/min, 5–6 cm).','ok'); } },
+ swap(){ if(!inArrest())return; S.swaps++; S.stint=0; log('Relevo del compresor.'); if(S.cprOn&&!S.analyzing){ note('Relevo realizado fuera de la pausa de análisis'); } },
+ analyze(){ if(!inArrest())return; if(!S.padsOn) return toast('Coloque los parches para ver el ritmo.','w'); if(S.cprOn) setCPR(false); S.analyzing=true; S.pauseHadAna=true; S.interpPending=true; S.analyses.push({t:S.t,r:S.hiddenROSC?'SR':S.rhythm,ans:null,hidden:S.hiddenROSC}); $('#interp').classList.add('on'); log('Pausa para análisis del ritmo.','in'); },
+ pulse(){ if(!inArrest())return; if(S.cprOn) return toast('Detenga las compresiones (en la pausa de análisis) para valorar el pulso.','w');
+   const r=S.hiddenROSC?'SR':S.rhythm;
+   if(S.hiddenROSC){ log('Pulso carotídeo palpable → RCE','ok'); startROSC(); }
+   else if(r==='PEA'){ log('Sin pulso: actividad eléctrica sin pulso (AESP).','in'); }
+   else { log('Sin pulso.','in'); note('Comprobación de pulso con ritmo no organizado (no indicada)'); } },
+ padsAL(){ if(S.padsOn) return toast('Parches ya colocados.'); addTask('Colocando parches AL',8,()=>{S.padsOn=true;S.padsT=S.t;S.padPos='AL';log('Parches anterolaterales colocados. Monitor conectado.','in');}); },
+ padsAP(){ if(!S.padsOn) return toast('Coloque primero los parches.'); if(S.padPos==='AP') return; addTask('Cambiando a vector AP',10,()=>{S.padPos='AP';S.padsAPT=S.t;log('Nuevo juego de parches en posición anteroposterior.','in');}); },
+ charge(){ if(!inArrest())return; if(!S.padsOn) return toast('Sin parches conectados.','w'); if(S.charging||S.charged) return; S.charging=true; sweep(420,1250,3.0); log('Cargando '+S.energy+' J…','sh'); addTask('Cargando desfibrilador',3,()=>{ S.charging=false; S.charged=true; S.chargedT=S.t; log('Cargado '+S.energy+' J.','sh'); }); },
+ shock(){ if(!inArrest()||!S.charged) return; doShock(); },
+ disarm(){ if(!S.charged) return; S.charged=false; S.disarms++; log('Energía descargada de forma interna (desarmado).'); },
+ bvm(){ if(S.airway!=='none') return toast('Ya hay un dispositivo de ventilación.'); S.airway='BVM'; S.airwayT=S.t; S.bvmT=S.t; S.ventRef=S.t; log('Ventilación con bolsa-mascarilla y O₂ 100 % (30:2). Capnografía en la mascarilla.','in'); },
+ igel(){ if(S.airway==='iGel'||S.airway==='ETT') return toast('Ya hay vía aérea avanzada.'); addTask('Insertando i-gel',8,()=>{S.airway='iGel';S.airwayT=S.t;S.ettChecked=true;log('i-gel colocado; capnografía con onda. Ventilación 10/min con compresiones continuas.','in');}); },
+ ett(){ if(S.airway==='ETT') return toast('Ya intubado.'); addTask('Intubando (compresiones continúan)',15,()=>{S.airway='ETT';S.airwayT=S.t;S.ettEso=Math.random()<0.22;S.ettChecked=false;S.ettPlacedT=S.t;log('Tubo endotraqueal colocado. Confirme con capnografía.','in');openCapnoCheck();}); },
+ pullett(){ if(S.airway!=='ETT') return toast('No hay tubo endotraqueal.'); const wasEso=S.ettEso; S.airway='BVM'; S.ettEso=false; log(wasEso?'Tubo esofágico retirado. Se reanuda BVM.':'Tubo traqueal retirado (estaba bien colocado).', wasEso?'ok':'er'); if(!wasEso) note('Se retiró un tubo traqueal correctamente colocado'); else S.esoFixed=S.t; },
+ iv(){ if(S.access!=='none'||S.accessPending) return toast('Ya hay acceso o se está canalizando.'); S.accessPending=true; addTask('Canalizando vía IV',20,()=>{ S.accessPending=false; if(Math.random()<0.62||S.ivFails>=2){ S.access='IV'; S.accessT=S.t; log('Vía IV periférica permeable.','ok'); } else { S.ivFails++; log('Fallo de canalización IV (intento '+S.ivFails+').','er'); if(S.ivFails>=2&&MODE==='train') toast('Dos intentos IV fallidos: la vía IO es razonable.','w'); } }); },
+ io(){ if(S.access!=='none'||S.accessPending) return toast('Ya hay acceso o se está canalizando.'); if(S.ivFails<2) note('Vía IO elegida sin 2 intentos IV fallidos (ERC 2025: IV preferente)'); S.accessPending=true; addTask('Colocando vía IO humeral',10,()=>{S.accessPending=false;S.access='IO';S.accessT=S.t;log('Vía intraósea humeral permeable.','ok');}); },
+ d_adr(){ if(!needAccess())return; S.adrN++; S.adrT.push(S.t); giveDrug('adr','Adrenalina 1 mg'); },
+ d_amio300(){ if(!needAccess())return; if(S.amio>=300) return toast('Ya se administraron 300 mg.'); S.amio+=300; giveDrug('amio300','Amiodarona 300 mg'); },
+ d_amio150(){ if(!needAccess())return; S.amio+=150; giveDrug('amio150','Amiodarona 150 mg'); },
+ d_lido100(){ if(!needAccess())return; S.lido+=100; giveDrug('lido100','Lidocaína 100 mg'); },
+ d_lido50(){ if(!needAccess())return; S.lido+=50; giveDrug('lido50','Lidocaína 50 mg'); },
+ d_ca(){ if(!needAccess())return; if(S.caT==null) S.caT=S.t; S.compSinceCa=0; giveDrug('ca','Cloruro cálcico 10 % 10 mL'); },
+ d_bic(){ if(!needAccess())return; if(S.bicT==null) S.bicT=S.t; giveDrug('bic','Bicarbonato sódico 1 M 50 mL'); },
+ d_insg(){ if(!needAccess())return; if(S.insT==null) S.insT=S.t; giveDrug('insg','Insulina 10 UI + glucosa 25 g'); },
+ d_ssf(){ if(!needAccess())return; S.ssf++; giveDrug('ssf','Cristaloide 500 mL'); },
+ d_lysis(){ if(!needAccess())return; if(S.lysisT!=null) return toast('Trombolítico ya administrado.'); S.lysisT=S.t; giveDrug('lysis','Trombolítico (alteplasa 50 mg bolo / TNK por peso)'); if(MODE==='train'&&S.key==='tep') toast('Tras la trombólisis, mantén la RCP: en la realidad 60–90 min (el simulador lo comprime).','w'); },
+ t_warm(){ if(S.warmT==null){S.warmT=S.t;log('Medidas de control térmico activo.');} },
+ t_decomp(){ if(S.decompT!=null) return; addTask('Toracostomía digital bilateral',12,()=>{ S.decompT=S.t; log(S.key==='neumo'?'Toracostomía izquierda: salida de aire a presión. Derecha: sin hallazgos.':'Toracostomía bilateral sin salida de aire.', S.key==='neumo'?'ok':''); }); },
+ t_peri(){ if(S.periT!=null) return; addTask('Pericardiocentesis ecoguiada',20,()=>{ S.periT=S.t; log('Pericardiocentesis: sin derrame significativo.'); }); },
+ t_antid(){ if(S.antidT==null){S.antidT=S.t;log('Antídoto empírico administrado.');} },
+ hist(){ if(S.histT==null) S.histT=S.t; modal('<h2>Antecedentes y testigos</h2><p>'+S.scen.hist+'</p><button class="btn pri" onclick="closeModal()">Cerrar</button>'); log('Recogida de antecedentes.','in'); },
+ gas(){ if(S.gasPending) return; S.gasPending=true; log('Muestra de gasometría al analizador.','in'); addTask('Gasometría en curso',40,()=>{ S.gasPending=false; S.gasT=S.t; const txt=S.phase==='rosc'?postRoscGas():S.scen.gas; log('Gasometría: '+txt,'in'); toast('<b>Gasometría:</b> '+txt,'w'); }); },
+ pocus(){ if(S.cprOn||!S.analyzing) return toast('Realice la ecografía durante la pausa de análisis, sin prolongarla.','w'); S.pocusN++; log('POCUS: '+S.scen.pocus,'in'); toast('<b>POCUS:</b> '+S.scen.pocus,'w'); },
+ causes(){ openCauses(); },
+ pause(){ S.paused=!S.paused; $$('[data-act="pause"]').forEach(b=>b.firstChild.textContent=S.paused?'Reanudar simulación':'Pausar simulación'); toast(S.paused?'Simulación en pausa (los tiempos se detienen).':'Simulación reanudada.'); },
+ end(){ openEnd(); },
+ r_ecg(){ rDo('ecg','ECG 12 d: '+S.scen.ecg12); modal('<h2>ECG de 12 derivaciones</h2><p>'+S.scen.ecg12+'</p><button class="btn pri" onclick="closeModal()">Cerrar</button>'); },
+ r_fio2(){ S.v.fio2=0.45; rDo('fio2','FiO₂ titulada para SpO₂ 94–98 %.'); },
+ r_vent(){ S.v.vent='normo'; rDo('vent','Ventilación ajustada: VT 6–8 mL/kg, FR para normocapnia (EtCO₂ 35–45).'); },
+ r_nora(){ S.v.nora=true; rDo('nora','Noradrenalina en perfusión, titulada a PAM >65 mmHg.'); },
+ r_fluid(){ S.v.fluid=(S.v.fluid||0)+1; rDo('fluid','Cristaloide 500 mL.'); },
+ r_glu(){ rDo('glu','Glucemia capilar: '+(S.key==='hiperk'?'214':'178')+' mg/dL.'); },
+ r_temp(){ rDo('temp','Control de temperatura: objetivo evitar fiebre (>37,7 °C) al menos 72 h.'); },
+ r_sed(){ rDo('sed','Sedoanalgesia y ventilación protectora.'); },
+ r_plan(){ rDo('plan','Plan: '+S.scen.plan); modal('<h2>Tratamiento definitivo</h2><p>'+S.scen.plan+'</p><button class="btn pri" onclick="closeModal()">Cerrar</button>'); }
+};
+function rDo(k,msg){ if(S.phase!=='rosc')return; if(!S.rDone[k]) S.rDone[k]=S.t; log('✓ '+msg,'ok'); }
+function postRoscGas(){ const pc=S.v.vent==='normo'?41:29; const po=S.v.fio2>0.6?310:88; return 'pH '+(S.v.vent==='normo'?'7,28':'7,41')+' · pCO₂ '+pc+' · pO₂ '+po+' · K⁺ '+(S.key==='hiperk'?'6,4':'4,0')+' · lactato 4,8'+(S.v.vent!=='normo'?' — hipocapnia por hiperventilación':'')+(S.v.fio2>0.6?' — hiperoxia':''); }
+
+function doShock(){
+  const comp=S.cprOn, r=S.hiddenROSC?'SR':S.rhythm, ok=isShock(r);
+  S.shockCount++; const pre=comp?0:S.t-S.pauseStart;
+  S.shocks.push({t:S.t,e:S.energy,r,ok,pre,pads:S.padPos,comp,n:S.shockCount});
+  if(!comp) S.pauseHadShock=true;
+  S.charged=false; thump();
+  const f=$('#flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go');
+  const w=$('#ptWrap'); w.classList.remove('jolt'); void w.offsetWidth; w.classList.add('jolt');
+  log('⚡ Descarga n.º '+S.shockCount+' · '+S.energy+' J · parches '+S.padPos+(comp?'':' · pausa pre-descarga '+pre.toFixed(1)+' s'),'sh');
+  if(comp) crit('Descarga con compresiones manuales en curso: riesgo para el reanimador');
+  if(!ok) crit('Descarga sobre un ritmo no desfibrilable ('+rhythmName(r)+')');
+  else S.scen.onShock&&S.scen.onShock(S,S.shockCount);
+  if(MODE==='train'&&!comp) toast('Reanude las compresiones inmediatamente, sin comprobar ritmo ni pulso.','w');
+  setEnergyEsc();
+}
+function setEnergyEsc(){ /* sugerir escalada visualmente */ }
+
+function openCapnoCheck(){
+  modal('<h2>Confirmación del tubo endotraqueal</h2><p>Observa el capnograma en el monitor durante varias ventilaciones. ¿Hay una onda de capnografía sostenida?</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn gr" id="mOk">Onda sostenida: tubo confirmado</button><button class="btn red" id="mEso">Sin onda: probable intubación esofágica → retirar</button></div><p class="muted" style="font-size:12px">Puedes cerrar esta ventana y mirar el capnograma antes de decidir.</p><button class="btn" onclick="closeModal()">Mirar el monitor</button>');
+  $('#mOk').onclick=()=>{ S.ettChecked=true; S.ettCheckT=S.t; closeModal(); if(S.ettEso){ crit('Intubación esofágica no reconocida: se confirmó un tubo sin onda de capnografía'); S.esoMissed=true; } else log('Tubo confirmado con capnografía en onda.','ok'); };
+  $('#mEso').onclick=()=>{ S.ettChecked=true; S.ettCheckT=S.t; closeModal(); ACT.pullett(); };
+}
+function openCauses(){
+  const html='<h2>Causas reversibles · 4H 4T</h2><p class="muted">Marca las que sospechas y aplica el tratamiento específico. Se evalúa si identificas la causa y la tratas.</p><div class="causes">'+CAUSES.map(c=>'<div class="cause'+(S.causeMarks[c.k]?' on':'')+'" data-c="'+c.k+'"><b>'+c.n+'</b><span class="muted" style="font-size:12px">'+c.tx+'</span><div class="row"><button class="btn" data-mark="'+c.k+'">'+(S.causeMarks[c.k]?'✓ Sospechada':'Marcar sospecha')+'</button>'+(c.act?'<button class="btn or" data-tx="'+c.act+'">'+c.al+'</button>':'')+'</div></div>').join('')+'</div><div style="margin-top:12px"><button class="btn pri" onclick="closeModal()">Cerrar</button></div>';
+  modal(html);
+  $$('[data-mark]').forEach(b=>b.onclick=()=>{ const k=b.dataset.mark; S.causeMarks[k]=S.causeMarks[k]?null:S.t; log((S.causeMarks[k]?'Sospecha: ':'Descartada: ')+CAUSES.find(c=>c.k===k).n,'in'); openCauses(); });
+  $$('[data-tx]').forEach(b=>b.onclick=()=>{ ACT[b.dataset.tx](); closeModal(); });
+}
+function openEnd(){
+  if(S.phase==='rosc'){ endCase('Fin del caso tras RCE'); return; }
+  modal('<h2>¿Finalizar la reanimación?</h2><p>Se cerrará el caso y se generará la evaluación. Si el paciente sigue en PCR, se considera una decisión de cese de esfuerzos: las reglas de cese no deben ser el único criterio y requieren contexto clínico y ético.</p><div style="display:flex;gap:8px"><button class="btn red" id="mEnd">Finalizar y evaluar</button><button class="btn" onclick="closeModal()">Continuar la RCP</button></div>');
+  $('#mEnd').onclick=()=>{ closeModal(); endCase('Cese de la reanimación'); };
+}
+
+function startROSC(){
+  S.phase='rosc'; S.roscT=S.t; if(S.cprOn) setCPR(false); S.effComp=false;
+  if(S.pauseStart!=null){ S.pauses.push({s:S.pauseStart,d:S.t-S.pauseStart,shock:S.pauseHadShock,ana:S.pauseHadAna,final:true}); }
+  S.analyzing=false; $('#interp').classList.remove('on');
+  S.v={hr:S.hr,sbp:82,dbp:48,spo2:86,et:30,temp:36.2,fio2:1,vent:'hyper',nora:false,fluid:0};
+  $('#actArrest').style.display='none'; $('#actRosc').style.display='block';
+  toast('<b>RCE confirmada.</b> Inicia los cuidados post-resucitación (ABCDE).','o');
+  beep(880,0.15,0.05); setTimeout(()=>beep(1180,0.2,0.05),180);
+}
+
+/* interpretation buttons */
+$$('[data-int]').forEach(b=>b.onclick=()=>{ if(!S||!S.analyses.length) return; const a=S.analyses[S.analyses.length-1]; if(a.ans) return; a.ans=b.dataset.int; a.ansT=S.t;
+  const truth={VF:'FV',fVF:'FV',pVT:'TV',ASY:'ASI',PEA:'ORG',SR:'ORG'}[a.r]; a.ok=(truth===a.ans)||(truth==='TV'&&a.ans==='FV')||(truth==='FV'&&a.ans==='TV');
+  log('Interpretación: '+b.textContent+(MODE==='train'?(a.ok?' ✓':' ✗ (era '+rhythmName(a.r)+')'):''), MODE==='train'?(a.ok?'ok':'er'):'');
+  $('#interp').classList.remove('on'); S.interpPending=false;
+  if(MODE==='train'){ if(a.ans==='ORG') toast('Ritmo organizado: compruebe el pulso (≤10 s).','w'); else if(a.ans==='FV'||a.ans==='TV') toast(S.charged?'Cargado: todos fuera y descargue.':'Reanude compresiones mientras carga el desfibrilador.','w'); else toast('No desfibrilable: reanude la RCP de inmediato'+(S.charged?' y desarme el desfibrilador':'')+'.','w'); }
+});
+$$('[data-act]').forEach(b=>b.addEventListener('click',()=>{ if(!S||S.phase==='ended') return; const a=ACT[b.dataset.act]; if(a){ if(S.paused&&b.dataset.act!=='pause'&&b.dataset.act!=='end') return toast('Simulación en pausa.'); a(); updateUI(); } }));
+$$('#energy button').forEach(b=>b.onclick=()=>{ if(S&&S.charged) return toast('Desarme antes de cambiar la energía.','w'); setEnergy(+b.dataset.e); });
+function setEnergy(e){ if(S) S.energy=e; $$('#energy button').forEach(x=>x.classList.toggle('on',+x.dataset.e===e)); }
+document.addEventListener('keydown',e=>{ if(!S||S.phase==='ended'||$('#simRun').style.display==='none'||!$('#view-sim').classList.contains('on')) return; if($('#modalBg').classList.contains('on')) { if(e.key==='Escape') closeModal(); return; }
+  const m={c:'cpr',a:'analyze',g:'charge',d:'shock',p:'pulse',e:'d_adr',r:'swap',Escape:'pause'}; const k=m[e.key.length===1?e.key.toLowerCase():e.key]; if(k&&ACT[k]){ e.preventDefault(); if(S.paused&&k!=='pause') return; if(S.phase==='rosc'&&!['pause'].includes(k)) return; ACT[k](); updateUI(); } });
+
+/* ======================= LOOP ======================= */
+let last=performance.now();
+function loop(){
+  const now=performance.now(); let dt=(now-last)/1000; last=now; if(!S||S.phase==='ended') return; dt=Math.min(dt,0.5);
+  if(S.paused){ updateUI(); return; }
+  S.t+=dt;
+  // tasks
+  for(let i=S.tasks.length-1;i>=0;i--){ const tk=S.tasks[i]; if(S.t>=tk.end){ S.tasks.splice(i,1); tk.fn(); } }
+  if(S.phase==='arrest'){
+    S.arrestTime+=dt;
+    // ventilation pause in 30:2
+    let ventPause=false;
+    if(S.cprOn&&S.airway==='BVM'){ const ph=(S.t-S.ventRef)%20.4; ventPause=ph>16.4; }
+    S.effComp=S.cprOn&&!ventPause;
+    if(ventPause) S.ventPauseTime+=dt;
+    if(S.effComp){ S.compTime+=dt; S.stint+=dt; S.maxStint=Math.max(S.maxStint,S.stint); S.compRun+=dt; S.noFlowRun=0; if(S.caT!=null) S.compSinceCa+=dt; }
+    else { if(!ventPause){ S.noFlowRun+=dt; S.compRun=0; } }
+    S.q=S.cprOn?clamp(0.95-Math.max(0,S.stint-120)*0.006,0.35,0.95):0;
+    if(S.effComp){ S.qSum+=S.q*dt; S.qN+=dt; }
+    const ventOK=(S.airway==='BVM'||S.airway==='iGel'||(S.airway==='ETT'&&!S.ettEso));
+    if(ventOK&&S.cprOn) S.ventEff+=dt;
+    S.scen.tick&&S.scen.tick(S);
+    // etco2
+    let target;
+    if(S.hiddenROSC) target=S.effComp?42:36;
+    else if(S.effComp) target=(7+20*S.q)*S.scen.etMod;
+    else target=Math.max(2,S.etco2*0.9);
+    if(S.airway==='ETT'&&S.ettEso) target=0;
+    S.etco2+= (target-S.etco2)*Math.min(1,dt*0.5);
+    // metronome
+    if(S.effComp&&SND&&now-S.lastMet>545){ S.lastMet=now; beep(1000,0.03,0.02); }
+    // charged reminder beep
+    if(S.charged&&Math.floor(S.t*2)!==Math.floor((S.t-dt)*2)) beep(1500,0.05,0.02);
+    if(S.charged&&S.t-S.chargedT>30&&!S.chargedWarn){ S.chargedWarn=true; note('Desfibrilador cargado durante >30 s sin descargar ni desarmar'); }
+    if(!S.charged) S.chargedWarn=false;
+    // VF alarm tone
+    if(S.padsOn&&isShock(S.rhythm)&&!S.hiddenROSC&&!S.cprOn&&Math.floor(S.t)!==Math.floor(S.t-dt)) beep(960,0.12,0.02,'square');
+  } else if(S.phase==='rosc'){
+    const V=S.v; const sinceR=S.t-S.roscT;
+    const mapT=(V.nora?74:60)+(V.fluid||0)*3;
+    const mapNow=(V.sbp+2*V.dbp)/3; const nm=mapNow+(mapT-mapNow)*Math.min(1,dt*0.15);
+    V.sbp=Math.round(nm*1.42); V.dbp=Math.round((3*nm-V.sbp)/2);
+    const spoT=V.fio2>0.6?100:96; V.spo2+=(spoT-V.spo2)*Math.min(1,dt*0.12);
+    const etT=V.vent==='normo'?40:28; V.et+=(etT-V.et)*Math.min(1,dt*0.15);
+    if(!S.rDone.temp) V.temp=Math.min(38.4,36.2+sinceR*0.004); else V.temp+=(36.8-V.temp)*Math.min(1,dt*0.02);
+    V.hr=Math.round(S.hr+(V.nora?4:0)+Math.sin(S.t/7)*2);
+    S.etco2=V.et;
+  }
+  if(Math.floor(S.t)!==Math.floor(S.t-dt)) S.samples.push({t:Math.floor(S.t),r:S.phase==='rosc'?'ROSC':(S.hiddenROSC?'SR':S.rhythm),c:S.effComp?1:(S.cprOn?0.5:0)});
+  updateUI();
+}
+
+/* ======================= HINTS ======================= */
+function hintText(){
+  if(MODE!=='train') return '<b>Modo evaluación.</b> Sin pistas: dirige la reanimación como líder del equipo.';
+  if(S.paused) return '<b>En pausa.</b> Pulsa Esc o “Reanudar simulación”.';
+  if(S.phase==='rosc'){ const miss=[['ecg','ECG de 12 derivaciones'],['fio2','titular O₂ a SpO₂ 94–98 %'],['vent','ventilar a normocapnia'],['nora','tratar la hipotensión (PAM >65)'],['temp','control de temperatura'],['plan','tratamiento definitivo de la causa']].filter(x=>!S.rDone[x[0]]); return miss.length?'<b>Post-RCE:</b> pendiente '+miss.map(x=>x[1]).join(' · '):'<b>Post-RCE completo.</b> Puedes finalizar y ver tu evaluación.'; }
+  const cyc=S.cycleStart!=null?S.t-S.cycleStart:0; const r=S.hiddenROSC?'SR':S.rhythm;
+  if(S.assessed==null) return '<b>Siguiente:</b> valora respuesta y respiración (≤10 s).';
+  if(S.help==null) return '<b>Siguiente:</b> activa al equipo de PCR y pide el desfibrilador.';
+  if(S.airway==='ETT'&&!S.ettChecked) return '<b>Tubo sin confirmar:</b> revisa el capnograma (onda sostenida).';
+  if(S.analyzing){ if(S.interpPending) return '<b>Pausa de análisis:</b> identifica el ritmo en el monitor. Cada segundo cuenta.';
+    if(isShock(r)) return S.charged?'<b>¡Todos fuera, oxígeno fuera!</b> Descarga y reanuda compresiones de inmediato.':'<b>Desfibrilable:</b> reanuda compresiones mientras cargas (pausa pre-descarga &lt;5 s).';
+    if(r==='PEA'||r==='SR') return '<b>Ritmo organizado:</b> comprueba el pulso (≤10 s); si no hay pulso, reanuda la RCP.'+(S.pocusN===0?' Puedes hacer POCUS sin prolongar la pausa.':'');
+    return '<b>No desfibrilable:</b> reanuda la RCP inmediatamente'+(S.charged?' y desarma el desfibrilador':'')+'.'; }
+  if(!S.cprOn) return '<b>Sin compresiones:</b> inicia/reanuda RCP (C).';
+  if(!S.padsOn&&!S.tasks.some(t=>t.label.includes('parches'))) return '<b>Siguiente:</b> coloca los parches anterolaterales sin detener las compresiones.';
+  if(S.charged&&!isShock(r)) return '<b>Cargado:</b> si el ritmo era desfibrilable, pausa breve y descarga. Si no, desarma.';
+  if(S.charged) return '<b>Cargado:</b> detén compresiones, confirma ritmo y descarga en &lt;5 s.';
+  if(S.padsOn&&S.analyses.length===0) return '<b>Siguiente:</b> pausa breve para analizar el ritmo (A).';
+  if(cyc>=105) return '<b>Fin de ciclo:</b> prepara el análisis'+(isShock(lastAnaRhythm())?' (considera la carga anticipada)':'')+(S.stint>90?' y el relevo del compresor':'')+'.';
+  if(S.airway==='none') return '<b>Vía aérea:</b> ventila con bolsa-mascarilla y O₂ 100 % (30:2).';
+  if(S.access==='none'&&!S.accessPending) return '<b>Acceso:</b> canaliza vía IV (IO si fallan 2 intentos).';
+  const la=lastAnaRhythm(); const sinceAdr=S.adrT.length?S.t-S.adrT[S.adrT.length-1]:null;
+  if(S.access!=='none'&&!S.accessPending){
+    if(la&&!isShock(la)&&S.adrN===0) return '<b>No desfibrilable:</b> adrenalina 1 mg IV ya.';
+    if(S.shockCount>=3&&S.adrN===0) return '<b>Tras la 3.ª descarga:</b> adrenalina 1 mg + amiodarona 300 mg.';
+    if(S.shockCount>=3&&!ANTIARR(S)) return '<b>Tras la 3.ª descarga:</b> amiodarona 300 mg.';
+    if(S.shockCount>=5&&S.amio===300&&S.lido===0) return '<b>Tras la 5.ª descarga:</b> amiodarona 150 mg.';
+    if(sinceAdr!=null&&sinceAdr>=180) return '<b>Adrenalina:</b> han pasado '+fmt(sinceAdr)+' — repetir (cada 3–5 min).';
+  }
+  if(S.shockCount>=3&&S.padPos==='AL'&&isShock(la)) return '<b>FV refractaria:</b> cambia el vector a anteroposterior.';
+  if(S.t>200&&Object.values(S.causeMarks).filter(Boolean).length===0) return '<b>Causas reversibles:</b> revisa 4H·4T (antecedentes, gasometría, POCUS en la pausa).';
+  if(S.stint>110) return '<b>Fatiga:</b> releva al compresor en la próxima pausa.';
+  return '<b>RCP en curso.</b> Mantén calidad; próximo análisis en '+fmt(Math.max(0,120-cyc))+'.';
+}
+
+/* ======================= UI UPDATE ======================= */
+let uiTick=0;
+function updateUI(){
+  if(!S) return; uiTick++;
+  const arrest=S.phase==='arrest';
+  $('#tTotal').textContent=fmt(arrest?S.t:S.roscT);
+  const cyc=S.cycleStart!=null&&arrest?120-(S.t-S.cycleStart):null;
+  $('#tCycle').textContent=cyc==null?'--:--':(cyc<0?'+'+fmt(-cyc):fmt(cyc));
+  $('#tmCycle').className='tm'+(cyc!=null&&cyc<0?' alarm':cyc!=null&&cyc<15?' warn':'');
+  const pz=arrest&&!S.cprOn&&S.firstCPR!=null?S.t-S.pauseStart:null;
+  $('#tPause').textContent=pz==null?'—':pz.toFixed(1)+' s';
+  $('#tmPause').className='tm'+(pz!=null&&pz>10?' alarm':pz!=null&&pz>5?' warn':'');
+  const sa=S.adrT.length?S.t-S.adrT[S.adrT.length-1]:null;
+  $('#tAdr').textContent=sa==null||!arrest?'--:--':fmt(sa);
+  $('#tmAdr').className='tm'+(sa!=null&&arrest&&sa>300?' alarm':sa!=null&&arrest&&sa>=180?' warn':'');
+  const ccf=S.arrestTime>3?S.compTime/S.arrestTime*100:null;
+  $('#tCCF').textContent=ccf==null?'--%':Math.round(ccf)+'%';
+  $('#tShocks').textContent=S.shockCount; $('#tAdrN').textContent=S.adrN+' mg';
+  $('#tAA').textContent=(S.amio?'Amio '+S.amio+' mg ':'')+(S.lido?'Lido '+S.lido+' mg':'')||'—';
+  if(!S.amio&&!S.lido) $('#tAA').textContent='—';
+  // patient
+  const wrap=$('#ptWrap'); wrap.classList.toggle('comp',S.effComp&&arrest);
+  $('#ptHands').style.display=S.cprOn&&arrest?'':'none';
+  const skin=S.phase==='rosc'?'#d6a487':'#8d9db4'; $$('.skin').forEach(e=>e.setAttribute('fill',skin));
+  $('#padAL1').style.display=S.padsOn&&S.padPos==='AL'?'':'none'; $('#padAL2').style.display=S.padsOn&&S.padPos==='AL'?'':'none';
+  $('#padAP1').style.display=S.padsOn&&S.padPos==='AP'?'':'none'; $('#ptAP-post').style.display=S.padsOn&&S.padPos==='AP'?'':'none';
+  $('#awBVM').style.display=S.airway==='BVM'?'':'none'; $('#awIGEL').style.display=S.airway==='iGel'?'':'none'; $('#awETT').style.display=S.airway==='ETT'?'':'none';
+  $('#acIV').style.display=S.access==='IV'?'':'none'; $('#acIO').style.display=S.access==='IO'?'':'none';
+  $('#ptLabel').textContent=S.phase==='rosc'?'RCE · pulso presente':(S.cprOn?'RCP en curso':'En PCR · sin compresiones');
+  const chips=[];
+  chips.push(S.phase==='rosc'?'<span class="chip g">Pulso presente</span>':'<span class="chip r">Sin pulso</span>');
+  chips.push(S.assessed!=null?'<span class="chip">No responde</span>':'<span class="chip a">Sin valorar</span>');
+  chips.push('<span class="chip">Vía aérea: '+({none:'ninguna',BVM:'BVM',iGel:'i-gel',ETT:'TOT'}[S.airway])+(S.airway==='ETT'&&!S.ettChecked?' (sin confirmar)':'')+'</span>');
+  chips.push('<span class="chip">Acceso: '+(S.access==='none'?'no':S.access)+'</span>');
+  if(S.padsOn) chips.push('<span class="chip">Parches '+S.padPos+'</span>');
+  if(S.help!=null) chips.push('<span class="chip g">Equipo activado</span>');
+  $('#ptChips').innerHTML=chips.join('');
+  if(S.cprOn&&arrest){ const depth=(4.1+1.6*S.q).toFixed(1), rate=Math.round(108+Math.sin(S.t)*3+(1-S.q)*14); $('#qTxt').textContent=rate+'/min · '+depth+' cm · reexpansión '+(S.q>0.7?'completa':'incompleta')+' · compresor '+fmt(S.stint); $('#qBar').style.width=Math.round(S.q*100)+'%'; $('#qBar').style.background=S.q>0.75?'var(--ok)':S.q>0.55?'var(--amb)':'var(--bad)'; }
+  else { $('#qTxt').textContent=arrest?'Sin compresiones':'—'; $('#qBar').style.width='0'; }
+  // tasks
+  $('#tasks').innerHTML=S.tasks.map(t=>'<div class="task">'+t.label+'<div class="bar"><i style="width:'+Math.round(clamp(1-(t.end-S.t)/t.dur,0,1)*100)+'%"></i></div></div>').join('');
+  // monitor numbers
+  if(arrest){
+    const r=S.hiddenROSC?'SR':S.rhythm;
+    $('#nHR').textContent=!S.padsOn||S.effComp?'---':(r==='SR'||r==='PEA'?S.hr:(r==='pVT'?190:'---'));
+    $('#nSpO2').textContent='--';
+    const showCap=S.airway!=='none';
+    $('#nCO2').textContent=showCap?Math.round(S.etco2):'--';
+    $('#nRR').textContent=showCap?(S.airway==='BVM'?'~6':'10'):'--';
+    $('#nBP').textContent='--/--'; $('#nMAP').textContent='PAM --'; $('#monFoot').textContent='PANI: --/-- · T: 36,2 °C';
+    let al='';
+    if(!S.padsOn) al='SIN SEÑAL · CONECTE PARCHES';
+    else if(S.effComp) al='ARTEFACTO DE COMPRESIÓN';
+    else if(isShock(r)) al=r==='pVT'?'*** TV ***':'*** FV ***';
+    else if(r==='ASY') al='*** ASISTOLIA ***';
+    $('#monAlarm').innerHTML='<span class="alarm">'+al+'</span>';
+  } else {
+    const V=S.v; $('#nHR').textContent=V.hr; $('#nSpO2').textContent=Math.round(V.spo2); $('#nCO2').textContent=Math.round(V.et); $('#nRR').textContent=V.vent==='normo'?'14':'24';
+    const map=Math.round((V.sbp+2*V.dbp)/3); $('#nBP').textContent=V.sbp+'/'+V.dbp; $('#nMAP').textContent='PAM '+map;
+    $('#monFoot').textContent='FiO₂ '+Math.round(V.fio2*100)+'% · T: '+V.temp.toFixed(1).replace('.',',')+' °C'+(V.nora?' · NA en perfusión':'');
+    let al=[]; if(map<65) al.push('PAM BAJA'); if(V.spo2>98.5) al.push('SpO₂ ALTA (hiperoxia)'); if(V.et<33) al.push('EtCO₂ BAJO (hiperventilación)'); if(V.temp>37.7) al.push('FIEBRE');
+    $('#monAlarm').innerHTML=al.length?'<span class="alarm">'+al.join(' · ')+'</span>':'<span style="color:var(--ok)">RCE</span>';
+  }
+  // defib screen
+  const dfs=[]; dfs.push('DESFIBRILADOR MANUAL · BIFÁSICO');
+  dfs.push('Parches: '+(S.padsOn?(S.padPos==='AL'?'anterolateral':'anteroposterior'):'no conectados'));
+  dfs.push('Energía: '+S.energy+' J'+(S.charging?' · CARGANDO…':S.charged?' · <b style="color:#fff">CARGADO</b>':''));
+  dfs.push('Descargas: '+S.shockCount+(S.shocks.length?' · última '+fmt(S.t-S.shocks[S.shocks.length-1].t)+' atrás':''));
+  $('#dfScreen').innerHTML=dfs.join('<br>');
+  $('#bShock').classList.toggle('ready',S.charged);
+  $('#bShock').disabled=!S.charged||!arrest; $('#bCharge').disabled=!arrest||!S.padsOn||S.charging||S.charged; $('#bDisarm').disabled=!S.charged;
+  // buttons
+  const bc=$('#bCPR'); bc.firstChild.textContent=S.cprOn?'Detener compresiones':'Iniciar / reanudar compresiones'; bc.classList.toggle('active',S.cprOn);
+  const mark=(sel,cond)=>{const b=document.querySelector('[data-act="'+sel+'"]'); if(b) b.classList.toggle('done',!!cond);};
+  mark('assess',S.assessed!=null); mark('help',S.help!=null); mark('padsAL',S.padsOn&&S.padPos==='AL'); mark('padsAP',S.padPos==='AP'&&S.padsOn);
+  mark('bvm',S.airway==='BVM'); mark('igel',S.airway==='iGel'); mark('ett',S.airway==='ETT'); mark('iv',S.access==='IV'); mark('io',S.access==='IO');
+  ['ecg','fio2','vent','nora','temp','glu','sed','plan','fluid'].forEach(k=>mark('r_'+k,S.rDone[k]));
+  if(uiTick%3===0||S.paused){ const h=hintText(); if(h!==S.lastHint){ $('#hint').innerHTML=h; S.lastHint=h; } }
+}
+
+/* ======================= WAVEFORMS ======================= */
+const CV={ecg:$('#cvECG'),pl:$('#cvPL'),co2:$('#cvCO2')}; const SW={x:0};
+function resizeCanvases(){ const dpr=window.devicePixelRatio||1; Object.values(CV).forEach(c=>{ const w=c.clientWidth||600, h=+c.getAttribute('height'); c.width=Math.round(w*dpr); c.height=Math.round(h*dpr); c.style.height=h+'px'; const g=c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0); g.fillStyle='#020507'; g.fillRect(0,0,w,h); c._w=w; c._h=h; c._ly=null; }); SW.x=0; }
+window.addEventListener('resize',resizeCanvases);
+const G=(x,m,s)=>Math.exp(-((x-m)*(x-m))/(2*s*s));
+function beat(tb,wide,peaked,noP){ let v=0; if(!noP) v+=0.12*G(tb,0.08,0.022);
+  if(wide){ v+=-0.12*G(tb,0.17,0.02)+0.85*G(tb,0.22,0.036)-0.3*G(tb,0.29,0.03); v+=(peaked?0.8:0.3)*G(tb,0.5,peaked?0.04:0.07); }
+  else { v+=-0.1*G(tb,0.17,0.008)+1.0*G(tb,0.19,0.011)-0.25*G(tb,0.212,0.01)+0.28*G(tb,0.42,0.05); } return v; }
+function ecgV(t){
+  if(!S||!S.padsOn) return (Math.random()-0.5)*0.02;
+  let r=S.phase==='rosc'?'SR':(S.hiddenROSC?'SR':S.rhythm); let v=0;
+  const hr=S.phase==='rosc'?S.v.hr:S.hr;
+  if(r==='VF'||r==='fVF'){ const A=r==='VF'?0.55:0.12; v=A*(0.6*Math.sin(2*Math.PI*4.3*t+S.rngSeed)+0.4*Math.sin(2*Math.PI*6.1*t+0.7)+0.3*Math.sin(2*Math.PI*2.7*t+Math.sin(0.5*t)))*(0.7+0.3*Math.sin(2*Math.PI*0.23*t)); }
+  else if(r==='pVT'){ const f=3.17; v=0.85*Math.sin(2*Math.PI*f*t)+0.25*Math.sin(4*Math.PI*f*t+1); }
+  else if(r==='ASY'){ v=0.03*Math.sin(2*Math.PI*0.3*t)+(Math.random()-0.5)*0.015; }
+  else { const RR=60/Math.max(20,hr); const tb=t%RR; v=beat(tb,S.wide,S.peaked&&S.phase!=='rosc',S.peaked); }
+  if(S.phase==='arrest'&&S.effComp){ const f=110/60; v+=0.75*Math.sin(2*Math.PI*f*t)+0.22*Math.sin(4*Math.PI*f*t); }
+  return v;
+}
+function plV(t){ if(!S) return 0; if(S.phase==='rosc'){ const RR=60/S.v.hr; const tb=t%RR; return 0.9*G(tb,0.25,0.07)+0.35*G(tb,0.45,0.08); } if(S.effComp&&S.phase==='arrest'){ const f=110/60; return 0.2*Math.max(0,Math.sin(2*Math.PI*f*t)); } return 0; }
+function co2V(t){ if(!S) return 0; const et=S.etco2;
+  if(S.phase==='rosc'){ const per=60/(S.v.vent==='normo'?14:24); const p=t%per; return p<per*0.35?0:et*(1-Math.exp(-(p-per*0.35)/0.18)); }
+  if(S.airway==='none') return 0; if(S.airway==='ETT'&&S.ettEso) return 0;
+  if(S.airway==='BVM'){ if(!S.cprOn){ return 0; } const ph=(S.t-S.ventRef)%20.4; if(ph>16.4){ const p=(ph-16.4)%2; return p<0.7?0:et*(1-Math.exp(-(p-0.7)/0.2)); } return et*0.12*Math.abs(Math.sin(2*Math.PI*(110/60)*t)); }
+  const p=t%6; let base=p<1?0:et*(1-Math.exp(-(p-1)/0.25)); if(S.effComp) base+=et*0.06*Math.sin(2*Math.PI*(110/60)*t); return Math.max(0,base);
+}
+let wt=0, lastF=performance.now();
+function draw(){
+  const now=performance.now(); const dt=Math.min(0.1,(now-lastF)/1000); lastF=now;
+  if(S&&!S.paused&&S.phase!=='ended'&&$('#view-sim').classList.contains('on')&&$('#simRun').style.display!=='none'){
+    const speed=120; const px=dt*speed; const ec=CV.ecg; if(!ec._w) resizeCanvases();
+    const steps=Math.max(1,Math.round(px));
+    for(let i=0;i<steps;i++){ wt+=dt/steps; SW.x+=px/steps; if(SW.x>=ec._w){ SW.x=0; Object.values(CV).forEach(c=>c._ly=null);}
+      plot(CV.ecg,ecgV(wt),-1.3,1.5,'#41ff86');
+      plot(CV.pl,plV(wt),-0.1,1.3,'#3ad7ff');
+      plot(CV.co2,co2V(wt),0,50,'#ffd23c');
+    }
+  }
+  requestAnimationFrame(draw);
+}
+function plot(c,val,min,max,col){ const g=c.getContext('2d'), w=c._w, h=c._h; const x=SW.x; g.fillStyle='#020507'; g.fillRect(x,0,10,h);
+  if(c===CV.co2){ g.fillStyle='#14202a'; [20,40].forEach(l=>{ const yy=h-((l-min)/(max-min))*(h-8)-4; g.fillRect(x,yy,10,1); }); }
+  const y=h-((val-min)/(max-min))*(h-8)-4; g.strokeStyle=col; g.lineWidth=1.8; g.beginPath(); if(c._ly!=null&&c._lx!=null&&x>c._lx){ g.moveTo(c._lx,c._ly); g.lineTo(x,y); g.stroke(); } c._lx=x; c._ly=y; }
+requestAnimationFrame(draw);
+
+/* ======================= EVALUATION ======================= */
+function endCase(reason){
+  if(S.phase==='arrest'&&!S.cprOn){ S.pauses.push({s:S.pauseStart,d:S.t-S.pauseStart,shock:S.pauseHadShock,ana:S.pauseHadAna,final:true}); }
+  S.endReason=reason; S.endT=S.t; const wasArrest=S.phase==='arrest'; S.phase='ended'; S.cprOn=false; clearInterval(loopTimer);
+  log('Fin: '+reason, 'in');
+  const E=evaluate(wasArrest);
+  const h=store.get('pcr_hist',[]); h.unshift({d:new Date().toLocaleString('es-ES'),s:S.scen.title,sc:E.score,rosc:!!S.roscT,mode:MODE}); store.set('pcr_hist',h.slice(0,12)); renderHist();
+  renderEval(E);
+}
+function evaluate(endedInArrest){
+  const it=[]; const add=(cat,label,pts,earned,detail)=>it.push({cat,label,pts,earned:clamp(earned,0,pts),detail});
+  const arrestEnd=S.roscT!=null?S.roscT:S.endT;
+  const sc=S.scen; const shockable0=isShock(sc.r0); const everShock=shockable0||S.analyses.some(a=>isShock(a.r));
+  // --- RCP
+  add('Reconocimiento y RCP','Confirmación de la PCR antes de comprimir',3,S.assessed!=null&&(S.firstCPR==null||S.assessed<=S.firstCPR)?3:0,S.assessed!=null?'Valoración a los '+fmt(S.assessed):'No se valoró respuesta/respiración');
+  add('Reconocimiento y RCP','Activación del equipo ≤30 s',3,S.help!=null?(S.help<=30?3:S.help<=60?1.5:0):0,S.help!=null?'A los '+Math.round(S.help)+' s':'No se activó');
+  const tc=S.firstCPR; add('Reconocimiento y RCP','Inicio de compresiones ≤20 s',5,tc==null?0:tc<=20?5:tc<=40?2.5:0,tc==null?'Nunca se iniciaron':'A los '+Math.round(tc)+' s');
+  const ccf=S.arrestTime>0?S.compTime/S.arrestTime:0; add('Reconocimiento y RCP','Fracción de compresión torácica ≥80 % (objetivo docente)',6,ccf>=0.8?6:ccf>=0.6?6*(ccf-0.6)/0.2:0,Math.round(ccf*100)+' % del tiempo de PCR con compresiones (incluye pausas de ventilación 30:2)');
+  const qa=S.qN?S.qSum/S.qN:0; add('Reconocimiento y RCP','Relevo del compresor cada ~2 min',3,S.maxStint<=150?3:S.maxStint<=210?1.5:0,'Turno más largo: '+fmt(S.maxStint)+' · calidad media '+Math.round(qa*100)+' %');
+  const longP=S.pauses.filter(p=>p.d>10); add('Reconocimiento y RCP','Sin pausas >10 s',4,longP.length===0?4:longP.length===1?2:0,longP.length?longP.length+' pausa(s) >10 s (máx '+Math.max(...S.pauses.map(p=>p.d)).toFixed(1)+' s)':'Pausa máxima '+(S.pauses.length?Math.max(...S.pauses.map(p=>p.d)).toFixed(1):'0')+' s');
+  // --- Desfibrilación
+  add('Desfibrilación','Parches colocados ≤60 s',4,S.padsT==null?0:S.padsT<=60?4:S.padsT<=120?2:0,S.padsT==null?'Nunca':'A los '+Math.round(S.padsT)+' s');
+  const inap=S.shocks.filter(s=>!s.ok), unsafe=S.shocks.filter(s=>s.comp);
+  add('Desfibrilación','Ninguna descarga sobre ritmo no desfibrilable',5,inap.length?0:5,inap.length?inap.length+' descarga(s) inapropiada(s)':'Correcto');
+  add('Desfibrilación','Seguridad: nunca descargar con compresiones en curso',5,unsafe.length?0:5,unsafe.length?unsafe.length+' descarga(s) con compresiones':'Correcto');
+  if(everShock){
+    const fs=S.shocks.find(s=>s.ok); add('Desfibrilación','Primera descarga precoz (≤120 s desde la PCR)',6,!fs?0:fs.t<=120?6:fs.t<=180?3:0,fs?'A los '+Math.round(fs.t)+' s, '+fs.e+' J':'No se desfibriló un ritmo desfibrilable');
+    const ok5=S.shocks.filter(s=>!s.comp&&s.pre<=5).length, nS=S.shocks.filter(s=>!s.comp).length; add('Desfibrilación','Pausa pre-descarga <5 s',5,nS?5*ok5/nS:0,nS?ok5+'/'+nS+' descargas con pausa pre-descarga <5 s ('+S.shocks.filter(s=>!s.comp).map(s=>s.pre.toFixed(1)+' s').join(', ')+')':'—');
+    const ps=S.periShock; if(ps.length){ const ok=ps.filter(d=>d<=5).length; add('Desfibrilación','Pausa total peri-descarga <5 s',3,3*ok/ps.length,ps.map(d=>d.toFixed(1)+' s').join(', ')); }
+    const failed3=S.shocks.filter(s=>s.ok).length>=3&&(S.shocks.filter(s=>s.ok)[2].r!=='SR');
+    if(failed3){ const t3=S.shocks.filter(s=>s.ok)[2].t; add('Desfibrilación','Cambio de vector a anteroposterior en FV refractaria',4,S.padsAPT!=null&&S.padsAPT>=t3?4:S.padsAPT!=null?2:0,S.padsAPT!=null?'Cambio a AP a los '+fmt(S.padsAPT):'No se cambió el vector tras 3 descargas fallidas'); }
+    if(S.shocks.length>=2){ const esc=S.shocks.some((s,i)=>i>0&&s.e>S.shocks[0].e); add('Desfibrilación','Escalada de energía en descargas sucesivas',1,esc?1:0.5,esc?'Se escaló la energía':'Energía fija (aceptable si el equipo no permite escalar)'); }
+  }
+  // --- Fármacos
+  const firstAcc=S.accessT; add('Fármacos y accesos','Acceso vascular (IV preferente) ≤3 min',4,firstAcc==null?0:(firstAcc<=180?4:firstAcc<=300?2:1)-(S.access==='IO'&&S.ivFails<2?1:0),firstAcc==null?'Sin acceso':S.access+' a los '+fmt(firstAcc)+(S.access==='IO'&&S.ivFails<2?' (IO sin 2 intentos IV fallidos)':''));
+  const adrD=S.drugs.filter(d=>d.k==='adr');
+  const nonShockBranch=!shockable0;
+  if(nonShockBranch){
+    const d0=adrD[0]; const ref=firstAcc!=null?firstAcc:null;
+    add('Fármacos y accesos','Adrenalina lo antes posible (no desfibrilable)',6,!d0?0:(ref!=null&&d0.t-ref<=60?6:d0.t-ref<=120?3:1),d0?'1.ª dosis a los '+fmt(d0.t)+(ref!=null?' ('+Math.round(d0.t-ref)+' s tras el acceso)':''):'No se administró');
+  } else {
+    const early=adrD.filter(d=>d.shocks<3&&isShock(d.lastAna||d.rhythm));
+    const third=S.shocks.filter(s=>s.ok)[2];
+    if(third&&third.r!=='SR'){ const d=adrD.find(x=>x.t>=third.t); add('Fármacos y accesos','Adrenalina tras la 3.ª descarga (desfibrilable)',6,early.length?0:(d?(d.t-third.t<=150?6:3):0),early.length?'Adrenalina antes de la 3.ª descarga ('+early.length+' dosis)':d?'Administrada '+Math.round(d.t-third.t)+' s tras la 3.ª descarga':'No se administró'); }
+    else add('Fármacos y accesos','No adelantar la adrenalina en ritmo desfibrilable',3,early.length?0:3,early.length?'Adrenalina antes de la 3.ª descarga':'Correcto');
+  }
+  if(adrD.length>=1){ const ints=[]; for(let i=1;i<adrD.length;i++) ints.push(adrD[i].t-adrD[i-1].t); const tail=arrestEnd-adrD[adrD.length-1].t; const okI=ints.filter(x=>x>=165&&x<=315).length; const missed=tail>330?1:0; const tot=ints.length+missed; add('Fármacos y accesos','Intervalos de adrenalina 3–5 min',4,tot?4*okI/tot:4,(ints.length?'Intervalos: '+ints.map(x=>fmt(x)).join(', '):'Una sola dosis')+(missed?' · dosis omitida (última hace '+fmt(tail)+' al finalizar)':''));
+  } else if(arrestEnd>300) add('Fármacos y accesos','Intervalos de adrenalina 3–5 min',4,0,'No se administró adrenalina');
+  const am300=S.drugs.find(d=>d.k==='amio300'||d.k==='lido100'); const am150=S.drugs.find(d=>d.k==='amio150'||d.k==='lido50');
+  if(everShock&&S.shocks.filter(s=>s.ok).length>=3&&S.shocks.filter(s=>s.ok)[2].r!=='SR'){ add('Fármacos y accesos','Antiarrítmico (amiodarona 300 mg) tras la 3.ª descarga',5,!am300?0:am300.shocks<3?1:5,am300?(am300.k==='amio300'?'Amiodarona':'Lidocaína')+' tras '+am300.shocks+' descargas':'No administrado');
+    if(S.shockCount>=5&&S.shocks[4].r!=='SR') add('Fármacos y accesos','Segunda dosis (150 mg) tras la 5.ª descarga',2,am150&&am150.shocks>=5?2:0,am150?'Tras '+am150.shocks+' descargas':'No administrada'); }
+  const wrongAA=S.drugs.filter(d=>/amio|lido/.test(d.k)&&!isShock(d.lastAna||d.rhythm)); if(S.amio>0&&S.lido>0) note('Se combinaron amiodarona y lidocaína');
+  const inapDrugs=[]; S.drugs.forEach(d=>{ if((d.k==='ca'||d.k==='bic'||d.k==='insg')&&S.key!=='hiperk') inapDrugs.push(d.k==='ca'?'calcio':d.k==='bic'?'bicarbonato':'insulina-glucosa'); if(d.k==='lysis'&&S.key!=='tep') inapDrugs.push('trombolítico sin indicación'); });
+  wrongAA.forEach(()=>inapDrugs.push('antiarrítmico en ritmo no desfibrilable'));
+  add('Fármacos y accesos','Sin fármacos no indicados (Ca/bicarbonato no rutinarios)',3,inapDrugs.length?0:3,inapDrugs.length?[...new Set(inapDrugs)].join(', '):'Correcto');
+  // --- Vía aérea
+  const vT=S.bvmT!=null?S.bvmT:S.airwayT; add('Vía aérea y ventilación','Oxigenación/ventilación iniciada ≤2 min',4,vT==null?0:vT<=120?4:vT<=240?2:0,vT==null?'Sin ventilación':'A los '+fmt(vT));
+  if(S.ettPlacedT!=null){ add('Vía aérea y ventilación','Tubo confirmado con capnografía en onda',5,S.esoMissed?0:(S.ettCheckT!=null&&S.ettCheckT-S.ettPlacedT<=60?5:2),S.esoMissed?'Intubación esofágica no reconocida':S.esoFixed?'Esofágica detectada y corregida':'Confirmado'); if(S.esoMissed) S.crit.some(c=>c.msg.includes('esofágica'))||crit('Intubación esofágica no reconocida'); }
+  else if(S.airway==='iGel') add('Vía aérea y ventilación','Vía aérea avanzada adecuada a la pericia',3,3,'i-gel con capnografía');
+  // --- Ritmo
+  const ans=S.analyses.filter(a=>a.ans); add('Ritmo y ciclos','Identificación correcta del ritmo',5,ans.length?5*ans.filter(a=>a.ok).length/ans.length:0,ans.length?ans.filter(a=>a.ok).length+'/'+ans.length+' correctas':'No se interpretó el ritmo');
+  const at=S.analyses.map(a=>a.t); const iv=[]; for(let i=1;i<at.length;i++) iv.push(at[i]-at[i-1]); const okC=iv.filter(x=>x>=95&&x<=150).length;
+  add('Ritmo y ciclos','Análisis de ritmo cada ~2 min',5,iv.length?5*okC/iv.length:(at.length?3:0),iv.length?'Intervalos: '+iv.map(x=>fmt(x)).join(', '):(at.length?'Un único análisis':'Sin análisis'));
+  // --- Causas
+  const marked=!!S.causeMarks[sc.cause]; add('Causas reversibles','Causa identificada en 4H·4T ('+CAUSES.find(c=>c.k===sc.cause).n+')',4,marked?4:0,marked?'Sospecha registrada':'No se marcó la causa');
+  add('Causas reversibles','Tratamiento específico de la causa',6,sc.treated(S)?6:0,sc.treated(S)?'Aplicado':'No aplicado');
+  const unnec=[]; if(S.decompT!=null&&S.key!=='neumo') unnec.push('toracostomía'); if(S.periT!=null) unnec.push('pericardiocentesis'); if(unnec.length) note('Procedimientos invasivos sin indicación: '+unnec.join(', '));
+  // --- Post-RCE
+  if(S.roscT!=null){ const P=[['ecg','ECG 12 derivaciones',2],['fio2','Titulación de O₂ (SpO₂ 94–98 %)',2],['vent','Normocapnia',2],['nora','Tratamiento de la hipotensión',2],['temp','Control de temperatura',1],['plan','Tratamiento definitivo de la causa',2]]; P.forEach(p=>add('Post-RCE',p[1],p[2],S.rDone[p[0]]?p[2]:0,S.rDone[p[0]]?'A los '+fmt(S.rDone[p[0]]-S.roscT)+' de la RCE':'No realizado')); }
+  const tot=it.reduce((a,b)=>a+b.pts,0), got=it.reduce((a,b)=>a+b.earned,0);
+  let score=Math.round(got/tot*100); const critN=S.crit.length; score=Math.max(0,score-critN*5);
+  return {items:it,score,ccf,qa,endedInArrest,tc,firstShock:S.shocks.find(s=>s.ok),adr0:adrD[0]};
+}
+function renderHist(){ const h=store.get('pcr_hist',[]); $('#hist').innerHTML=h.length?'<table>'+h.map(x=>'<tr><td>'+x.d+'</td><td>'+x.s+'</td><td class="mono">'+x.sc+'</td><td>'+(x.rosc?'RCE':'—')+'</td></tr>').join('')+'</table>':'Sin intentos guardados en este navegador.'; }
+function renderEval(E){
+  $('#simRun').style.display='none'; const el=$('#simEval'); el.style.display='block';
+  const cats={}; E.items.forEach(i=>{ cats[i.cat]=cats[i.cat]||{p:0,e:0}; cats[i.cat].p+=i.pts; cats[i.cat].e+=i.earned; });
+  const col=E.score>=85?'var(--ok)':E.score>=65?'var(--amb)':'var(--bad)';
+  const R=70, C=2*Math.PI*R;
+  const verdict=E.score>=85?'Excelente: actuación alineada con ERC 2025.':E.score>=65?'Aceptable, con aspectos que mejorar.':'Insuficiente: revisa los puntos críticos.';
+  const outcome=S.roscT!=null?'<span class="chip g">RCE a los '+fmt(S.roscT)+'</span>':'<span class="chip r">Sin RCE · '+S.endReason+' a los '+fmt(S.endT)+'</span>';
+  const metrics=[['Tiempo hasta compresiones',E.tc!=null?Math.round(E.tc)+' s':'—'],['Tiempo hasta 1.ª descarga',E.firstShock?Math.round(E.firstShock.t)+' s':'—'],['Tiempo hasta 1.ª adrenalina',E.adr0?fmt(E.adr0.t):'—'],['Fracción de compresión',Math.round(E.ccf*100)+' %'],['Calidad media estimada',Math.round(E.qa*100)+' %'],['Descargas',S.shockCount+' ('+S.shocks.map(s=>s.e+'J').join(', ')+')'],['Adrenalina',S.adrN+' mg'],['Antiarrítmicos',(S.amio?'amiodarona '+S.amio+' mg ':'')+(S.lido?'lidocaína '+S.lido+' mg':'')||'—'],['Pausas totales',S.pauses.length+' · media '+(S.pauses.length?(S.pauses.reduce((a,b)=>a+b.d,0)/S.pauses.length).toFixed(1):'0')+' s'],['Vía aérea / acceso',({none:'ninguna',BVM:'BVM',iGel:'i-gel',ETT:'TOT'})[S.airway]+' / '+(S.access==='none'?'—':S.access)]];
+  el.innerHTML='<div class="card"><div class="eval-head"><svg class="ring" viewBox="0 0 170 170"><circle cx="85" cy="85" r="'+R+'" stroke="#1b2632" stroke-width="14" fill="none"/><circle cx="85" cy="85" r="'+R+'" stroke="'+col+'" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="'+(C*E.score/100)+' '+C+'" transform="rotate(-90 85 85)"/><text x="85" y="92" text-anchor="middle" font-size="40" font-weight="700" fill="'+col+'" font-family="IBM Plex Mono">'+E.score+'</text><text x="85" y="114" text-anchor="middle" font-size="11" fill="#8394a6">/ 100</text></svg>'+
+   '<div><h2>Evaluación clínica · '+S.scen.title+'</h2><p style="margin:4px 0">'+verdict+'</p><div class="chips">'+outcome+'<span class="chip">Modo '+(MODE==='train'?'formación':'evaluación')+'</span><span class="chip">Causa: '+CAUSES.find(c=>c.k===S.scen.cause).n+'</span></div>'+
+   '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn pri" id="eAgain">Repetir este escenario</button><button class="btn" id="eOther">Elegir otro escenario</button><button class="btn" id="eCopy">Copiar informe</button></div></div></div>'+
+   (S.crit.length?'<div class="crit"><b>Errores críticos (−5 puntos cada uno)</b><ul>'+S.crit.map(c=>'<li>'+fmt(c.t)+' · '+c.msg+'</li>').join('')+'</ul></div>':'')+
+   '<h3 style="margin-top:14px">Por áreas</h3><div class="cats">'+Object.entries(cats).map(([k,v])=>'<div class="cat"><b style="font-size:13px">'+k+'</b><div class="mono" style="font-size:12px;color:var(--mut)">'+Math.round(v.e*10)/10+' / '+v.p+'</div><div class="qbar"><i style="width:'+Math.round(v.e/v.p*100)+'%"></i></div></div>').join('')+'</div>'+
+   '<h3 style="margin-top:14px">Línea temporal</h3><canvas id="tl" height="130" style="width:100%;background:#0b1118;border-radius:8px"></canvas><div class="muted" style="font-size:11.5px;margin-top:4px"><span style="color:var(--shock)">■</span> desfibrilable · <span style="color:var(--nonshock)">■</span> no desfibrilable · <span style="color:var(--rosc)">■</span> RCE/ritmo con pulso · fila 2: compresiones · ⚡ descargas · ▲ adrenalina · ◆ otros fármacos</div>'+
+   '<div class="ref-grid" style="margin-top:14px"><div><h3>Ítems evaluados</h3><div class="items">'+E.items.map(i=>{const c=i.earned>=i.pts?'ok':i.earned>0?'pa':'ko';return '<div class="item '+c+'"><span class="ic">'+(c==='ok'?'✓':c==='pa'?'◐':'✗')+'</span><div>'+i.label+'<div class="d">'+i.detail+'</div></div><span class="pts">'+(Math.round(i.earned*10)/10)+'/'+i.pts+'</span></div>'}).join('')+'</div></div>'+
+   '<div><h3>Métricas</h3><table>'+metrics.map(m=>'<tr><td>'+m[0]+'</td><td class="mono">'+m[1]+'</td></tr>').join('')+'</table>'+
+   (S.notes.length?'<h3 style="margin-top:12px">Observaciones</h3><ul style="font-size:13px">'+[...new Set(S.notes.map(n=>n.msg))].map(n=>'<li>'+n+'</li>').join('')+'</ul>':'')+
+   '<h3 style="margin-top:12px">Debriefing (puntos clave del caso)</h3><div class="pearl">'+debrief()+'</div>'+
+   '<h3 style="margin-top:12px">Registro completo</h3><div class="log" style="max-height:260px">'+S.log.map(l=>'<div><span class="t">'+fmt(l.t)+'</span><span class="'+l.cls+'">'+l.msg+'</span></div>').join('')+'</div></div></div>'+
+   '<div id="copyBox" style="display:none;margin-top:10px"><p class="muted">Copia el texto manualmente:</p><textarea rows="10" id="copyTa"></textarea></div></div>';
+  drawTimeline();
+  $('#eAgain').onclick=()=>startSim(S.key);
+  $('#eOther').onclick=()=>{ $('#simEval').style.display='none'; $('#simSetup').style.display='grid'; S=null; };
+  $('#eCopy').onclick=()=>{ const txt=reportText(E); try{ navigator.clipboard.writeText(txt).then(()=>toast('Informe copiado.','o'),()=>{ $('#copyBox').style.display='block'; $('#copyTa').value=txt; }); }catch(e){ $('#copyBox').style.display='block'; $('#copyTa').value=txt; } };
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function debrief(){
+  const k=S.key; const m={
+   fv:'FV por síndrome coronario agudo. Claves: desfibrilación inmediata, adrenalina 1 mg + amiodarona 300 mg tras la 3.ª descarga, y en FV refractaria cambio de vector a anteroposterior (la doble desfibrilación secuencial no se recomienda fuera de investigación). Tras la RCE: ECG de 12 d y coronariografía urgente; considerar RCP mecánica/ECPR si refractaria.',
+   pvt:'TV sin pulso con hipopotasemia/hipomagnesemia y QT largo. La desfibrilación en los primeros minutos es la intervención con mayor impacto: si se retrasa, degenera a FV. Corregir iones tras la RCE.',
+   hiperk:'AESP por hiperpotasemia grave (K⁺ 8,6) en paciente en hemodiálisis. Calcio y bicarbonato NO son rutinarios en la PCR, pero sí están indicados en la hiperpotasemia (junto a insulina-glucosa). La gasometría precoz orienta el diagnóstico. Tras la RCE: diálisis urgente.',
+   tep:'AESP por TEP masivo (VD dilatado en POCUS, EtCO₂ bajo). Trombólisis inmediata ante sospecha y RCP prolongada: en la vida real 60–90 min tras el fibrinolítico (el simulador comprime el tiempo).',
+   hipox:'Parada hipóxica tras obstrucción de la vía aérea. Sin ventilación eficaz con oxígeno no hay RCE: priorizar la vía aérea, confirmar la ventilación con capnografía y administrar adrenalina precozmente en ritmo no desfibrilable.',
+   neumo:'AESP traumática por neumotórax a tensión en paciente con ventilación a presión positiva. Ecografía: ausencia de deslizamiento pleural. Tratamiento: descompresión torácica inmediata (toracostomía digital); en la PCR traumática, las causas reversibles priman sobre los fármacos.'}; return m[k]; }
+function reportText(E){ return 'SIMULADOR PCR · ERC 2025\nCaso: '+S.scen.title+'\nModo: '+(MODE==='train'?'formación':'evaluación')+'\nPuntuación: '+E.score+'/100\nResultado: '+(S.roscT!=null?'RCE a los '+fmt(S.roscT):'sin RCE ('+S.endReason+')')+'\n\nÍTEMS\n'+E.items.map(i=>'- '+i.label+': '+(Math.round(i.earned*10)/10)+'/'+i.pts+' — '+i.detail).join('\n')+(S.crit.length?'\n\nERRORES CRÍTICOS\n'+S.crit.map(c=>'- '+fmt(c.t)+' '+c.msg).join('\n'):'')+'\n\nREGISTRO\n'+S.log.map(l=>fmt(l.t)+'  '+l.msg).join('\n'); }
+function drawTimeline(){
+  const c=$('#tl'); const dpr=window.devicePixelRatio||1; const w=c.clientWidth, h=130; c.width=w*dpr; c.height=h*dpr; const g=c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+  const T=Math.max(60,S.endT); const X=t=>40+(w-50)*t/T;
+  g.fillStyle='#8394a6'; g.font='10px IBM Plex Mono'; g.fillText('Ritmo',2,34); g.fillText('RCP',8,64);
+  const colR=r=>isShock(r)?'#ff8a1f':(r==='SR'||r==='ROSC')?'#2fd47a':'#8f7dff';
+  S.samples.forEach(s=>{ g.fillStyle=colR(s.r); g.fillRect(X(s.t),24,Math.max(1,X(1)-X(0)+0.5),16); if(s.c){ g.fillStyle=s.c===1?'#41ff86':'#2a6a44'; g.fillRect(X(s.t),54,Math.max(1,X(1)-X(0)+0.5),16);} });
+  g.font='13px sans-serif';
+  S.shocks.forEach(s=>{ g.fillStyle=s.ok&&!s.comp?'#ff8a1f':'#ff4d5e'; g.fillText('⚡',X(s.t)-6,96); });
+  S.drugs.forEach(d=>{ g.fillStyle=d.k==='adr'?'#ff6b6b':'#c9a7ff'; g.fillText(d.k==='adr'?'▲':'◆',X(d.t)-5,114); });
+  g.fillStyle='#8394a6'; g.font='10px IBM Plex Mono'; for(let t=0;t<=T;t+=60){ g.fillText(fmt(t),X(t)-14,12); g.fillStyle='#1b2632'; g.fillRect(X(t),16,1,104); g.fillStyle='#8394a6'; }
+  if(S.roscT!=null){ g.fillStyle='#2fd47a'; g.fillRect(X(S.roscT),16,2,104); }
+}
+</script>
+</body>
+</html>

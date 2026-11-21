@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mundo Emergencia · Aprende jugando</title>
+<meta name="description" content="Mundo virtual de la emergencia por capítulos: PHTLS, ATLS, RCP, VMNI y fin de guardia.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b16;--bg2:#0d1426;--card:#111a30;--line:#1f2b48;--tx:#e8eefc;--mut:#8a99bd;--acc:#ff8a3d;--ok:#34d399;--bad:#ff4d6d;--gold:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--tx);font:15px/1.5 Inter,system-ui,sans-serif;min-height:100%}
+h1,h2,h3,.sora{font-family:Sora,Inter,sans-serif}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+a{color:inherit}
+.hud{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;padding:10px 18px;background:rgba(7,11,22,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:10px;font-family:Sora;font-weight:800;letter-spacing:-.02em;font-size:17px;white-space:nowrap}
+.logo .siren{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,#ff4d6d,#ff8a3d);box-shadow:0 0 18px #ff4d6d66;font-size:16px}
+.player{display:flex;align-items:center;gap:12px;margin-left:auto;min-width:0}
+.ava{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:#1a2544;border:2px solid var(--acc);font-weight:700;font-family:Sora;flex:none}
+.pinfo{min-width:0}
+.pname{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prank{font-size:12px;color:var(--mut);white-space:nowrap}
+.xpbar{width:150px;height:7px;border-radius:9px;background:#1a2544;overflow:hidden;margin-top:3px}
+.xpbar i{display:block;height:100%;background:linear-gradient(90deg,#ff8a3d,#fbbf24);border-radius:9px;transition:width .6s}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:99px;background:var(--card);border:1px solid var(--line);font-size:13px;font-weight:600;white-space:nowrap}
+.chip:hover{border-color:#33456f}
+.ibtn{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--card);border:1px solid var(--line)}
+.ibtn:hover{border-color:#33456f}
+main{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+.intro{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;margin-bottom:16px}
+.intro h1{font-size:clamp(24px,3.4vw,36px);letter-spacing:-.03em;line-height:1.1}
+.intro h1 span{background:linear-gradient(90deg,#ff8a3d,#ff4d6d);-webkit-background-clip:text;background-clip:text;color:transparent}
+.intro p{color:var(--mut);max-width:620px;margin-top:6px}
+.modes{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-weight:600;font-size:14px;transition:.15s}
+.btn:hover{border-color:#3a4d7a;transform:translateY(-1px)}
+.btn.pri{background:linear-gradient(135deg,#ff6a3d,#ff4d6d);border:0;color:#fff;box-shadow:0 6px 20px #ff4d6d40}
+.btn.ghost{background:transparent}
+.btn[disabled]{opacity:.45;pointer-events:none}
+/* MAPA */
+.mapwrap{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(1200px 500px at 70% -10%,#1a2a55 0%,#0b1226 55%,#070b16 100%)}
+#map{display:block;width:100%;height:auto}
+.node{cursor:pointer}
+.node .ring{transition:.2s}
+.node:hover .ring,.node:focus .ring{stroke-width:4}
+.node.locked{cursor:not-allowed}
+.node.locked .disc{filter:grayscale(1) brightness(.55)}
+.pulse{animation:pulse 2.2s infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.9);opacity:0}}
+.blink{animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.15}}
+.amb{animation:drive 14s linear infinite}
+@keyframes drive{0%{transform:translateX(-140px)}100%{transform:translateX(1140px)}}
+.heli{animation:fly 22s linear infinite}
+@keyframes fly{0%{transform:translate(1100px,40px)}100%{transform:translate(-200px,10px)}}
+.rotor{animation:spin .25s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin{to{transform:scaleX(-1)}}
+.legend{position:absolute;left:14px;bottom:12px;font-size:12px;color:var(--mut);background:#070b16cc;padding:6px 10px;border-radius:10px;border:1px solid var(--line)}
+/* LISTA */
+.caps{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:16px}
+.cap{position:relative;text-align:left;padding:14px 14px 12px;border-radius:16px;background:var(--card);border:1px solid var(--line);transition:.15s;overflow:hidden}
+.cap:hover{transform:translateY(-2px);border-color:#3a4d7a}
+.cap .top{display:flex;align-items:center;gap:10px}
+.cap .em{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:19px;flex:none}
+.cap .n{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.cap h3{font-size:16px;line-height:1.2}
+.cap .s{font-size:12.5px;color:var(--mut);margin-top:8px}
+.cap .prog{height:5px;border-radius:9px;background:#1a2544;margin-top:10px;overflow:hidden}
+.cap .prog i{display:block;height:100%;border-radius:9px}
+.cap .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-top:6px}
+.cap.locked{opacity:.55}
+.cap .lock{position:absolute;top:10px;right:12px;font-size:14px}
+.stars{color:var(--gold);letter-spacing:1px}
+.stars .off{color:#2c3a5e}
+/* MODALES */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(3,6,14,.72);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:16px}
+.ov.on{display:flex;animation:fade .2s}
+@keyframes fade{from{opacity:0}}
+.modal{width:min(720px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--bg2);border:1px solid var(--line);border-radius:22px;box-shadow:0 30px 80px #0009;animation:up .25s}
+@keyframes up{from{transform:translateY(16px);opacity:0}}
+.mh{position:relative;padding:22px 24px 18px;border-bottom:1px solid var(--line)}
+.mh .x{position:absolute;top:14px;right:14px}
+.mh .kick{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.mh h2{font-size:24px;letter-spacing:-.02em;margin-top:2px}
+.mh p{color:var(--mut);font-size:14px}
+.mb{padding:20px 24px 24px}
+.story{background:#0a1020;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:12px;padding:12px 14px;font-size:14.5px;color:#c9d4f0;margin-bottom:18px}
+.sec{font-size:12px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.09em;margin:18px 0 8px}
+.mods{display:grid;gap:8px}
+.mod{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:left;transition:.15s}
+.mod:hover{border-color:#3a4d7a;transform:translateX(2px)}
+.mod .go{margin-left:auto;font-weight:700;font-size:13px;white-space:nowrap}
+.mod b{display:block;font-size:14.5px}
+.mod small{color:var(--mut);font-size:12.5px}
+.mod .seen{font-size:11px;color:var(--ok);font-weight:600}
+.mis{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px dashed var(--line);font-size:14px}
+.mis:last-child{border:0}
+.chk{width:22px;height:22px;border-radius:7px;border:2px solid #33456f;display:grid;place-items:center;flex:none;font-size:13px;font-weight:800}
+.mis.done .chk{background:var(--ok);border-color:var(--ok);color:#052e1f}
+.mis.done .t{color:var(--mut);text-decoration:line-through;text-decoration-color:#34d39988}
+.mis .xp{margin-left:auto;font-size:12px;font-weight:700;color:var(--gold);white-space:nowrap}
+.mis button.chk{cursor:pointer}
+.exam{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px;border-radius:14px;background:linear-gradient(135deg,#1a1430,#121b33);border:1px solid #2d2a55;margin-top:16px}
+.exam .big{font-size:22px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:99px;background:#16203b;border:1px solid var(--line);font-size:13px}
+.badge.on{border-color:var(--gold);background:#2a210b}
+/* QUIZ */
+.qhead{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mut);margin-bottom:10px}
+.qbar{height:6px;border-radius:9px;background:#1a2544;overflow:hidden;margin-bottom:16px}
+.qbar i{display:block;height:100%;background:linear-gradient(90deg,#ff8a3d,#ff4d6d);transition:width .3s}
+.qq{font-family:Sora;font-size:18px;font-weight:600;line-height:1.35;margin-bottom:14px}
+.opt{display:block;width:100%;text-align:left;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:8px;font-size:14.5px;transition:.12s}
+.opt:hover{border-color:#3a4d7a}
+.opt.ok{border-color:var(--ok);background:#0c2a20}
+.opt.ko{border-color:var(--bad);background:#2d0f18}
+.opt[disabled]{cursor:default}
+.expl{padding:12px 14px;border-radius:12px;background:#0a1020;border:1px solid var(--line);font-size:14px;color:#c9d4f0;margin:6px 0 14px}
+.res{text-align:center;padding:10px 0}
+.res .score{font-family:Sora;font-size:52px;font-weight:800;letter-spacing:-.04em}
+.res .stars{font-size:34px}
+.lives{font-size:18px;letter-spacing:2px}
+.timer{height:5px;border-radius:9px;background:#1a2544;overflow:hidden;margin-bottom:14px}
+.timer i{display:block;height:100%;background:var(--acc);transition:width .1s linear}
+/* PLAYER */
+#play{position:fixed;inset:0;z-index:60;background:#000;display:none;flex-direction:column}
+#play.on{display:flex}
+.pbar{display:flex;align-items:center;gap:12px;padding:8px 12px;background:#070b16;border-bottom:1px solid var(--line)}
+.pbar .t{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pbar .c{font-size:12px;color:var(--mut)}
+#frame{flex:1;width:100%;border:0;background:#fff}
+/* INSIGNIAS */
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.bcard{padding:14px;border-radius:14px;background:var(--card);border:1px solid var(--line);text-align:center}
+.bcard .i{font-size:30px;filter:grayscale(1);opacity:.35}
+.bcard.on{border-color:#6b5512;background:#1d180a}
+.bcard.on .i{filter:none;opacity:1}
+.bcard b{display:block;font-size:14px;margin-top:4px}
+.bcard small{color:var(--mut);font-size:12px}
+.field{display:block;width:100%;padding:11px 13px;border-radius:12px;background:var(--card);border:1px solid var(--line);color:var(--tx);font:inherit;margin:6px 0 14px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:10px;font-size:14px}
+.sw{width:44px;height:24px;border-radius:99px;background:#2a3657;position:relative;flex:none;transition:.2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+.sw.on{background:var(--ok)}.sw.on::after{left:23px}
+/* TOAST */
+#toasts{position:fixed;right:16px;bottom:16px;z-index:80;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:11px 14px;border-radius:14px;background:#141f3a;border:1px solid #33456f;box-shadow:0 12px 30px #0008;font-size:14px;animation:tin .3s;max-width:320px}
+.toast b{color:var(--gold)}
+@keyframes tin{from{transform:translateX(30px);opacity:0}}
+footer{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--mut);font-size:12.5px}
+@media(max-width:720px){.xpbar{width:90px}.hud .chip.hide-m,.logo .tx{display:none}.mh h2{font-size:20px}.legend{display:none}}
+</style>
+</head>
+<body>
+
+<header class="hud">
+  <div class="logo"><div class="siren">🚨</div><span class="tx">Mundo Emergencia</span></div>
+  <div class="player">
+    <button class="chip hide-m" id="bBadges" title="Insignias">🏅 <span id="nBadges">0</span></button>
+    <button class="chip" id="bStars" title="Estrellas de examen">⭐ <span id="nStars">0</span></button>
+    <button class="ava" id="bAva" title="Tu perfil">?</button>
+    <div class="pinfo">
+      <div class="pname" id="pName">Sin nombre</div>
+      <div class="prank"><span id="pRank">—</span> · <span id="pXp">0</span> XP</div>
+      <div class="xpbar"><i id="xpFill" style="width:0"></i></div>
+    </div>
+    <button class="ibtn" id="bSet" title="Ajustes">⚙️</button>
+  </div>
+</header>
+
+<main>
+  <section class="intro">
+    <div>
+      <h1>Tu guardia empieza <span>ahora</span>.</h1>
+      <p>Recorre el mundo de la emergencia capítulo a capítulo: de la calle al box de trauma, de la parada a la ventilación. Completa misiones, aprueba los exámenes y sube de rango.</p>
+    </div>
+    <div class="modes">
+      <button class="btn pri" id="bContinue">▶ Continuar</button>
+      <button class="btn" id="bNight">🌙 Turno de noche</button>
+    </div>
+  </section>
+
+  <div class="mapwrap">
+    <svg id="map" viewBox="0 0 1000 520" role="img" aria-label="Mapa del mundo de la emergencia">
+      <defs>
+        <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c1836"/><stop offset="1" stop-color="#071022"/></linearGradient>
+        <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#101b38"/><stop offset="1" stop-color="#0a1229"/></linearGradient>
+        <radialGradient id="glow"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+        <filter id="soft"><feGaussianBlur stdDeviation="6"/></filter>
+      </defs>
+      <!-- cielo y estrellas -->
+      <g id="sky"></g>
+      <circle cx="880" cy="70" r="26" fill="#f4f1de" opacity=".9"/><circle cx="890" cy="62" r="24" fill="#16244a"/>
+      <!-- montañas -->
+      <path d="M0 250 L90 170 L160 215 L250 130 L340 210 L420 160 L520 230 L610 150 L700 220 L800 140 L900 210 L1000 170 L1000 300 L0 300Z" fill="#0e1a3a"/>
+      <path d="M0 280 L120 220 L230 265 L330 205 L450 270 L560 215 L690 270 L800 220 L920 265 L1000 240 L1000 320 L0 320Z" fill="#111f44"/>
+      <!-- suelo -->
+      <rect y="300" width="1000" height="220" fill="url(#ground)"/>
+      <!-- carretera -->
+      <path d="M-20 455 C 200 430, 320 470, 520 448 S 860 430, 1020 452" stroke="#1d2a4c" stroke-width="44" fill="none"/>
+      <path d="M-20 455 C 200 430, 320 470, 520 448 S 860 430, 1020 452" stroke="#f5d35b" stroke-width="2" stroke-dasharray="18 16" fill="none" opacity=".55"/>
+      <!-- ruta de la guardia -->
+      <path id="route" d="" stroke="#ff8a3d" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round" fill="none" opacity=".75"/>
+      <!-- escena de accidente -->
+      <g transform="translate(120,388)">
+        <rect x="-36" y="-6" width="46" height="20" rx="5" fill="#3b4a72" transform="rotate(-12)"/>
+        <rect x="8" y="-2" width="44" height="20" rx="5" fill="#59617d" transform="rotate(18 30 8)"/>
+        <circle cx="-4" cy="-18" r="5" fill="#ff8a3d" class="blink"/>
+        <path d="M-60 26 l10 -18 l10 18z" fill="#ff8a3d"/><path d="M60 30 l9 -16 l9 16z" fill="#ff8a3d"/>
+      </g>
+      <!-- hospital -->
+      <g transform="translate(330,200)">
+        <rect x="0" y="40" width="200" height="150" rx="6" fill="#18264d" stroke="#27386a"/>
+        <rect x="60" y="0" width="80" height="44" rx="4" fill="#1d2d5a" stroke="#27386a"/>
+        <rect x="88" y="10" width="24" height="24" rx="3" fill="#ff4d6d"/><rect x="96" y="14" width="8" height="16" fill="#fff"/><rect x="92" y="18" width="16" height="8" fill="#fff"/>
+        <g id="win" fill="#ffd77a"></g>
+        <rect x="74" y="150" width="52" height="40" fill="#0b1430" stroke="#38bdf8" stroke-opacity=".5"/>
+        <text x="100" y="146" text-anchor="middle" font-size="10" font-family="Sora" font-weight="700" fill="#ff8a3d">URGENCIAS</text>
+        <!-- helipuerto -->
+        <ellipse cx="100" cy="-4" rx="26" ry="6" fill="#0b1430" stroke="#fbbf24" stroke-opacity=".6"/>
+        <text x="100" y="-1" text-anchor="middle" font-size="8" fill="#fbbf24" font-weight="700">H</text>
+      </g>
+      <!-- unidad respiratoria -->
+      <g transform="translate(640,250)">
+        <rect x="0" y="0" width="150" height="110" rx="10" fill="#132a3a" stroke="#1f4a55"/>
+        <g fill="#7ef0c7" opacity=".85"><rect x="16" y="18" width="22" height="14" rx="2"/><rect x="48" y="18" width="22" height="14" rx="2"/><rect x="80" y="18" width="22" height="14" rx="2"/><rect x="112" y="18" width="22" height="14" rx="2"/></g>
+        <path d="M14 80 h20 l8 -18 l10 32 l8 -14 h20 l8 -10 l8 10 h40" stroke="#34d399" stroke-width="2.5" fill="none"/>
+      </g>
+      <!-- sala de descanso -->
+      <g transform="translate(850,330)">
+        <rect x="0" y="0" width="110" height="70" rx="8" fill="#1d1840" stroke="#3a2f74"/>
+        <rect x="14" y="14" width="30" height="20" rx="3" fill="#c4b5fd" opacity=".7"/><rect x="62" y="14" width="30" height="20" rx="3" fill="#c4b5fd" opacity=".35"/>
+      </g>
+      <!-- ambulancia -->
+      <g class="amb"><g transform="translate(0,432)">
+        <rect x="0" y="0" width="64" height="26" rx="5" fill="#f1f5f9"/><rect x="44" y="4" width="18" height="12" rx="2" fill="#7dd3fc"/>
+        <rect x="8" y="10" width="30" height="4" fill="#ff4d6d"/><rect x="21" y="3" width="4" height="18" fill="#ff4d6d" opacity="0"/>
+        <rect x="18" y="-5" width="10" height="5" rx="2" fill="#38bdf8" class="blink"/><rect x="30" y="-5" width="10" height="5" rx="2" fill="#ff4d6d" class="blink" style="animation-delay:.5s"/>
+        <circle cx="14" cy="27" r="6" fill="#0b1020"/><circle cx="50" cy="27" r="6" fill="#0b1020"/>
+      </g></g>
+      <!-- helicóptero -->
+      <g class="heli"><g transform="translate(0,60)">
+        <ellipse cx="30" cy="12" rx="22" ry="10" fill="#e2e8f0"/><rect x="48" y="9" width="40" height="5" rx="2" fill="#e2e8f0"/><rect x="84" y="2" width="4" height="16" fill="#e2e8f0"/>
+        <rect x="14" y="8" width="14" height="8" rx="2" fill="#7dd3fc"/><rect x="-10" y="0" width="80" height="2" fill="#94a3b8" class="rotor"/>
+        <circle cx="30" cy="22" r="2.5" fill="#ff4d6d" class="blink"/>
+      </g></g>
+      <g id="nodes"></g>
+    </svg>
+    <div class="legend">Toca un lugar del mapa para entrar en su capítulo</div>
+  </div>
+
+  <div class="caps" id="caps"></div>
+</main>
+
+<footer>
+  Herramienta docente con fines formativos. Modelos y valores simplificados: no sustituye a las guías clínicas vigentes, a los protocolos del servicio ni al juicio clínico. Tu progreso se guarda solo en este navegador (puedes exportarlo en ⚙️).
+</footer>
+
+<!-- MODAL GENÉRICO -->
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+
+<!-- REPRODUCTOR DE MÓDULOS -->
+<div id="play">
+  <div class="pbar">
+    <button class="btn" id="pBack">← Volver al mundo</button>
+    <div style="min-width:0"><div class="t" id="pTitle"></div><div class="c" id="pCap"></div></div>
+    <a class="btn ghost" id="pNew" target="_blank" rel="noopener" style="margin-left:auto">↗ Pestaña nueva</a>
+  </div>
+  <iframe id="frame" title="Módulo de aprendizaje" allow="fullscreen"></iframe>
+</div>
+
+<div id="toasts"></div>
+
+<script src="datos.js"></script>
+<script>
+"use strict";
+/* ============ ESTADO ============ */
+const KEY = "mundo_emergencia_v1";
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }
+let S = Object.assign({ nombre:"", rol:"", visitas:{}, estrellas:{}, mejorNota:{}, manual:{}, noche:0, libre:false, vistos:[], insVistas:[] }, load());
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function rawGet(k){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){ return null; } }
+
+/* Sensores que las misiones consultan (leen el progreso de cada módulo) */
+const sens = {
+  visit: id => !!S.visitas[id],
+  count: k => { const v = rawGet(k); return v && typeof v === "object" ? Object.keys(v).length : 0; },
+  num: k => +rawGet(k) || 0,
+  list: k => Array.isArray(rawGet(k)) ? rawGet(k) : [],
+  stars: id => S.estrellas[id] || 0
+};
+const misDone = m => m.manual ? !!S.manual[m.id] : !!m.auto(sens);
+function capStats(c){
+  const done = c.misiones.filter(misDone).length;
+  const total = c.misiones.length;
+  return { done, total, pct: Math.round(done / total * 100), complete: done === total };
+}
+function unlocked(c){
+  if (S.libre || c.n === 1) return true;
+  const prev = CAPITULOS.find(x => x.n === c.n - 1);
+  return prev.sinExamen ? capStats(prev).complete : sens.stars(prev.id) >= 1;
+}
+function badgeOn(c){ return c.sinExamen ? capStats(c).complete : sens.stars(c.id) >= 1; }
+const EXTRA = [
+  { id:"guardia", nombre:"Guardia completa", icono:"🏆", txt:"Todos los capítulos al 100 %", on:() => CAPITULOS.every(c => capStats(c).complete) },
+  { id:"noche", nombre:"Noche en vela", icono:"🌙", txt:"10 aciertos o más en el Turno de noche", on:() => S.noche >= 10 },
+  { id:"perfecto", nombre:"Matrícula", icono:"🎓", txt:"3 estrellas en un examen", on:() => Object.values(S.estrellas).some(v => v >= 3) }
+];
+function allBadges(){
+  return CAPITULOS.map(c => ({ ...c.insignia, on: badgeOn(c) })).concat(EXTRA.map(b => ({ ...b, on: b.on() })));
+}
+function xpTotal(){
+  let xp = 0;
+  CAPITULOS.forEach(c => {
+    c.misiones.forEach(m => { if (misDone(m)) xp += m.xp; });
+    xp += (S.estrellas[c.id] || 0) * 100;
+    if (capStats(c).complete) xp += 200;
+  });
+  xp += S.noche * 25;
+  return xp;
+}
+function rango(xp){
+  let i = 0; RANGOS.forEach((r, k) => { if (xp >= r.xp) i = k; });
+  const cur = RANGOS[i], nxt = RANGOS[i + 1];
+  return { i, cur, nxt, pct: nxt ? (xp - cur.xp) / (nxt.xp - cur.xp) * 100 : 100 };
+}
+
+/* ============ TOASTS (misiones, insignias, rango) ============ */
+function toast(html){ const t = document.createElement("div"); t.className = "toast"; t.innerHTML = html; $("#toasts").appendChild(t); setTimeout(() => t.remove(), 4200); }
+let lastRank = null;
+function checkNews(silent){
+  CAPITULOS.forEach(c => c.misiones.forEach(m => {
+    if (misDone(m) && !S.vistos.includes(m.id)){ S.vistos.push(m.id); if (!silent && m.xp) toast(`✅ Misión cumplida: ${esc(m.txt)} <b>+${m.xp} XP</b>`); }
+  }));
+  allBadges().forEach(b => {
+    if (b.on && !S.insVistas.includes(b.id)){ S.insVistas.push(b.id); if (!silent) toast(`${b.icono} Insignia desbloqueada: <b>${esc(b.nombre)}</b>`); }
+  });
+  const r = rango(xpTotal()).i;
+  if (!silent && lastRank !== null && r > lastRank) toast(`🎖️ ¡Ascenso! Ahora eres <b>${esc(RANGOS[r].nombre)}</b>`);
+  lastRank = r; save();
+}
+
+/* ============ RENDER ============ */
+function starStr(n){ return `<span class="stars">${"★".repeat(n)}<span class="off">${"★".repeat(3 - n)}</span></span>`; }
+const POS = { phtls:[150,350], atls:[430,290], rcp:[560,175], vmni:[715,330], turno:[905,300] };
+function renderMap(){
+  // estrellas del cielo (deterministas)
+  if (!$("#sky").childElementCount){
+    let s = "", seed = 7;
+    const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    for (let i = 0; i < 90; i++) s += `<circle cx="${(rnd()*1000).toFixed(0)}" cy="${(rnd()*220).toFixed(0)}" r="${(rnd()*1.3+.3).toFixed(1)}" fill="#fff" opacity="${(rnd()*.6+.2).toFixed(2)}"/>`;
+    $("#sky").innerHTML = s;
+    let w = "";
+    for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) if ((r * 7 + k * 3) % 5) w += `<rect x="${14 + k * 31}" y="${54 + r * 24}" width="16" height="12" rx="2" opacity="${((r + k) % 3) ? .85 : .3}"/>`;
+    $("#win").innerHTML = w;
+  }
+  const pts = CAPITULOS.map(c => POS[c.id]);
+  $("#route").setAttribute("d", "M" + pts.map(p => p.join(" ")).join(" L"));
+  $("#nodes").innerHTML = CAPITULOS.map(c => {
+    const [x, y] = POS[c.id], st = capStats(c), lk = !unlocked(c), stars = sens.stars(c.id);
+    const R = 30, circ = 2 * Math.PI * (R + 6);
+    const next = !lk && !st.complete && nextCap() === c;
+    return `<g class="node ${lk ? "locked" : ""}" data-cap="${c.id}" tabindex="0" role="button" aria-label="Capítulo ${c.n}: ${esc(c.titulo)}">
+      ${next ? `<circle cx="${x}" cy="${y}" r="${R}" fill="${c.color}" class="pulse"/>` : ""}
+      <circle cx="${x}" cy="${y}" r="${R + 16}" fill="url(#glow)" opacity=".5"/>
+      <circle cx="${x}" cy="${y}" r="${R + 6}" fill="none" stroke="#1f2b48" stroke-width="5"/>
+      <circle cx="${x}" cy="${y}" r="${R + 6}" fill="none" stroke="${c.color}" stroke-width="5" stroke-linecap="round"
+        stroke-dasharray="${circ * st.pct / 100} ${circ}" transform="rotate(-90 ${x} ${y})"/>
+      <g class="disc"><circle class="ring" cx="${x}" cy="${y}" r="${R}" fill="#0d1630" stroke="${c.color}" stroke-width="2"/>
+      <text x="${x}" y="${y + 9}" text-anchor="middle" font-size="26">${lk ? "🔒" : c.icono}</text></g>
+      <g transform="translate(${x},${y + R + 24})">
+        <rect x="-66" y="-13" width="132" height="${c.sinExamen ? 24 : 38}" rx="9" fill="#070b16" fill-opacity=".85" stroke="#1f2b48"/>
+        <text y="3" text-anchor="middle" font-family="Sora" font-size="12" font-weight="700" fill="#e8eefc">${c.n}. ${esc(c.titulo)}</text>
+        ${c.sinExamen ? "" : `<text y="19" text-anchor="middle" font-size="12" fill="#fbbf24">${"★".repeat(stars)}<tspan fill="#2c3a5e">${"★".repeat(3 - stars)}</tspan></text>`}
+      </g></g>`;
+  }).join("");
+  $("#nodes").querySelectorAll(".node").forEach(n => {
+    const f = () => openCap(n.dataset.cap);
+    n.onclick = f; n.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); f(); } };
+  });
+}
+function renderCaps(){
+  $("#caps").innerHTML = CAPITULOS.map(c => {
+    const st = capStats(c), lk = !unlocked(c);
+    return `<button class="cap ${lk ? "locked" : ""}" data-cap="${c.id}">
+      ${lk ? '<span class="lock">🔒</span>' : ""}
+      <div class="top"><div class="em" style="background:${c.color}22;color:${c.color}">${c.icono}</div>
+      <div><div class="n">Capítulo ${c.n}</div><h3>${esc(c.titulo)}</h3></div></div>
+      <div class="s">${esc(c.sub)}</div>
+      <div class="prog"><i style="width:${st.pct}%;background:${c.color}"></i></div>
+      <div class="meta"><span>${st.done}/${st.total} misiones</span>${c.sinExamen ? "" : starStr(sens.stars(c.id))}</div>
+    </button>`;
+  }).join("");
+  $("#caps").querySelectorAll(".cap").forEach(b => b.onclick = () => openCap(b.dataset.cap));
+}
+function renderHud(){
+  const xp = xpTotal(), r = rango(xp);
+  $("#pName").textContent = S.nombre || "Sin nombre";
+  $("#bAva").textContent = (S.nombre || "?").trim().charAt(0).toUpperCase() || "?";
+  $("#pRank").textContent = r.cur.nombre;
+  $("#pXp").textContent = xp;
+  $("#xpFill").style.width = r.pct + "%";
+  $("#nStars").textContent = Object.values(S.estrellas).reduce((a, b) => a + b, 0);
+  $("#nBadges").textContent = allBadges().filter(b => b.on).length;
+}
+function nextCap(){ return CAPITULOS.find(c => unlocked(c) && !capStats(c).complete) || CAPITULOS[0]; }
+function render(silent){ checkNews(silent); renderHud(); renderMap(); renderCaps(); }
+
+/* ============ MODAL ============ */
+function modal(html){ $("#modal").innerHTML = html; $("#ov").classList.add("on"); const x = $("#modal .x"); if (x) x.onclick = closeModal; }
+function closeModal(){ $("#ov").classList.remove("on"); stopTimer(); }
+$("#ov").addEventListener("click", e => { if (e.target.id === "ov") closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape"){ if ($("#play").classList.contains("on")) closePlay(); else closeModal(); } });
+
+function openCap(id){
+  const c = CAPITULOS.find(x => x.id === id);
+  if (!unlocked(c)){
+    const prev = CAPITULOS.find(x => x.n === c.n - 1);
+    toast(`🔒 Supera primero el capítulo ${prev.n} (${esc(prev.titulo)}) o activa el modo libre en ⚙️`);
+    return;
+  }
+  const st = capStats(c), stars = sens.stars(c.id), best = S.mejorNota[c.id];
+  modal(`
+    <div class="mh" style="background:linear-gradient(135deg,${c.color}22,transparent 60%)">
+      <button class="ibtn x" aria-label="Cerrar">✕</button>
+      <div class="kick" style="color:${c.color}">Capítulo ${c.n} · ${st.done}/${st.total} misiones</div>
+      <h2>${c.icono} ${esc(c.titulo)}</h2><p>${esc(c.sub)}</p>
+    </div>
+    <div class="mb">
+      <div class="story" style="border-left-color:${c.color}">${esc(c.historia)}</div>
+      <div class="sec">Entra en la simulación</div>
+      <div class="mods">${c.modulos.map(m => `
+        <button class="mod" data-mod="${m.id}">
+          <div><b>${esc(m.nombre)}</b><small>${esc(m.desc)}</small>${S.visitas[m.id] ? '<div class="seen">✓ Visitado</div>' : ""}</div>
+          <span class="go" style="color:${c.color}">Jugar ▶</span>
+        </button>`).join("")}</div>
+      <div class="sec">Misiones</div>
+      <div>${c.misiones.map(m => {
+        const d = misDone(m);
+        return `<div class="mis ${d ? "done" : ""}">
+          ${m.manual ? `<button class="chk" data-man="${m.id}" title="Marcar como hecha">${d ? "✓" : ""}</button>` : `<span class="chk">${d ? "✓" : ""}</span>`}
+          <span class="t">${esc(m.txt)}${m.manual ? ' <small style="color:var(--mut)">(márcala tú)</small>' : ""}</span>
+          <span class="xp">${m.xp ? "+" + m.xp + " XP" : ""}</span></div>`;
+      }).join("")}</div>
+      ${c.sinExamen ? "" : `
+      <div class="exam">
+        <div class="big">📝</div>
+        <div><b>Examen del capítulo</b><div style="font-size:13px;color:var(--mut)">5 preguntas · ★ 60 % · ★★ 80 % · ★★★ 100 % · +100 XP por estrella${best != null ? ` · Mejor nota: ${best} %` : ""}</div>
+        <div style="margin-top:4px">${starStr(stars)}</div></div>
+        <button class="btn pri" style="margin-left:auto" id="bExam">${stars ? "Repetir examen" : "Hacer examen"}</button>
+      </div>`}
+      <div class="sec">Insignia</div>
+      <span class="badge ${badgeOn(c) ? "on" : ""}">${c.insignia.icono} ${esc(c.insignia.nombre)} · <small>${esc(c.insignia.txt)}</small></span>
+    </div>`);
+  $("#modal").querySelectorAll("[data-mod]").forEach(b => b.onclick = () => openPlay(c, c.modulos.find(m => m.id === b.dataset.mod)));
+  $("#modal").querySelectorAll("[data-man]").forEach(b => b.onclick = () => { S.manual[b.dataset.man] = !S.manual[b.dataset.man]; save(); render(); openCap(c.id); });
+  const be = $("#bExam"); if (be) be.onclick = () => startQuiz(c);
+}
+
+/* ============ REPRODUCTOR ============ */
+let playing = null;
+function openPlay(c, m){
+  closeModal();
+  playing = { c, m };
+  S.visitas[m.id] = (S.visitas[m.id] || 0) + 1; save();
+  $("#pTitle").textContent = m.nombre;
+  $("#pCap").textContent = `Capítulo ${c.n} · ${c.titulo}`;
+  $("#pNew").href = m.url;
+  $("#frame").src = m.url;
+  $("#play").classList.add("on");
+  document.body.style.overflow = "hidden";
+  render();
+}
+function closePlay(){
+  $("#play").classList.remove("on");
+  $("#frame").src = "about:blank";
+  document.body.style.overflow = "";
+  const c = playing && playing.c; playing = null;
+  render();
+  if (c) openCap(c.id);
+}
+$("#pBack").onclick = closePlay;
+// Los módulos guardan su progreso en localStorage: lo detectamos al vuelo
+window.addEventListener("storage", () => { render(); });
+
+/* ============ EXAMEN DE CAPÍTULO ============ */
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+function prepQ(q){ // baraja también las opciones
+  const idx = shuffle(q.o.map((_, i) => i));
+  return { q: q.q, e: q.e, o: idx.map(i => q.o[i]), c: idx.indexOf(q.c), cap: q.cap };
+}
+function startQuiz(c){
+  const qs = shuffle(PREGUNTAS[c.id]).slice(0, 5).map(prepQ);
+  let i = 0, ok = 0;
+  const show = () => {
+    const q = qs[i];
+    modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:${c.color}">Examen · Capítulo ${c.n}</div><h2>${esc(c.titulo)}</h2></div>
+      <div class="mb">
+        <div class="qhead"><span>Pregunta ${i + 1} de ${qs.length}</span><span>✅ ${ok}</span></div>
+        <div class="qbar"><i style="width:${i / qs.length * 100}%"></i></div>
+        <div class="qq">${esc(q.q)}</div>
+        <div id="opts">${q.o.map((o, k) => `<button class="opt" data-k="${k}">${esc(o)}</button>`).join("")}</div>
+        <div id="after"></div>
+      </div>`);
+    $("#modal").querySelectorAll(".opt").forEach(b => b.onclick = () => {
+      const k = +b.dataset.k, right = k === q.c; if (right) ok++;
+      $("#modal").querySelectorAll(".opt").forEach(x => { x.disabled = true; const kk = +x.dataset.k; if (kk === q.c) x.classList.add("ok"); else if (kk === k) x.classList.add("ko"); });
+      $("#after").innerHTML = `<div class="expl">${right ? "✅ <b>Correcto.</b> " : "❌ <b>No.</b> "}${esc(q.e)}</div>
+        <button class="btn pri" id="nx">${i + 1 < qs.length ? "Siguiente →" : "Ver resultado"}</button>`;
+      $("#nx").onclick = () => { i++; i < qs.length ? show() : finish(); };
+    });
+  };
+  const finish = () => {
+    const pct = Math.round(ok / qs.length * 100);
+    const st = pct === 100 ? 3 : pct >= 80 ? 2 : pct >= 60 ? 1 : 0;
+    const prev = S.estrellas[c.id] || 0;
+    if (st > prev) S.estrellas[c.id] = st;
+    if (S.mejorNota[c.id] == null || pct > S.mejorNota[c.id]) S.mejorNota[c.id] = pct;
+    save();
+    const gained = Math.max(0, st - prev) * 100;
+    modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:${c.color}">Resultado</div><h2>${esc(c.titulo)}</h2></div>
+      <div class="mb res">
+        <div class="score">${pct}%</div>
+        <div>${starStr(st)}</div>
+        <p style="color:var(--mut);margin:10px 0 18px">${st ? (st === 3 ? "¡Perfecto! Matrícula de honor." : "Capítulo superado." ) + (gained ? ` +${gained} XP` : "") : "Necesitas un 60 % para superar el capítulo. Repasa en la simulación y vuelve a intentarlo."}</p>
+        <div class="row" style="justify-content:center">
+          <button class="btn" id="rAgain">↻ Repetir</button>
+          <button class="btn" id="rBack">Volver al capítulo</button>
+          ${st && CAPITULOS.find(x => x.n === c.n + 1) ? `<button class="btn pri" id="rNext">Siguiente capítulo →</button>` : ""}
+        </div>
+      </div>`);
+    $("#rAgain").onclick = () => startQuiz(c);
+    $("#rBack").onclick = () => openCap(c.id);
+    const rn = $("#rNext"); if (rn) rn.onclick = () => openCap(CAPITULOS.find(x => x.n === c.n + 1).id);
+    render();
+  };
+  show();
+}
+
+/* ============ TURNO DE NOCHE (modo arcade) ============ */
+let tmr = null;
+function stopTimer(){ if (tmr){ clearInterval(tmr); tmr = null; } }
+function startNight(){
+  const pool = shuffle(Object.entries(PREGUNTAS).flatMap(([cap, arr]) => arr.map(q => ({ ...q, cap })))).map(prepQ);
+  let i = 0, ok = 0, lives = 3, score = 0;
+  const T = 20;
+  const show = () => {
+    if (lives <= 0 || i >= pool.length) return end();
+    const q = pool[i], c = CAPITULOS.find(x => x.id === q.cap);
+    let left = T;
+    modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:#a78bfa">🌙 Turno de noche · ${c.icono} ${esc(c.titulo)}</div><h2>Paciente ${i + 1}</h2></div>
+      <div class="mb">
+        <div class="qhead"><span class="lives">${"❤️".repeat(lives)}${"🖤".repeat(3 - lives)}</span><span><b>${score}</b> pts · ✅ ${ok}</span></div>
+        <div class="timer"><i id="tf" style="width:100%"></i></div>
+        <div class="qq">${esc(q.q)}</div>
+        <div>${q.o.map((o, k) => `<button class="opt" data-k="${k}">${esc(o)}</button>`).join("")}</div>
+        <div id="after"></div>
+      </div>`);
+    const answer = k => {
+      stopTimer();
+      const right = k === q.c;
+      if (right){ ok++; score += 100 + Math.round(left * 5); } else lives--;
+      $("#modal").querySelectorAll(".opt").forEach(x => { x.disabled = true; const kk = +x.dataset.k; if (kk === q.c) x.classList.add("ok"); else if (kk === k) x.classList.add("ko"); });
+      $("#after").innerHTML = `<div class="expl">${k === -1 ? "⏰ <b>Se acabó el tiempo.</b> " : right ? "✅ " : "❌ "}${esc(q.e)}</div><button class="btn pri" id="nx">${lives > 0 ? "Siguiente paciente →" : "Fin del turno"}</button>`;
+      $("#nx").onclick = () => { i++; show(); };
+    };
+    $("#modal").querySelectorAll(".opt").forEach(b => b.onclick = () => answer(+b.dataset.k));
+    tmr = setInterval(() => { left -= .1; const f = $("#tf"); if (f) f.style.width = Math.max(0, left / T * 100) + "%"; if (left <= 0) answer(-1); }, 100);
+  };
+  const end = () => {
+    stopTimer();
+    const rec = ok > S.noche;
+    if (rec){ S.noche = ok; save(); }
+    modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:#a78bfa">🌙 Turno de noche</div><h2>Fin de la guardia</h2></div>
+      <div class="mb res">
+        <div class="score">${score}</div><div style="color:var(--mut)">puntos · ${ok} pacientes bien resueltos</div>
+        <p style="margin:12px 0 18px">${rec ? `🏅 ¡Nuevo récord! Tu mejor turno ahora suma ${ok * 25} XP` : `Tu récord: ${S.noche} aciertos`}</p>
+        <div class="row" style="justify-content:center"><button class="btn pri" id="nAgain">↻ Otro turno</button><button class="btn" id="nClose">Volver al mapa</button></div>
+      </div>`);
+    $("#nAgain").onclick = startNight; $("#nClose").onclick = closeModal;
+    render();
+  };
+  modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:#a78bfa">Modo arcade</div><h2>🌙 Turno de noche</h2><p>Llegan pacientes de todos los capítulos, sin orden.</p></div>
+    <div class="mb">
+      <div class="story" style="border-left-color:#a78bfa">Tienes <b>3 vidas</b> y <b>${T} segundos</b> por paciente. Cuanto antes aciertes, más puntos. Tu récord de aciertos suma 25 XP por acierto.</div>
+      <p style="color:var(--mut);margin-bottom:16px">Récord actual: <b style="color:var(--tx)">${S.noche}</b> aciertos</p>
+      <button class="btn pri" id="nGo">Empezar turno ▶</button>
+    </div>`);
+  $("#nGo").onclick = show;
+}
+
+/* ============ PERFIL, INSIGNIAS, AJUSTES ============ */
+function openProfile(first){
+  const xp = xpTotal(), r = rango(xp);
+  modal(`<div class="mh">${first ? "" : '<button class="ibtn x" aria-label="Cerrar">✕</button>'}<div class="kick" style="color:var(--acc)">${first ? "Bienvenida" : "Tu perfil"}</div><h2>${first ? "🚨 Antes de tu primera guardia" : esc(r.cur.nombre)}</h2>
+    <p>${first ? "Dinos cómo te llamas para ponerlo en tu tarjeta de identificación." : `${xp} XP${r.nxt ? ` · ${r.nxt.xp - xp} XP para ${esc(r.nxt.nombre)}` : " · Rango máximo"}`}</p></div>
+    <div class="mb">
+      <label>Nombre<input class="field" id="fName" maxlength="40" value="${esc(S.nombre)}" placeholder="p. ej. Carlos"></label>
+      <label>Perfil<select class="field" id="fRol">
+        ${["", "Medicina", "Enfermería", "Técnico/a en emergencias", "Estudiante", "Otro"].map(o => `<option ${o === S.rol ? "selected" : ""} value="${o}">${o || "— elige —"}</option>`).join("")}
+      </select></label>
+      ${first ? "" : `<div class="sec">Rangos</div><div>${RANGOS.map((x, k) => `<div class="mis ${k <= r.i ? "done" : ""}"><span class="chk">${k <= r.i ? "✓" : ""}</span><span class="t" style="text-decoration:none">${esc(x.nombre)}</span><span class="xp">${x.xp} XP</span></div>`).join("")}</div>`}
+      <div class="row" style="margin-top:16px"><button class="btn pri" id="fOk">${first ? "Empezar la guardia ▶" : "Guardar"}</button></div>
+    </div>`);
+  $("#fOk").onclick = () => { S.nombre = $("#fName").value.trim(); S.rol = $("#fRol").value; save(); closeModal(); render(); if (first) openCap(nextCap().id); };
+}
+function openBadges(){
+  modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:var(--gold)">Colección</div><h2>🏅 Insignias</h2></div>
+    <div class="mb"><div class="bgrid">${allBadges().map(b => `<div class="bcard ${b.on ? "on" : ""}"><div class="i">${b.icono}</div><b>${esc(b.nombre)}</b><small>${esc(b.txt)}</small></div>`).join("")}</div></div>`);
+}
+function openStars(){
+  modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:var(--gold)">Exámenes</div><h2>⭐ Estrellas</h2></div>
+    <div class="mb">${CAPITULOS.filter(c => !c.sinExamen).map(c => `<div class="mis"><span style="font-size:20px">${c.icono}</span><span class="t">${c.n}. ${esc(c.titulo)}</span><span class="xp">${starStr(sens.stars(c.id))}</span></div>`).join("")}</div>`);
+}
+function openSettings(){
+  modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:var(--mut)">Ajustes</div><h2>⚙️ Configuración</h2></div>
+    <div class="mb">
+      <div class="toggle"><div><b>Modo libre</b><div style="font-size:12.5px;color:var(--mut)">Desbloquea todos los capítulos sin aprobar el anterior (para docentes o repaso)</div></div><button class="sw ${S.libre ? "on" : ""}" id="swLibre" aria-label="Modo libre"></button></div>
+      <div class="sec">Tu progreso</div>
+      <p style="font-size:13.5px;color:var(--mut);margin-bottom:10px">Se guarda en este navegador. Expórtalo para llevarlo a otro dispositivo.</p>
+      <div class="row">
+        <button class="btn" id="bExp">⬇ Exportar</button>
+        <label class="btn" style="cursor:pointer">⬆ Importar<input type="file" id="fImp" accept="application/json" hidden></label>
+        <button class="btn" id="bReset" style="color:var(--bad)">Reiniciar</button>
+      </div>
+    </div>`);
+  $("#swLibre").onclick = () => { S.libre = !S.libre; save(); render(); openSettings(); };
+  $("#bExp").onclick = () => {
+    const extra = {}; ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist"].forEach(k => { const v = localStorage.getItem(k); if (v != null) extra[k] = v; });
+    const blob = new Blob([JSON.stringify({ mundo: S, modulos: extra, fecha: new Date().toISOString() }, null, 1)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "mundo-emergencia-progreso.json"; a.click();
+  };
+  $("#fImp").onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    f.text().then(t => {
+      try{
+        const d = JSON.parse(t);
+        if (!d.mundo) throw 0;
+        S = Object.assign(S, d.mundo); save();
+        Object.entries(d.modulos || {}).forEach(([k, v]) => { if (/^(phtls_|atls_|pcr_hist)/.test(k)) localStorage.setItem(k, v); });
+        closeModal(); render(true); toast("✅ Progreso importado");
+      }catch(err){ toast("❌ El archivo no es un progreso válido"); }
+    });
+  };
+  $("#bReset").onclick = () => {
+    modal(`<div class="mh"><div class="kick" style="color:var(--bad)">Atención</div><h2>¿Reiniciar todo?</h2><p>Se borran tu XP, estrellas, misiones y el progreso guardado de los talleres en este navegador. No se puede deshacer.</p></div>
+      <div class="mb row"><button class="btn" id="rNo">Cancelar</button><button class="btn pri" id="rYes">Sí, reiniciar</button></div>`);
+    $("#rNo").onclick = openSettings;
+    $("#rYes").onclick = () => {
+      ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist",KEY].forEach(k => localStorage.removeItem(k));
+      S = { nombre:"", rol:"", visitas:{}, estrellas:{}, mejorNota:{}, manual:{}, noche:0, libre:false, vistos:[], insVistas:[] };
+      save(); closeModal(); render(true); openProfile(true);
+    };
+  };
+}
+
+$("#bAva").onclick = () => openProfile(false);
+$("#bBadges").onclick = openBadges;
+$("#bStars").onclick = openStars;
+$("#bSet").onclick = openSettings;
+$("#bNight").onclick = startNight;
+$("#bContinue").onclick = () => openCap(nextCap().id);
+
+render(true);
+if (!S.nombre) openProfile(true);
+</script>
+</body>
+</html>

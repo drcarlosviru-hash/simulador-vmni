@@ -1,3 +1,19 @@
+# 🚨 Mundo Emergencia — aprende jugando
+
+**Entrar al mundo:** https://drcarlosviru-hash.github.io/simulador-vmni/mundo/
+
+Mundo virtual de la emergencia por capítulos, con misiones, XP, rangos, insignias, exámenes con estrellas y un modo arcade (*Turno de noche*):
+
+1. **La calle** · PHTLS (trauma prehospitalario)
+2. **Box de trauma** · ATLS
+3. **Parada** · Simulador PCR, algoritmo SVA ERC 2025
+4. **Respira** · VMNI (repaso, guía visual, ventiladores y simulador)
+5. **Fin de guardia** · TurnoValor (demo con datos ficticios)
+
+Las misiones se marcan solas leyendo el progreso que guarda cada módulo en el navegador. Preguntas y capítulos editables en `mundo/datos.js`.
+
+---
+
 # Simulador de VMNI
 
 Simulador docente de ventilación mecánica no invasiva (VMNI) para urgencias y emergencias.

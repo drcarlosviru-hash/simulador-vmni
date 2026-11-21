@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>TurnoValor · Demo de revisión</title>
+<style>
+:root{
+  --bg:#f4f7f8; --card:#fff; --ink:#173239; --muted:#6d7f84; --line:#dfe8ea;
+  --teal:#0f7c78; --teal2:#15a39a; --navy:#173b56; --green:#2f9e64;
+  --orange:#e08a24; --red:#d94b4b; --purple:#7357b8; --shadow:0 10px 30px rgba(23,59,86,.08);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+button{font:inherit}
+.topbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar-inner{max-width:1180px;margin:auto;padding:14px 20px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--navy)}
+.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--teal),var(--teal2));display:grid;place-items:center;color:white;font-weight:900}
+.tag{font-size:12px;background:#e7f6f4;color:var(--teal);padding:5px 9px;border-radius:999px;font-weight:700}
+.spacer{flex:1}
+.demo-badge{font-size:12px;background:#fff4e7;color:#9a5a10;border:1px solid #f4d6b0;padding:6px 10px;border-radius:999px}
+.hero{max-width:1180px;margin:32px auto 18px;padding:0 20px}
+.hero-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:22px}
+.hero-card,.side-card{background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
+.hero-card{padding:30px}
+.side-card{padding:22px}
+.kicker{color:var(--teal);font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+h1{font-size:44px;line-height:1.04;margin:10px 0 14px;color:var(--navy)}
+.hero p{font-size:18px;line-height:1.5;color:#4a6268;max-width:760px}
+.quote{margin-top:20px;padding:18px;border-left:4px solid var(--teal2);background:#f0fbf9;border-radius:14px;font-weight:700;color:var(--navy)}
+.metric-big{font-size:34px;font-weight:850;color:var(--navy)}
+.mini{font-size:12px;color:var(--muted)}
+.navtabs{max-width:1180px;margin:0 auto 18px;padding:0 20px;display:flex;gap:8px;flex-wrap:wrap}
+.tabbtn{border:1px solid var(--line);background:white;color:var(--navy);padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700}
+.tabbtn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.main{max-width:1180px;margin:auto;padding:0 20px 50px}
+.panel{display:none}
+.panel.active{display:block}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 10px;color:var(--navy)}
+.value{font-size:28px;font-weight:850;color:var(--navy)}
+.value.teal{color:var(--teal)}
+.value.green{color:var(--green)}
+.value.orange{color:var(--orange)}
+.value.red{color:var(--red)}
+.sub{font-size:13px;color:var(--muted);margin-top:4px}
+.section-title{display:flex;align-items:end;justify-content:space-between;margin:22px 0 12px}
+.section-title h2{margin:0;color:var(--navy)}
+.pill{display:inline-block;padding:5px 8px;border-radius:999px;font-size:11px;font-weight:800}
+.pill.good{background:#e8f7ef;color:#1e7c4c}
+.pill.warn{background:#fff2df;color:#a46010}
+.pill.bad{background:#fdeaea;color:#a93030}
+.pill.info{background:#e7f1f8;color:#245d7a}
+table{width:100%;border-collapse:collapse}
+th,td{padding:11px 10px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
+th{color:#526b72;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+tr:last-child td{border-bottom:none}
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.dayname{font-size:11px;color:var(--muted);font-weight:800;text-align:center;padding:6px}
+.day{min-height:110px;background:white;border:1px solid var(--line);border-radius:14px;padding:9px}
+.day .n{font-weight:800;color:var(--navy);font-size:12px}
+.event{margin-top:6px;border-radius:8px;padding:5px 7px;font-size:11px;font-weight:750}
+.hl{background:#dff0ff;color:#1f5f8e}.as{background:#def8f4;color:#166e65}.loc{background:#fff2c9;color:#8b6500}
+.obs{background:#e7f6ec;color:#24704a}.exp{background:#f7e5f7;color:#874184}.asva{background:#eae3fb;color:#5e47a3}
+.conflict{outline:2px solid var(--red)}
+.offer{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+.offer h4{margin:0 0 6px;font-size:19px;color:var(--navy)}
+.scorebar{height:10px;background:#edf2f3;border-radius:999px;overflow:hidden;margin:7px 0 3px}
+.scorebar > span{display:block;height:100%;border-radius:999px}
+.row{display:flex;justify-content:space-between;gap:12px;margin:7px 0;font-size:13px}
+.decision{padding:12px;border-radius:12px;font-weight:900;text-align:center;margin-top:12px}
+.decision.good{background:#e6f7ee;color:#187145}
+.decision.warn{background:#fff1dd;color:#9b5e14}
+.arch{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#132f3d;color:#dff9f4;border-radius:16px;padding:18px;white-space:pre-wrap;line-height:1.55;overflow:auto}
+.formula{font-family:Cambria,Georgia,serif;background:#f8fbfc;border:1px solid var(--line);border-radius:14px;padding:14px;margin:8px 0;font-size:18px}
+.check{display:flex;gap:10px;align-items:flex-start;margin:9px 0}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--teal2);margin-top:6px;flex:0 0 auto}
+.footer{border-top:1px solid var(--line);background:white;padding:24px 20px;color:var(--muted);font-size:12px}
+.footer-inner{max-width:1180px;margin:auto}
+.copybtn{border:none;background:var(--teal);color:#fff;border-radius:11px;padding:10px 14px;font-weight:800;cursor:pointer}
+.note{background:#fff9ed;border:1px solid #f5ddb1;padding:13px 14px;border-radius:12px;color:#76511f;font-size:13px}
+@media(max-width:900px){
+  .hero-grid,.grid4,.grid3,.grid2,.offer{grid-template-columns:1fr}
+  h1{font-size:34px}
+  .calendar{grid-template-columns:repeat(2,1fr)}
+  .dayname{display:none}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="logo">TV</div>
+    <div class="brand">TurnoValor</div>
+    <span class="tag">Pilot Demo</span>
+    <div class="spacer"></div>
+    <span class="demo-badge">Datos ficticios · sin información personal</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-card">
+      <div class="kicker">Inteligencia laboral para médicos multiagenda</div>
+      <h1>Tu tiempo vale.<br/>Tu esfuerzo también.</h1>
+      <p>TurnoValor consolida múltiples centros, guardias, ingresos, descanso y datos wearable para ayudar al médico a identificar qué turnos ofrecen mejor compensación por el esfuerzo y la recuperación requerida.</p>
+      <div class="quote">No te ayudamos a trabajar más. Te ayudamos a que tu trabajo valga más.</div>
+    </div>
+    <div class="side-card">
+      <div class="kicker">Pregunta central</div>
+      <h3 style="font-size:24px;margin:8px 0 18px">¿Cuánto vale realmente tu próxima guardia?</h3>
+      <div class="row"><span>Ingreso</span><strong>650 €</strong></div>
+      <div class="row"><span>Duración</span><strong>12 h</strong></div>
+      <div class="row"><span>Carga esperada</span><strong>38 / 100</strong></div>
+      <div class="row"><span>Rentabilidad relativa</span><strong>1,42× tu media</strong></div>
+      <div class="decision good">CONVIENE</div>
+    </div>
+  </div>
+</section>
+
+<nav class="navtabs">
+  <button class="tabbtn active" data-tab="dashboard">Resumen</button>
+  <button class="tabbtn" data-tab="agenda">Agenda</button>
+  <button class="tabbtn" data-tab="compare">Comparar guardias</button>
+  <button class="tabbtn" data-tab="wearable">Wearable</button>
+  <button class="tabbtn" data-tab="method">Metodología</button>
+  <button class="tabbtn" data-tab="tech">Arquitectura</button>
+</nav>
+
+<main class="main">
+  <section id="dashboard" class="panel active">
+    <div class="grid4">
+      <div class="card"><div class="sub">Ingreso variable</div><div class="value">4.820 €</div><div class="sub">estimación mensual</div></div>
+      <div class="card"><div class="sub">Horas</div><div class="value teal">168 h</div><div class="sub">presencia + disponibilidad</div></div>
+      <div class="card"><div class="sub">Carga mensual</div><div class="value orange">63/100</div><div class="sub">índice de planificación</div></div>
+      <div class="card"><div class="sub">Rentabilidad fisiológica</div><div class="value green">12,4</div><div class="sub">€/punto · demo</div></div>
+    </div>
+
+    <div class="section-title"><h2>Próximas decisiones</h2><span class="pill info">demo interactiva</span></div>
+    <div class="grid3">
+      <div class="card">
+        <h3>Clínica B · Anestesia</h3>
+        <div class="row"><span>Sábado 08–20 h</span><strong>650 €</strong></div>
+        <div class="row"><span>€/h</span><strong>54,2</strong></div>
+        <div class="row"><span>Carga prevista</span><strong>38/100</strong></div>
+        <span class="pill good">1,42× tu media</span>
+      </div>
+      <div class="card">
+        <h3>Hospital A · Guardia 24 h</h3>
+        <div class="row"><span>Domingo 08–08 h</span><strong>780 €</strong></div>
+        <div class="row"><span>€/h</span><strong>32,5</strong></div>
+        <div class="row"><span>Carga prevista</span><strong>79/100</strong></div>
+        <span class="pill warn">0,68× tu media</span>
+      </div>
+      <div class="card">
+        <h3>Conflicto detectado</h3>
+        <div class="row"><span>Clínica A → Hospital A</span><strong>5 h</strong></div>
+        <div class="row"><span>Recuperación estimada</span><strong>insuficiente</strong></div>
+        <span class="pill bad">Revisar combinación</span>
+      </div>
+    </div>
+
+    <div class="section-title"><h2>Valor diferencial</h2></div>
+    <div class="card">
+      <div class="grid3">
+        <div><div class="kicker">Economía</div><h3>¿Cuánto ganas?</h3><p class="sub">Ingreso marginal, €/h, tarifa real y auditoría de nómina.</p></div>
+        <div><div class="kicker">Fisiología</div><h3>¿Cuánto te cuesta?</h3><p class="sub">Carga del turno, sueño, recuperación, actividad y wearable.</p></div>
+        <div><div class="kicker">Decisión</div><h3>¿Te conviene?</h3><p class="sub">Compara alternativas respecto a tu propio histórico personal.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="agenda" class="panel">
+    <div class="section-title"><h2>Agenda consolidada · Médico Demo</h2><span class="pill info">3 centros</span></div>
+    <div class="calendar">
+      <div class="dayname">Lun</div><div class="dayname">Mar</div><div class="dayname">Mié</div><div class="dayname">Jue</div><div class="dayname">Vie</div><div class="dayname">Sáb</div><div class="dayname">Dom</div>
+      <div class="day"><div class="n">1</div></div>
+      <div class="day"><div class="n">2</div><div class="event obs">UCI día · Hospital A</div></div>
+      <div class="day"><div class="n">3</div></div>
+      <div class="day"><div class="n">4</div><div class="event loc">Localizada · Clínica B</div></div>
+      <div class="day"><div class="n">5</div></div>
+      <div class="day"><div class="n">6</div><div class="event exp">Quirófano · Clínica A</div></div>
+      <div class="day"><div class="n">7</div><div class="event asva">Guardia 24 h · Hospital A</div></div>
+
+      <div class="day"><div class="n">8</div></div>
+      <div class="day"><div class="n">9</div><div class="event obs">UCI noche · Hospital A</div></div>
+      <div class="day"><div class="n">10</div></div>
+      <div class="day"><div class="n">11</div><div class="event exp">Quirófano · Clínica A</div></div>
+      <div class="day"><div class="n">12</div></div>
+      <div class="day conflict"><div class="n">13</div><div class="event exp">Quirófano · Clínica A</div><div class="event loc">Localizada · Clínica B</div></div>
+      <div class="day"><div class="n">14</div></div>
+    </div>
+    <div class="note" style="margin-top:14px">La demo muestra cómo TurnoValor unifica actividades procedentes de varios empleadores y señala solapes o cadenas de recuperación potencialmente problemáticas.</div>
+  </section>
+
+  <section id="compare" class="panel">
+    <div class="section-title"><h2>Comparar guardias</h2><span class="pill info">ejemplo ficticio</span></div>
+    <div class="offer">
+      <div class="card">
+        <h4>A · Clínica privada</h4>
+        <div class="row"><span>Ingreso</span><strong>650 €</strong></div>
+        <div class="row"><span>Duración</span><strong>12 h</strong></div>
+        <div class="row"><span>Ingreso/h</span><strong>54,2 €/h</strong></div>
+        <div class="row"><span>Carga prevista</span><strong>38/100</strong></div>
+        <div class="scorebar"><span style="width:38%;background:var(--green)"></span></div>
+        <div class="row"><span>Recuperación prevista</span><strong>11 h</strong></div>
+        <div class="row"><span>Rentabilidad relativa</span><strong>1,42×</strong></div>
+        <div class="decision good">MEJOR OPCIÓN</div>
+      </div>
+      <div class="card">
+        <h4>B · Guardia hospitalaria 24 h</h4>
+        <div class="row"><span>Ingreso</span><strong>780 €</strong></div>
+        <div class="row"><span>Duración</span><strong>24 h</strong></div>
+        <div class="row"><span>Ingreso/h</span><strong>32,5 €/h</strong></div>
+        <div class="row"><span>Carga prevista</span><strong>79/100</strong></div>
+        <div class="scorebar"><span style="width:79%;background:var(--orange)"></span></div>
+        <div class="row"><span>Recuperación prevista</span><strong>25 h</strong></div>
+        <div class="row"><span>Rentabilidad relativa</span><strong>0,68×</strong></div>
+        <div class="decision warn">PAGA MÁS, PERO COMPENSA MENOS</div>
+      </div>
+    </div>
+    <div class="section-title"><h2>Principio de producto</h2></div>
+    <div class="formula">max Beneficio económico, sujeto a límites de carga, sueño, recuperación y preferencias.</div>
+  </section>
+
+  <section id="wearable" class="panel">
+    <div class="section-title"><h2>Wearable · ejemplo de guardia sincronizada</h2><span class="pill info">Health Connect</span></div>
+    <div class="grid4">
+      <div class="card"><div class="sub">Pasos</div><div class="value">3.462</div></div>
+      <div class="card"><div class="sub">Pasos/h</div><div class="value teal">288,5</div></div>
+      <div class="card"><div class="sub">Carga locomotora</div><div class="value orange">19,2</div><div class="sub">0–100 · exploratorio</div></div>
+      <div class="card"><div class="sub">Cobertura objetiva</div><div class="value green">45%</div><div class="sub">solo pasos disponibles</div></div>
+    </div>
+    <div class="section-title"><h2>Disponibilidad de sensores</h2></div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Métrica</th><th>Estado</th><th>Peso actual</th><th>Interpretación</th></tr></thead>
+        <tbody>
+          <tr><td>Pasos</td><td><span class="pill good">Disponible</span></td><td>45%</td><td>Actividad locomotora observada</td></tr>
+          <tr><td>Calorías activas</td><td><span class="pill warn">Sin dato</span></td><td>20%</td><td>No se interpreta como cero</td></tr>
+          <tr><td>Frecuencia cardiaca</td><td><span class="pill warn">Sin dato</span></td><td>35%</td><td>No se interpreta como cero</td></tr>
+          <tr><td>Sueño</td><td><span class="pill warn">Sin dato</span></td><td>—</td><td>Se analiza como recuperación, no como ausencia de sueño</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="method" class="panel">
+    <div class="section-title"><h2>Metodología actual</h2><span class="pill warn">modelo exploratorio, no clínico</span></div>
+    <div class="grid2">
+      <div class="card">
+        <h3>1 · Carga teórica del turno</h3>
+        <div class="formula">CF = 100 × D × R × (0,45P + 0,35S + 0,20C)</div>
+        <div class="sub">P = carga física, S = sueño/circadiano, C = carga cognitiva, D = duración normalizada, R = recuperación.</div>
+      </div>
+      <div class="card">
+        <h3>2 · Rentabilidad fisiológica</h3>
+        <div class="formula">RFP = Ingreso marginal / Carga fisiológica</div>
+        <div class="sub">Cuando faltan tarifas se presenta como parcial. Los valores desconocidos deben ser NA, no 0.</div>
+      </div>
+      <div class="card">
+        <h3>3 · Wearable</h3>
+        <div class="formula">Carga = 100 × Σ(wj·xj) / Σ(wj disponibles)</div>
+        <div class="sub">Pesos actuales: pasos 45%, kcal 20%, FC 35%. Los componentes ausentes se reportan por separado.</div>
+      </div>
+      <div class="card">
+        <h3>4 · Aprendizaje personal</h3>
+        <div class="formula">Predicción → observación → error → actualización del modelo</div>
+        <div class="sub">Shrinkage hacia priors iniciales, mayor peso de datos recientes y seguimiento de MAE por usuario.</div>
+      </div>
+    </div>
+
+    <div class="section-title"><h2>Mejoras metodológicas previstas</h2></div>
+    <div class="card">
+      <div class="check"><div class="dot"></div><div>Separar exposición laboral de outcome de fatiga y recuperación.</div></div>
+      <div class="check"><div class="dot"></div><div>Medición preguardia, postguardia y recuperación a 12–24 h.</div></div>
+      <div class="check"><div class="dot"></div><div>Predicciones congeladas antes del turno para validación prospectiva.</div></div>
+      <div class="check"><div class="dot"></div><div>Validación temporal y N-of-1 antes de generalizar a modelos poblacionales.</div></div>
+      <div class="check"><div class="dot"></div><div>Optimización multiobjetivo: ingreso, carga, sueño, recuperación y preferencias.</div></div>
+    </div>
+  </section>
+
+  <section id="tech" class="panel">
+    <div class="section-title"><h2>Arquitectura actual y evolución</h2></div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Actual · prototipo personal</h3>
+        <div class="arch">Android / Health Connect
+        │
+        ▼
+FastAPI local · puerto 8765
+        │
+        ├─ Parser turnos
+        ├─ Motor económico
+        ├─ WearIndex / RFP
+        ├─ Learning engine
+        └─ PDF / informes
+        │
+        ▼
+SQLite + state.json</div>
+      </div>
+      <div class="card">
+        <h3>Pilot v3 · 20 médicos</h3>
+        <div class="arch">Web / PWA / Android
+        │
+        ▼
+HTTPS + Auth
+        │
+        ▼
+FastAPI modular
+        │
+        ├─ Usuarios
+        ├─ Centros
+        ├─ Turnos
+        ├─ Tarifas
+        ├─ Wearable
+        ├─ Postguardia
+        └─ Modelos personales
+        │
+        ▼
+PostgreSQL + Storage
+        │
+        ▼
+RLS por user_id</div>
+      </div>
+    </div>
+
+    <div class="section-title"><h2>Qué revisar técnicamente</h2></div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Área</th><th>Pregunta de revisión</th></tr></thead>
+        <tbody>
+          <tr><td>Backend</td><td>¿Qué módulos actuales conviene mantener y qué refactorizar?</td></tr>
+          <tr><td>Base de datos</td><td>¿Cómo migrar SQLite → PostgreSQL multiusuario con mínimo riesgo?</td></tr>
+          <tr><td>Seguridad</td><td>Auth, RLS, tokens, secrets, auditoría, RGPD.</td></tr>
+          <tr><td>Frontend</td><td>¿Mantener PWA o evolucionar a Flutter/React?</td></tr>
+          <tr><td>Health Connect</td><td>Sincronización individual, permisos y procedencia de datos.</td></tr>
+          <tr><td>Escalabilidad</td><td>20 → 1.000 → 10.000 usuarios sin microservicios prematuros.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-title"><h2>Resumen para compartir</h2></div>
+    <div class="card">
+      <p id="shareText" class="sub" style="font-size:14px;line-height:1.6">
+        TurnoValor es una plataforma de inteligencia laboral para médicos con múltiples empleadores. Integra horarios, ingresos, conflictos, actividad wearable y recuperación para estimar el valor real de cada turno y ayudar al profesional a elegir mejor, no necesariamente a trabajar más. El prototipo actual funciona con FastAPI, PWA, SQLite, Android/Health Connect, generación de PDF y un motor de aprendizaje personal. El siguiente paso es una arquitectura multiusuario segura para un piloto de 20 médicos.
+      </p>
+      <button class="copybtn" onclick="copySummary()">Copiar resumen</button>
+      <span id="copied" class="sub" style="margin-left:10px"></span>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <strong>TurnoValor · Demo de revisión técnica</strong><br/>
+    Este archivo es una demostración estática y autocontenida. No contiene datos personales reales, no requiere servidor y no representa una escala clínica validada.
+  </div>
+</footer>
+
+<script>
+const buttons=[...document.querySelectorAll('.tabbtn')];
+const panels=[...document.querySelectorAll('.panel')];
+buttons.forEach(b=>b.addEventListener('click',()=>{
+  buttons.forEach(x=>x.classList.remove('active'));
+  panels.forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById(b.dataset.tab).classList.add('active');
+  window.scrollTo({top:document.querySelector('.navtabs').offsetTop-70,behavior:'smooth'});
+}));
+function copySummary(){
+  const text=document.getElementById('shareText').innerText;
+  navigator.clipboard.writeText(text).then(()=>{
+    document.getElementById('copied').innerText='Resumen copiado';
+    setTimeout(()=>document.getElementById('copied').innerText='',1800);
+  });
+}
+</script>
+</body>
+</html>
