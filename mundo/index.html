@@ -40,24 +40,61 @@ main{max-width:1180px;margin:0 auto;padding:22px 18px 60px}
 .btn.ghost{background:transparent}
 .btn[disabled]{opacity:.45;pointer-events:none}
 /* MAPA */
-.mapwrap{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(1200px 500px at 70% -10%,#1a2a55 0%,#0b1226 55%,#070b16 100%)}
+.mapwrap{position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:#030713;box-shadow:0 20px 60px #0008}
 #map{display:block;width:100%;height:auto}
+#map[data-cielo=dia] .win,#map[data-cielo=dia] .night-only{display:none}
+#map[data-cielo=amanecer] .night-only,#map[data-cielo=atardecer] .night-only{opacity:.5}
+#map .stars{opacity:var(--star)}
+#map .lampcone,#map .lampbulb{opacity:var(--lamp)}
+#map .headl{opacity:calc(.25 + var(--dark) * .75)}
+#map[data-cielo=dia] .heliBeam{display:none}
+.tw{animation:tw 3.2s ease-in-out infinite}
+@keyframes tw{50%{opacity:.1}}
+.flick{animation:flick 7s steps(1) infinite}
+@keyframes flick{0%,92%{opacity:.9}93%{opacity:.15}95%{opacity:.9}97%{opacity:.2}}
+.shimmer{animation:shim 2.6s ease-in-out infinite}
+@keyframes shim{50%{opacity:.08;transform:translateX(6px)}}
+.blinkslow{animation:bl 1.8s steps(2) infinite}
+@keyframes bl{50%{opacity:.1}}
+.padlight{animation:pad 1.2s linear infinite}
+@keyframes pad{0%,40%{opacity:1}60%,100%{opacity:.2}}
+.cloud{animation:cloud 90s linear infinite}
+.c2{animation-duration:130s;animation-delay:-40s}
+@keyframes cloud{from{transform:translateX(-300px)}to{transform:translateX(1300px)}}
+.flashR{animation:fr .9s steps(1) infinite;mix-blend-mode:screen}
+.flashB{animation:fr .9s steps(1) infinite;animation-delay:.45s;mix-blend-mode:screen}
+.flashA{animation:fa 1.4s ease-in-out infinite;mix-blend-mode:screen}
+@keyframes fr{0%{opacity:.95}50%{opacity:.08}}
+@keyframes fa{50%{opacity:.2}}
+.flare{animation:flare .25s ease-in-out infinite alternate}
+@keyframes flare{to{opacity:.55}}
+.ambwrap{animation:amb 13s linear infinite}
+@keyframes amb{0%{transform:translate(-160px,566px)}50%{transform:translate(600px,572px)}100%{transform:translate(1380px,560px)}}
+.siren.a,.sirenglow.a{animation:sa .5s steps(1) infinite}
+.siren.b,.sirenglow.b{animation:sa .5s steps(1) infinite;animation-delay:.25s}
+@keyframes sa{0%{opacity:1}50%{opacity:.08}}
+.traffic.t1{animation:t1 9s linear infinite;animation-delay:-3s}
+@keyframes t1{0%{transform:translate(1300px,530px);opacity:0}5%{opacity:1}75%{opacity:1}88%{transform:translate(330px,532px);opacity:0}100%{transform:translate(330px,532px);opacity:0}}
+.traffic.t2{display:none}
+.heliwrap{animation:heli 26s linear infinite}
+@keyframes heli{0%{transform:translate(1320px,120px)}45%{transform:translate(700px,96px)}55%{transform:translate(560px,92px)}100%{transform:translate(-160px,70px)}}
+.rotor{animation:rot .12s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes rot{50%{transform:scaleX(.25)}}
+.tailrotor{animation:rot .08s linear infinite;transform-box:fill-box;transform-origin:center}
+.beacon{animation:bl 1s steps(2) infinite}.beacon2{animation:bl 1.3s steps(2) infinite}
 .node{cursor:pointer}
-.node .ring{transition:.2s}
-.node:hover .ring,.node:focus .ring{stroke-width:4}
+.node .badge-g{animation:bob 3.4s ease-in-out infinite;transform-box:fill-box}
+.node:hover .disc-c,.node:focus .disc-c{stroke-width:4}
+.node:focus{outline:none}
 .node.locked{cursor:not-allowed}
-.node.locked .disc{filter:grayscale(1) brightness(.55)}
+.node.locked .badge-g{animation:none;opacity:.6}
+@keyframes bob{50%{transform:translateY(-5px)}}
 .pulse{animation:pulse 2.2s infinite;transform-box:fill-box;transform-origin:center}
-@keyframes pulse{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.9);opacity:0}}
-.blink{animation:blink 1s steps(2) infinite}
-@keyframes blink{50%{opacity:.15}}
-.amb{animation:drive 14s linear infinite}
-@keyframes drive{0%{transform:translateX(-140px)}100%{transform:translateX(1140px)}}
-.heli{animation:fly 22s linear infinite}
-@keyframes fly{0%{transform:translate(1100px,40px)}100%{transform:translate(-200px,10px)}}
-.rotor{animation:spin .25s linear infinite;transform-box:fill-box;transform-origin:center}
-@keyframes spin{to{transform:scaleX(-1)}}
-.legend{position:absolute;left:14px;bottom:12px;font-size:12px;color:var(--mut);background:#070b16cc;padding:6px 10px;border-radius:10px;border:1px solid var(--line)}
+@keyframes pulse{0%{transform:scale(1);opacity:.65}100%{transform:scale(2);opacity:0}}
+.legend{position:absolute;right:14px;bottom:12px;font-size:12px;color:#c9d4f0;background:#070b16cc;padding:6px 10px;border-radius:10px;border:1px solid var(--line);backdrop-filter:blur(4px)}
+.clock{position:absolute;left:14px;top:12px;display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:#e8eefc;background:#070b16b3;padding:6px 11px;border-radius:99px;border:1px solid #ffffff22;backdrop-filter:blur(4px)}
+.clock:hover{border-color:#ffffff55}
+@media (prefers-reduced-motion:reduce){#map *{animation:none!important}}
 /* LISTA */
 .caps{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:16px}
 .cap{position:relative;text-align:left;padding:14px 14px 12px;border-radius:16px;background:var(--card);border:1px solid var(--line);transition:.15s;overflow:hidden}
@@ -174,7 +211,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--mut);font-
   <section class="intro">
     <div>
       <h1>Tu guardia empieza <span>ahora</span>.</h1>
-      <p>Recorre el mundo de la emergencia capítulo a capítulo: de la calle al box de trauma, de la parada a la ventilación. Completa misiones, aprueba los exámenes y sube de rango.</p>
+      <p>Recorre el mundo de la emergencia capítulo a capítulo: de la calle al parte de la ambulancia, del box de trauma a la parada y la ventilación. Completa misiones, aprueba los exámenes y sube de rango.</p>
     </div>
     <div class="modes">
       <button class="btn pri" id="bContinue">▶ Continuar</button>
@@ -183,71 +220,8 @@ footer{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--mut);font-
   </section>
 
   <div class="mapwrap">
-    <svg id="map" viewBox="0 0 1000 520" role="img" aria-label="Mapa del mundo de la emergencia">
-      <defs>
-        <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c1836"/><stop offset="1" stop-color="#071022"/></linearGradient>
-        <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#101b38"/><stop offset="1" stop-color="#0a1229"/></linearGradient>
-        <radialGradient id="glow"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
-        <filter id="soft"><feGaussianBlur stdDeviation="6"/></filter>
-      </defs>
-      <!-- cielo y estrellas -->
-      <g id="sky"></g>
-      <circle cx="880" cy="70" r="26" fill="#f4f1de" opacity=".9"/><circle cx="890" cy="62" r="24" fill="#16244a"/>
-      <!-- montañas -->
-      <path d="M0 250 L90 170 L160 215 L250 130 L340 210 L420 160 L520 230 L610 150 L700 220 L800 140 L900 210 L1000 170 L1000 300 L0 300Z" fill="#0e1a3a"/>
-      <path d="M0 280 L120 220 L230 265 L330 205 L450 270 L560 215 L690 270 L800 220 L920 265 L1000 240 L1000 320 L0 320Z" fill="#111f44"/>
-      <!-- suelo -->
-      <rect y="300" width="1000" height="220" fill="url(#ground)"/>
-      <!-- carretera -->
-      <path d="M-20 455 C 200 430, 320 470, 520 448 S 860 430, 1020 452" stroke="#1d2a4c" stroke-width="44" fill="none"/>
-      <path d="M-20 455 C 200 430, 320 470, 520 448 S 860 430, 1020 452" stroke="#f5d35b" stroke-width="2" stroke-dasharray="18 16" fill="none" opacity=".55"/>
-      <!-- ruta de la guardia -->
-      <path id="route" d="" stroke="#ff8a3d" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round" fill="none" opacity=".75"/>
-      <!-- escena de accidente -->
-      <g transform="translate(120,388)">
-        <rect x="-36" y="-6" width="46" height="20" rx="5" fill="#3b4a72" transform="rotate(-12)"/>
-        <rect x="8" y="-2" width="44" height="20" rx="5" fill="#59617d" transform="rotate(18 30 8)"/>
-        <circle cx="-4" cy="-18" r="5" fill="#ff8a3d" class="blink"/>
-        <path d="M-60 26 l10 -18 l10 18z" fill="#ff8a3d"/><path d="M60 30 l9 -16 l9 16z" fill="#ff8a3d"/>
-      </g>
-      <!-- hospital -->
-      <g transform="translate(330,200)">
-        <rect x="0" y="40" width="200" height="150" rx="6" fill="#18264d" stroke="#27386a"/>
-        <rect x="60" y="0" width="80" height="44" rx="4" fill="#1d2d5a" stroke="#27386a"/>
-        <rect x="88" y="10" width="24" height="24" rx="3" fill="#ff4d6d"/><rect x="96" y="14" width="8" height="16" fill="#fff"/><rect x="92" y="18" width="16" height="8" fill="#fff"/>
-        <g id="win" fill="#ffd77a"></g>
-        <rect x="74" y="150" width="52" height="40" fill="#0b1430" stroke="#38bdf8" stroke-opacity=".5"/>
-        <text x="100" y="146" text-anchor="middle" font-size="10" font-family="Sora" font-weight="700" fill="#ff8a3d">URGENCIAS</text>
-        <!-- helipuerto -->
-        <ellipse cx="100" cy="-4" rx="26" ry="6" fill="#0b1430" stroke="#fbbf24" stroke-opacity=".6"/>
-        <text x="100" y="-1" text-anchor="middle" font-size="8" fill="#fbbf24" font-weight="700">H</text>
-      </g>
-      <!-- unidad respiratoria -->
-      <g transform="translate(640,250)">
-        <rect x="0" y="0" width="150" height="110" rx="10" fill="#132a3a" stroke="#1f4a55"/>
-        <g fill="#7ef0c7" opacity=".85"><rect x="16" y="18" width="22" height="14" rx="2"/><rect x="48" y="18" width="22" height="14" rx="2"/><rect x="80" y="18" width="22" height="14" rx="2"/><rect x="112" y="18" width="22" height="14" rx="2"/></g>
-        <path d="M14 80 h20 l8 -18 l10 32 l8 -14 h20 l8 -10 l8 10 h40" stroke="#34d399" stroke-width="2.5" fill="none"/>
-      </g>
-      <!-- sala de descanso -->
-      <g transform="translate(850,330)">
-        <rect x="0" y="0" width="110" height="70" rx="8" fill="#1d1840" stroke="#3a2f74"/>
-        <rect x="14" y="14" width="30" height="20" rx="3" fill="#c4b5fd" opacity=".7"/><rect x="62" y="14" width="30" height="20" rx="3" fill="#c4b5fd" opacity=".35"/>
-      </g>
-      <!-- ambulancia -->
-      <g class="amb"><g transform="translate(0,432)">
-        <rect x="0" y="0" width="64" height="26" rx="5" fill="#f1f5f9"/><rect x="44" y="4" width="18" height="12" rx="2" fill="#7dd3fc"/>
-        <rect x="8" y="10" width="30" height="4" fill="#ff4d6d"/><rect x="21" y="3" width="4" height="18" fill="#ff4d6d" opacity="0"/>
-        <rect x="18" y="-5" width="10" height="5" rx="2" fill="#38bdf8" class="blink"/><rect x="30" y="-5" width="10" height="5" rx="2" fill="#ff4d6d" class="blink" style="animation-delay:.5s"/>
-        <circle cx="14" cy="27" r="6" fill="#0b1020"/><circle cx="50" cy="27" r="6" fill="#0b1020"/>
-      </g></g>
-      <!-- helicóptero -->
-      <g class="heli"><g transform="translate(0,60)">
-        <ellipse cx="30" cy="12" rx="22" ry="10" fill="#e2e8f0"/><rect x="48" y="9" width="40" height="5" rx="2" fill="#e2e8f0"/><rect x="84" y="2" width="4" height="16" fill="#e2e8f0"/>
-        <rect x="14" y="8" width="14" height="8" rx="2" fill="#7dd3fc"/><rect x="-10" y="0" width="80" height="2" fill="#94a3b8" class="rotor"/>
-        <circle cx="30" cy="22" r="2.5" fill="#ff4d6d" class="blink"/>
-      </g></g>
-      <g id="nodes"></g>
-    </svg>
+    <svg id="map" viewBox="0 0 1200 620" role="img" aria-label="Mapa del mundo de la emergencia"></svg>
+    <button class="clock" id="clock" title="Cambiar el cielo"></button>
     <div class="legend">Toca un lugar del mapa para entrar en su capítulo</div>
   </div>
 
@@ -274,6 +248,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--mut);font-
 <div id="toasts"></div>
 
 <script src="datos.js"></script>
+<script src="escena.js"></script>
 <script>
 "use strict";
 /* ============ ESTADO ============ */
@@ -281,7 +256,7 @@ const KEY = "mundo_emergencia_v1";
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } }
-let S = Object.assign({ nombre:"", rol:"", visitas:{}, estrellas:{}, mejorNota:{}, manual:{}, noche:0, libre:false, vistos:[], insVistas:[] }, load());
+let S = Object.assign({ nombre:"", rol:"", visitas:{}, estrellas:{}, mejorNota:{}, manual:{}, noche:0, libre:false, cielo:"", vistos:[], insVistas:[] }, load());
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 function rawGet(k){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){ return null; } }
 
@@ -291,6 +266,7 @@ const sens = {
   count: k => { const v = rawGet(k); return v && typeof v === "object" ? Object.keys(v).length : 0; },
   num: k => +rawGet(k) || 0,
   list: k => Array.isArray(rawGet(k)) ? rawGet(k) : [],
+  obj: k => { const v = rawGet(k); return v && typeof v === "object" ? v : {}; },
   stars: id => S.estrellas[id] || 0
 };
 const misDone = m => m.manual ? !!S.manual[m.id] : !!m.auto(sens);
@@ -301,6 +277,7 @@ function capStats(c){
 }
 function unlocked(c){
   if (S.libre || c.n === 1) return true;
+  if (sens.stars(c.id) || c.modulos.some(m => S.visitas[m.id])) return true; // ya empezado
   const prev = CAPITULOS.find(x => x.n === c.n - 1);
   return prev.sinExamen ? capStats(prev).complete : sens.stars(prev.id) >= 1;
 }
@@ -346,36 +323,46 @@ function checkNews(silent){
 
 /* ============ RENDER ============ */
 function starStr(n){ return `<span class="stars">${"★".repeat(n)}<span class="off">${"★".repeat(3 - n)}</span></span>`; }
-const POS = { phtls:[150,350], atls:[430,290], rcp:[560,175], vmni:[715,330], turno:[905,300] };
+/* posición de cada insignia [x, y] y del punto del suelo al que apunta [gx, gy] */
+const POS = { phtls:[185,452,185,548], apad:[385,338,385,420], atls:[640,330,640,432], rcp:[600,128,610,250], vmni:[878,252,870,350], turno:[1072,332,1072,404] };
+let escenaLista = null;
+const CIELO_ORDEN = ["", "noche", "amanecer", "dia", "atardecer"];
+function pintarReloj(){
+  const d = new Date(), hh = String(d.getHours()).padStart(2, "0"), mm = String(d.getMinutes()).padStart(2, "0");
+  $("#clock").innerHTML = `<span>🕑 ${hh}:${mm}</span><span style="opacity:.7">· ${escenaLista.nombre}${S.cielo ? " (fijo)" : ""}</span>`;
+}
+function asegurarEscena(forzar){
+  const k = momento(S.cielo);
+  if (!escenaLista || forzar || escenaLista.clave !== k){ escenaLista = construirEscena($("#map"), S.cielo); }
+  pintarReloj();
+}
 function renderMap(){
-  // estrellas del cielo (deterministas)
-  if (!$("#sky").childElementCount){
-    let s = "", seed = 7;
-    const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
-    for (let i = 0; i < 90; i++) s += `<circle cx="${(rnd()*1000).toFixed(0)}" cy="${(rnd()*220).toFixed(0)}" r="${(rnd()*1.3+.3).toFixed(1)}" fill="#fff" opacity="${(rnd()*.6+.2).toFixed(2)}"/>`;
-    $("#sky").innerHTML = s;
-    let w = "";
-    for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) if ((r * 7 + k * 3) % 5) w += `<rect x="${14 + k * 31}" y="${54 + r * 24}" width="16" height="12" rx="2" opacity="${((r + k) % 3) ? .85 : .3}"/>`;
-    $("#win").innerHTML = w;
-  }
+  asegurarEscena();
   const pts = CAPITULOS.map(c => POS[c.id]);
-  $("#route").setAttribute("d", "M" + pts.map(p => p.join(" ")).join(" L"));
+  $("#route").setAttribute("d", "M" + pts.map(p => p[2] + " " + p[3]).join(" L"));
   $("#nodes").innerHTML = CAPITULOS.map(c => {
-    const [x, y] = POS[c.id], st = capStats(c), lk = !unlocked(c), stars = sens.stars(c.id);
-    const R = 30, circ = 2 * Math.PI * (R + 6);
+    const [x, y, gx, gy] = POS[c.id], st = capStats(c), lk = !unlocked(c), stars = sens.stars(c.id);
+    const R = 24, circ = 2 * Math.PI * (R + 5);
     const next = !lk && !st.complete && nextCap() === c;
+    const col = lk ? "#64748b" : c.color;
     return `<g class="node ${lk ? "locked" : ""}" data-cap="${c.id}" tabindex="0" role="button" aria-label="Capítulo ${c.n}: ${esc(c.titulo)}">
-      ${next ? `<circle cx="${x}" cy="${y}" r="${R}" fill="${c.color}" class="pulse"/>` : ""}
-      <circle cx="${x}" cy="${y}" r="${R + 16}" fill="url(#glow)" opacity=".5"/>
-      <circle cx="${x}" cy="${y}" r="${R + 6}" fill="none" stroke="#1f2b48" stroke-width="5"/>
-      <circle cx="${x}" cy="${y}" r="${R + 6}" fill="none" stroke="${c.color}" stroke-width="5" stroke-linecap="round"
-        stroke-dasharray="${circ * st.pct / 100} ${circ}" transform="rotate(-90 ${x} ${y})"/>
-      <g class="disc"><circle class="ring" cx="${x}" cy="${y}" r="${R}" fill="#0d1630" stroke="${c.color}" stroke-width="2"/>
-      <text x="${x}" y="${y + 9}" text-anchor="middle" font-size="26">${lk ? "🔒" : c.icono}</text></g>
-      <g transform="translate(${x},${y + R + 24})">
-        <rect x="-66" y="-13" width="132" height="${c.sinExamen ? 24 : 38}" rx="9" fill="#070b16" fill-opacity=".85" stroke="#1f2b48"/>
-        <text y="3" text-anchor="middle" font-family="Sora" font-size="12" font-weight="700" fill="#e8eefc">${c.n}. ${esc(c.titulo)}</text>
-        ${c.sinExamen ? "" : `<text y="19" text-anchor="middle" font-size="12" fill="#fbbf24">${"★".repeat(stars)}<tspan fill="#2c3a5e">${"★".repeat(3 - stars)}</tspan></text>`}
+      <ellipse cx="${gx}" cy="${gy}" rx="16" ry="5" fill="${col}" opacity=".35"/>
+      <ellipse cx="${gx}" cy="${gy}" rx="5" ry="1.8" fill="${col}"/>
+      <line x1="${gx}" y1="${gy}" x2="${x}" y2="${y + R + 6}" stroke="${col}" stroke-width="1.6" stroke-dasharray="2 3" opacity=".8"/>
+      <g class="badge-g" style="animation-delay:${(c.n * .4).toFixed(1)}s">
+        ${next ? `<circle cx="${x}" cy="${y}" r="${R}" fill="${c.color}" class="pulse"/>` : ""}
+        <circle cx="${x}" cy="${y}" r="${R + 22}" fill="url(#pinGlow)"/>
+        <circle cx="${x}" cy="${y}" r="${R + 5}" fill="#070b16" fill-opacity=".85" stroke="#ffffff1f" stroke-width="4"/>
+        <circle cx="${x}" cy="${y}" r="${R + 5}" fill="none" stroke="${col}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${(circ * st.pct / 100).toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 ${x} ${y})"/>
+        <circle class="disc-c" cx="${x}" cy="${y}" r="${R}" fill="${lk ? "#1e293b" : c.color}" stroke="#fff" stroke-opacity=".9" stroke-width="2"/>
+        <svg x="${x - 13}" y="${y - 13}" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="${lk ? "#cbd5e1" : "#0b1020"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONOS[lk ? "lock" : c.id]}</svg>
+        <circle cx="${x + R - 2}" cy="${y - R + 2}" r="9" fill="#070b16" stroke="${col}" stroke-width="1.5"/>
+        <text x="${x + R - 2}" y="${y - R + 6}" text-anchor="middle" font-family="Sora,Inter,sans-serif" font-size="10.5" font-weight="800" fill="#fff">${c.n}</text>
+        <g transform="translate(${x},${y + R + 20})">
+          <rect x="-62" y="-12" width="124" height="${c.sinExamen ? 22 : 35}" rx="8" fill="#070b16" fill-opacity=".86" stroke="${col}" stroke-opacity=".45"/>
+          <text y="3" text-anchor="middle" font-family="Sora,Inter,sans-serif" font-size="12" font-weight="700" fill="#f1f5ff">${esc(c.titulo)}</text>
+          ${c.sinExamen ? "" : `<text y="17.5" text-anchor="middle" font-size="11" fill="#fbbf24" letter-spacing="1">${"★".repeat(stars)}<tspan fill="#334166">${"★".repeat(3 - stars)}</tspan></text>`}
+        </g>
       </g></g>`;
   }).join("");
   $("#nodes").querySelectorAll(".node").forEach(n => {
@@ -387,8 +374,8 @@ function renderCaps(){
   $("#caps").innerHTML = CAPITULOS.map(c => {
     const st = capStats(c), lk = !unlocked(c);
     return `<button class="cap ${lk ? "locked" : ""}" data-cap="${c.id}">
-      ${lk ? '<span class="lock">🔒</span>' : ""}
-      <div class="top"><div class="em" style="background:${c.color}22;color:${c.color}">${c.icono}</div>
+      
+      <div class="top"><div class="em" style="background:${c.color}22;color:${c.color}">${ico(lk ? "lock" : c.id, 21, c.color)}</div>
       <div><div class="n">Capítulo ${c.n}</div><h3>${esc(c.titulo)}</h3></div></div>
       <div class="s">${esc(c.sub)}</div>
       <div class="prog"><i style="width:${st.pct}%;background:${c.color}"></i></div>
@@ -428,7 +415,7 @@ function openCap(id){
     <div class="mh" style="background:linear-gradient(135deg,${c.color}22,transparent 60%)">
       <button class="ibtn x" aria-label="Cerrar">✕</button>
       <div class="kick" style="color:${c.color}">Capítulo ${c.n} · ${st.done}/${st.total} misiones</div>
-      <h2>${c.icono} ${esc(c.titulo)}</h2><p>${esc(c.sub)}</p>
+      <h2 style="display:flex;align-items:center;gap:10px">${ico(c.id, 26, c.color, 2)} ${esc(c.titulo)}</h2><p>${esc(c.sub)}</p>
     </div>
     <div class="mb">
       <div class="story" style="border-left-color:${c.color}">${esc(c.historia)}</div>
@@ -552,7 +539,7 @@ function startNight(){
     if (lives <= 0 || i >= pool.length) return end();
     const q = pool[i], c = CAPITULOS.find(x => x.id === q.cap);
     let left = T;
-    modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:#a78bfa">🌙 Turno de noche · ${c.icono} ${esc(c.titulo)}</div><h2>Paciente ${i + 1}</h2></div>
+    modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:#a78bfa">🌙 Turno de noche · ${esc(c.titulo)}</div><h2>Paciente ${i + 1}</h2></div>
       <div class="mb">
         <div class="qhead"><span class="lives">${"❤️".repeat(lives)}${"🖤".repeat(3 - lives)}</span><span><b>${score}</b> pts · ✅ ${ok}</span></div>
         <div class="timer"><i id="tf" style="width:100%"></i></div>
@@ -614,7 +601,7 @@ function openBadges(){
 }
 function openStars(){
   modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:var(--gold)">Exámenes</div><h2>⭐ Estrellas</h2></div>
-    <div class="mb">${CAPITULOS.filter(c => !c.sinExamen).map(c => `<div class="mis"><span style="font-size:20px">${c.icono}</span><span class="t">${c.n}. ${esc(c.titulo)}</span><span class="xp">${starStr(sens.stars(c.id))}</span></div>`).join("")}</div>`);
+    <div class="mb">${CAPITULOS.filter(c => !c.sinExamen).map(c => `<div class="mis"><span style="display:grid">${ico(c.id, 20, c.color)}</span><span class="t">${c.n}. ${esc(c.titulo)}</span><span class="xp">${starStr(sens.stars(c.id))}</span></div>`).join("")}</div>`);
 }
 function openSettings(){
   modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:var(--mut)">Ajustes</div><h2>⚙️ Configuración</h2></div>
@@ -630,7 +617,7 @@ function openSettings(){
     </div>`);
   $("#swLibre").onclick = () => { S.libre = !S.libre; save(); render(); openSettings(); };
   $("#bExp").onclick = () => {
-    const extra = {}; ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist"].forEach(k => { const v = localStorage.getItem(k); if (v != null) extra[k] = v; });
+    const extra = {}; ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2"].forEach(k => { const v = localStorage.getItem(k); if (v != null) extra[k] = v; });
     const blob = new Blob([JSON.stringify({ mundo: S, modulos: extra, fecha: new Date().toISOString() }, null, 1)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "mundo-emergencia-progreso.json"; a.click();
   };
@@ -641,7 +628,7 @@ function openSettings(){
         const d = JSON.parse(t);
         if (!d.mundo) throw 0;
         S = Object.assign(S, d.mundo); save();
-        Object.entries(d.modulos || {}).forEach(([k, v]) => { if (/^(phtls_|atls_|pcr_hist)/.test(k)) localStorage.setItem(k, v); });
+        Object.entries(d.modulos || {}).forEach(([k, v]) => { if (/^(phtls_|atls_|pcr_hist|apad_done|apadSim2)/.test(k)) localStorage.setItem(k, v); });
         closeModal(); render(true); toast("✅ Progreso importado");
       }catch(err){ toast("❌ El archivo no es un progreso válido"); }
     });
@@ -651,13 +638,20 @@ function openSettings(){
       <div class="mb row"><button class="btn" id="rNo">Cancelar</button><button class="btn pri" id="rYes">Sí, reiniciar</button></div>`);
     $("#rNo").onclick = openSettings;
     $("#rYes").onclick = () => {
-      ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist",KEY].forEach(k => localStorage.removeItem(k));
-      S = { nombre:"", rol:"", visitas:{}, estrellas:{}, mejorNota:{}, manual:{}, noche:0, libre:false, vistos:[], insVistas:[] };
+      ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2",KEY].forEach(k => localStorage.removeItem(k));
+      S = { nombre:"", rol:"", visitas:{}, estrellas:{}, mejorNota:{}, manual:{}, noche:0, libre:false, cielo:"", vistos:[], insVistas:[] };
       save(); closeModal(); render(true); openProfile(true);
     };
   };
 }
 
+$("#clock").onclick = () => {
+  const i = CIELO_ORDEN.indexOf(S.cielo || "");
+  S.cielo = CIELO_ORDEN[(i + 1) % CIELO_ORDEN.length]; save();
+  asegurarEscena(true); renderMap();
+  toast(S.cielo ? `🌗 Cielo fijado: <b>${CIELOS[S.cielo].n}</b>` : "🌗 Cielo automático según tu hora");
+};
+setInterval(() => { const k = momento(S.cielo); if (escenaLista && escenaLista.clave !== k) renderMap(); else if (escenaLista) pintarReloj(); }, 30000);
 $("#bAva").onclick = () => openProfile(false);
 $("#bBadges").onclick = openBadges;
 $("#bStars").onclick = openStars;

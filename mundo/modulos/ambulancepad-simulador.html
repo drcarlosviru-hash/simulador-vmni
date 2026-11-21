@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador AmbulancePad · SUC (formación)</title>
+<style>
+:root{--bg:#c7ccd2;--row:#e9ebee;--row2:#d5d9de;--ink:#1b2430;--muted:#5d6875;--top:#3b3f45;--navy:#253e66;--red:#c8423b;--green:#3cb34a;--or:#f08c1e;--blue:#9cc1e8;--line:#a9b1ba}
+*{box-sizing:border-box}
+html,body{margin:0;background:#2a2d31;color:var(--ink);font:15px/1.35 "Segoe UI",Tahoma,system-ui,sans-serif}
+button{font:inherit;cursor:pointer;color:inherit}
+input,select,textarea{font:inherit;padding:6px 8px;border:1px solid #9aa3ad;border-radius:2px;background:#fff;width:100%;color:var(--ink)}
+input:disabled,textarea:disabled,select:disabled{background:#eceef0;color:#555}
+#dev{max-width:1180px;margin:0 auto;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;position:relative}
+.disc{background:#fff4e0;color:#7a4a00;font-size:12px;padding:4px 10px;text-align:center}
+/* top bar */
+.top{background:var(--top);color:#fff;display:flex;align-items:center;gap:8px;padding:5px 8px;position:sticky;top:0;z-index:40;min-height:44px}
+.tb{border:0;background:transparent;color:#fff;padding:3px 6px;border-radius:3px;font-size:20px;line-height:1}
+.tb.env{color:#4cd964}.tb.ok{color:#4cd964;font-size:24px}
+.tb.srch{background:#d9534f;width:60px;font-size:17px}
+.tb.card{background:#e8e8e8;color:#555;width:44px;font-size:14px}
+.tb.x{background:#d9534f;font-weight:700;width:44px}
+.top .name{font-weight:600;letter-spacing:.3px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .inc{font-weight:600}
+.top .tm{font-family:Consolas,monospace;font-size:13px;opacity:.9}
+.sig{font-size:13px;color:#4cd964;border:0;background:transparent}
+.sig.off{color:#ff6b6b}
+#ban{position:sticky;top:44px;z-index:39}
+.banner{background:var(--red);color:#fff;padding:8px 12px;font-weight:600;cursor:pointer;animation:bl 1s steps(2) infinite}
+@keyframes bl{50%{background:#8f221c}}
+main{flex:1;padding:6px 6px 90px}
+/* rows */
+.r{display:grid;grid-template-columns:28px 220px 1fr minmax(160px,34%) 60px;align-items:stretch;background:linear-gradient(#f3f4f6,#d9dce0);border-bottom:3px solid #4a4f56;min-height:62px;cursor:pointer}
+.r .st{background:var(--or);display:grid;place-items:center;color:#fff;font-weight:700;font-size:18px}
+.r.ok .st{background:var(--green)}
+.r .tt{padding:6px 8px;display:flex;flex-direction:column;justify-content:center}
+.r .tt b{font-size:15px;letter-spacing:.2px}
+.r .tt span{font-size:14px;color:#333}
+.r .q{display:flex;gap:6px;align-items:center;padding:4px;flex-wrap:wrap}
+.r .sm{margin:6px 6px;background:#fafafa;border:1px solid #9aa3ad;font:12px Consolas,monospace;color:#666;padding:4px 6px;overflow:hidden;white-space:pre-wrap;max-height:52px}
+.r .ic{display:grid;place-items:center;margin:4px;border-radius:4px;color:#fff;font-weight:700;font-size:22px;background:var(--navy)}
+.r .ic.rd{background:#fff;color:var(--red);border:3px solid var(--red)}
+.r .ic.gr{background:#fff;color:#1f4d2b;border:3px solid #2e5e3a}
+.r.open{border-bottom:0}
+.panel{background:#e4e6e9;border-bottom:3px solid #4a4f56;padding:6px 10px 14px 34px;position:relative}
+@media(max-width:760px){
+ .r{grid-template-columns:22px 1fr 50px;grid-template-areas:"st tt ic" "st q q" "st sm sm"}
+ .r .st{grid-area:st}.r .tt{grid-area:tt}.r .q{grid-area:q}.r .sm{grid-area:sm;max-height:40px}.r .ic{grid-area:ic;font-size:18px}
+ .panel{padding:6px 6px 14px 26px}
+}
+.hd{background:#2f3338;color:#fff;font-size:15px;padding:3px 8px;margin:10px 0 0}
+.box{border:1px solid #8f979f;border-top:0;background:#eef0f2;padding:6px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}}
+.ck{display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 8px;border:1px solid #d9772c;background:linear-gradient(#f7a868,#ee8a3c);text-align:center;font-size:14px;color:#3a1d05;border-radius:1px}
+.ck.blue{border-color:#5f8bc0;background:linear-gradient(#b3cfee,#86aedb);color:#16365e}
+.ck.grey{border-color:#a7aeb6;background:linear-gradient(#e4e6e9,#c9cdd2);color:#333}
+.ck::before{content:"";flex:none;width:15px;height:15px;border:2px solid #555;background:#fff;box-shadow:inset 1px 1px 0 #999}
+.ck span{flex:1}
+.ck.on{background:linear-gradient(#8af46a,#52d634);border-color:#2f9a1d;color:#0b2a05;font-weight:600}
+.ck.on::before{content:"✕";font-weight:900;font-size:13px;line-height:12px;text-align:center;color:#000;background:#fff}
+.ck:disabled{opacity:.75;cursor:default}
+.ck.sm{min-height:38px;min-width:120px}
+.bb{border:1px solid #6d8fb8;background:linear-gradient(#b8d3ef,#8db3dc);color:#25456b;min-height:44px;padding:4px 10px;border-radius:1px}
+.bb.dk{background:linear-gradient(#3d5778,#253e66);color:#fff;border-color:#1c2f4d}
+.bb:disabled{opacity:.5;cursor:default}
+.plus{background:var(--blue);border:0;color:var(--or);font-size:30px;font-weight:700;min-width:80px}
+.plus.dk{background:#2c4568}
+.frm{display:grid;grid-template-columns:150px 1fr;gap:4px 10px;align-items:center}
+.frm label{font-size:14px;color:#222}
+@media(max-width:760px){.frm{grid-template-columns:1fr}}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:760px){.cols{grid-template-columns:1fr}}
+.times{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+@media(max-width:760px){.times{grid-template-columns:repeat(2,1fr)}}
+.tbx label{font-size:13.5px;display:block}
+.tbx .t{display:flex;gap:3px}
+.clk{border:1px solid #9aa3ad;background:linear-gradient(#e8e8e8,#cfcfcf);width:44px;font-size:18px;border-radius:50%}
+.tbl{width:100%;border-collapse:collapse;background:#fff;font-size:13.5px}
+.tbl th,.tbl td{text-align:left;padding:4px 6px;border-bottom:1px solid #d6dade}
+.tbl th{background:#e9ecef;font-weight:600}
+.logw{display:flex;gap:0;border:1px solid #8f979f;background:#fff;min-height:90px}
+.logw .lt{flex:1;overflow:auto}
+.note{position:absolute;right:8px;bottom:8px;width:52px;height:46px;border:0;border-radius:4px;background:#3a7bd5;color:#fff;font-size:22px}
+.tip{background:#eaf3ff;border-left:4px solid #3a7bd5;padding:6px 9px;font-size:13.5px;margin:8px 0}
+.warn{background:#fdecea;border-left:4px solid var(--red);padding:6px 9px;font-size:13.5px;margin:8px 0}
+.small{font-size:12.5px;color:var(--muted)}
+.vrow{display:grid;grid-template-columns:60px 1fr;border-bottom:1px solid #b9c0c7}
+.vrow>.c{display:grid;place-items:center;color:#fff;font-size:20px}
+.vrow .f{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:6px}
+.vrow .f input{width:80px}
+.vrow .f .lab{min-width:70px;font-size:14px}
+/* bottom */
+.bar{position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;justify-content:center;background:#3b3f45;pointer-events:none}
+.bar .in{display:flex;gap:6px;overflow-x:auto;max-width:1180px;width:100%;padding:6px;pointer-events:auto}
+.bar button{flex:1 0 auto;min-width:118px;border:1px solid #888;background:linear-gradient(#f2f2f2,#cfd2d6);padding:6px 10px;display:flex;align-items:center;gap:8px;font-size:14px;text-align:left;border-radius:1px}
+.bar button b{font-size:22px;font-weight:400}
+.bar button.g{background:linear-gradient(#a5d18f,#7cb465)}
+.bar button:disabled{opacity:.45}
+.side{position:fixed;right:max(6px,calc(50% - 590px + 6px));top:120px;display:flex;flex-direction:column;gap:6px;z-index:20}
+.side button{width:42px;height:38px;border:0;background:#cfd3d8;font-size:18px;border-radius:3px}
+@media(max-width:900px){.side{display:none}}
+/* home */
+.hhead{display:grid;grid-template-columns:180px 1fr 1fr;gap:10px;background:#2f3338;color:#fff;padding:8px}
+@media(max-width:760px){.hhead{grid-template-columns:1fr}}
+.hhead .vd{background:linear-gradient(#f2f2f2,#cfd2d6);color:#222;border:0;display:flex;align-items:center;gap:8px;padding:6px;font-size:15px}
+.hhead .kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:14.5px}
+.list{background:#e8eaed;min-height:300px;margin-top:6px}
+.list table{width:100%;border-collapse:collapse;font-size:14.5px}
+.list th{text-align:left;font-weight:400;color:#333;padding:6px;border-bottom:2px solid #b5bcc4;background:#dfe2e6}
+.list td{padding:8px 6px;border-bottom:1px solid #cdd2d8;white-space:nowrap}
+.list tr.sel td{background:#2a7fd4;color:#fff}
+.list tr{cursor:pointer}
+.trainer{background:#fff;border:2px dashed #7a8794;margin:10px 6px;padding:10px}
+.trainer h3{margin:0 0 6px;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+/* modal */
+#mod{position:fixed;inset:0;z-index:60;background:rgba(10,15,20,.55);display:none;align-items:center;justify-content:center}
+#mod.show{display:flex}
+#mod .w{background:#e4e6e9;width:min(860px,100%);max-height:92vh;display:flex;flex-direction:column;border:2px solid #222}
+#mod .h{display:flex;align-items:center;gap:6px;background:#3b3f45;color:#fff;padding:6px 8px;font-weight:600}
+#mod .h span{flex:1}
+#mod .h button{border:0;width:44px;height:34px;font-size:18px;color:#fff}
+#mod .b{overflow:auto;padding:8px 12px 16px}
+@media(max-width:760px){#mod .w{height:100%;max-height:100%}}
+canvas.sg{width:100%;height:130px;background:#fff;border:1px dashed #888;touch-action:none;display:block}
+.toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:#14202e;color:#fff;padding:9px 14px;border-radius:6px;font-size:14px;z-index:90;max-width:92vw;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.incoming{background:#fff;border:4px solid var(--red);padding:12px;margin:8px 6px;animation:pl 1.2s infinite}
+@keyframes pl{50%{box-shadow:0 0 0 8px rgba(200,66,59,.25)}}
+.report{background:#fff;max-width:820px;margin:8px auto;padding:20px;font-size:13.5px;border:1px solid #999}
+.report h1{font-size:18px;margin:0}
+.report h4{background:#e9ecef;margin:12px 0 4px;padding:3px 8px;font-size:13px}
+.report .rh{display:flex;justify-content:space-between;gap:10px;border-bottom:3px solid var(--navy);padding-bottom:8px}
+.report .logo{width:84px;height:42px;border:1px dashed #888;display:grid;place-items:center;font-size:11px;color:#777}
+.report img{max-width:150px;margin:3px}
+.kv2{display:grid;grid-template-columns:minmax(120px,36%) 1fr;gap:2px 10px}
+.kv2 b{font-weight:500;color:#555}
+pre.xml{background:#14202e;color:#cde3f7;padding:10px;overflow:auto;font-size:12px;max-height:55vh}
+.lock{background:#555;color:#fff;padding:6px 10px;font-size:13.5px}
+.eye{width:74px;height:50px;border-radius:50%;border:2px solid #777;background:radial-gradient(circle,#222 0 var(--p,9px),#8a6a4a calc(var(--p,9px) + 1px) 15px,#f6f6f6 16px);position:relative}
+.eye i{position:absolute;right:-4px;bottom:-6px;font-style:normal;font-weight:800;font-size:18px}
+@media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)!important}.top{flex-wrap:wrap;gap:4px}.top .tm{font-size:11px}.tb.srch{width:40px}.top .name{min-width:80px}html,body{overflow-x:hidden}.vrow .f input{width:64px}.regw{grid-template-columns:1fr!important}}
+.bodyw{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}.bodyw svg [data-r]{cursor:pointer;stroke:#3b3f45;stroke-width:1.4}
+.les{display:inline-block;background:#fdecea;border:1px solid #e3a8a3;padding:3px 7px;margin:2px;font-size:13px}
+.scq{font:700 22px Consolas,monospace;color:#c8423b}
+.dxsel{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:760px){.dxsel{grid-template-columns:1fr}}
+.logm{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap}.logm>div{flex:1;min-width:150px;background:#dbe6f3;border:1px solid #9fb3cc}
+.logm .lh{background:#3b3f45;color:#fff;font-size:13px;padding:2px 6px}.logm .lb{padding:5px;display:flex;flex-direction:column;gap:4px}
+.crew button{text-align:left;padding:5px 8px;border:1px solid #9fb3cc;background:#fff;font-size:13px}.crew button.on{background:#2a7fd4;color:#fff}
+.yellow textarea{background:#ffff66}
+.arrow{font-size:26px;min-width:56px;min-height:44px;border:1px solid #6d8fb8;background:linear-gradient(#b8d3ef,#8db3dc)}.arrow.on{background:linear-gradient(#8af46a,#52d634)}
+.gstep{display:grid;grid-template-columns:28px 1fr auto;gap:6px;align-items:center;padding:6px;border-bottom:1px solid #cdd3da;background:#fff}
+.gstep.ok{background:#eaf7e6}.gstep .n{font:700 13px Consolas;color:#555}
+</style>
+</head>
+<body>
+<div id="dev">
+ <div class="top" id="top"></div>
+ <div class="disc">Simulador formativo construido a partir del manual y de la estructura de pantallas del SUC. No es el software oficial: <b>no introduzcas datos reales de pacientes</b>.</div>
+ <div id="ban"></div>
+ <main id="main"></main>
+</div>
+<div class="side" id="side"></div>
+<div class="bar" id="bar"></div>
+<div id="mod"><div class="w"><div class="h"><span id="mT"></span><button style="background:var(--green)" data-act="mOk">✔</button><button style="background:var(--red)" data-act="mClose">✕</button></div><div class="b" id="mB"></div></div></div>
+<script>
+/* ============ utilidades ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hm=(d=new Date())=>d.toTimeString().slice(0,5);
+const hms=(d=new Date())=>d.toTimeString().slice(0,8);
+const today=()=>new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+const filled=v=>Array.isArray(v)?v.length>0:(v!==undefined&&v!==null&&String(v).trim()!=='');
+function toast(m,ms=3200){document.querySelectorAll('.toast').forEach(x=>x.remove());const t=document.createElement('div');t.className='toast';t.innerHTML=m;document.body.appendChild(t);setTimeout(()=>t.remove(),ms)}
+const store={get(){try{return JSON.parse(localStorage.getItem('apadSim2'))}catch(e){return null}},set(v){try{localStorage.setItem('apadSim2',JSON.stringify(v))}catch(e){}},del(){try{localStorage.removeItem('apadSim2')}catch(e){}}};
+
+/* ============ catálogos ============ */
+const PROTOS=['SVA MÍNIMO','SVA EXTENDIDO','SVB TRANSP.SECUNDARIO','SVA TRANSP.SECUNDARIO','SVA PSIQUIÁTRICO','SVA EXITUS','SVA NEONATO'];
+const isSVB=p=>/^SVB/.test(p);
+const REQROLES=pr=>isSVB(pr)?['TES-Conductor/a','TES-Ayudante']:['Médico/a','Enfermero/a','TES-Conductor/a'];
+const ROLES=['Médico/a','Enfermero/a','TES-Conductor/a','TES-Ayudante','Piloto','Aprendiz','Gestor de recursos'];
+const VEH=['SVA-01','SVA-02','SVA-03','SVB-11'];
+const EST=['Gran Canaria: Base Norte','Gran Canaria: Base Sur','Gran Canaria: Base Centro'];
+const DEVS={zoll:{d:'ZOLL X Series v2',n:'DESFIBRILADOR',mac:'00:1A:2B:3C:4D:5E'},wein:{d:'Weinmann Medumat',n:'RESPIRADOR',mac:'00:1A:2B:3C:4D:6F'}};
+const HOSP=['H. U. de Gran Canaria Dr. Negrín','C. H. U. Insular-Materno Infantil','H. U. de Canarias','H. U. N. S. de Candelaria','H. Dr. José Molina Orosa','H. General de Fuerteventura','H. General de La Palma'];
+const DESTINOS=['Domicilio',...HOSP,'Centro de salud','No traslado','Traslado por otro recurso'];
+const CIE=[['410.91','IAM / SCACEST'],['411.1','Síndrome coronario intermedio / SCASEST'],['413.9','Angina de pecho'],['786.50','Dolor torácico no especificado'],['427.5','Parada cardiaca'],['427.31','Fibrilación auricular'],['427.41','Fibrilación ventricular'],['428.0','Insuficiencia cardiaca congestiva'],['401.9','Hipertensión arterial'],['434.91','Ictus isquémico'],['431','Hemorragia intracerebral'],['435.9','Accidente isquémico transitorio'],['436','Enfermedad cerebrovascular aguda'],['780.2','Síncope'],['780.39','Convulsiones'],['780.01','Coma'],['251.2','Hipoglucemia'],['491.21','EPOC reagudizado'],['493.92','Asma con exacerbación aguda'],['518.81','Insuficiencia respiratoria aguda'],['486','Neumonía'],['786.09','Disnea'],['933.1','Cuerpo extraño en laringe (atragantamiento)'],['995.0','Shock anafiláctico'],['995.91','Sepsis'],['850.9','Conmoción cerebral'],['959.01','Traumatismo craneal'],['959.8','Traumatismo múltiple / politraumatismo'],['303.00','Intoxicación etílica aguda'],['977.9','Intoxicación medicamentosa'],['300.00','Ansiedad'],['789.00','Dolor abdominal'],['780.60','Fiebre'],['650','Parto normal'],['798.2','Exitus'],['798.9','Muerte sin testigos']];
+const PRENOTIF_CIE={'410.91':'SCACEST','434.91':'Ictus','431':'Ictus','436':'Ictus'};
+const MEDS=['Adrenalina','Amiodarona','Atropina','Ácido acetilsalicílico','Clopidogrel','Ticagrelor','Heparina sódica','Enoxaparina','Nitroglicerina','Morfina','Fentanilo','Midazolam','Diazepam','Propofol','Etomidato','Ketamina','Rocuronio','Succinilcolina','Salbutamol','Bromuro de ipratropio','Metilprednisolona','Hidrocortisona','Dexclorfeniramina','Furosemida','Glucosa 50%','Glucagón','Naloxona','Flumazenilo','Ondansetrón','Metoclopramida','Paracetamol','Metamizol','Dexketoprofeno','Ácido tranexámico','Suero fisiológico 0,9%','Ringer lactato','Labetalol','Urapidilo','Adenosina','Bicarbonato sódico','Sulfato de magnesio','Otro'];
+const MACROS=['Paciente consciente y orientado. ','Refiere ','Niega ','Familia informada. ','Se explica situación y riesgos. ','A nuestra llegada se encuentra ','Testigos refieren ','Sin antecedentes de interés. ','Se traslada estable. '];
+const SCEN={
+ torax:{t:'Dolor torácico',call:{apellidos:'GARCÍA PRUEBA',nombre:'ANTONIO',edad:'62',sexo:'masculino',pob:'LAS PALMAS DE GRAN CANARIA',calle:'CALLE FICTICIA',num:'12',notas:'PISO 3 PUERTA B',tipoLl:'Enfermedad',razon:'Dolor torácico',prio:'EM',kw:'PRIORIDAD 0',sosp:'Dolor torácico opresivo de 40 min, sudoroso.'},v:[[152,92,98,20,94,34],[146,88,94,19,96,35],[138,84,88,18,97,36],[134,82,84,17,98,36]],ecg:'SCACEST'},
+ ictus:{t:'Déficit neurológico',call:{apellidos:'SUÁREZ EJEMPLO',nombre:'CARMEN',edad:'74',sexo:'femenino',pob:'TELDE',calle:'AVENIDA DEL SIMULACRO',num:'5',notas:'',tipoLl:'Enfermedad',razon:'Alteración neurológica',prio:'EM',kw:'Emergencia',sosp:'Pérdida de fuerza en brazo derecho y dificultad para hablar desde hace 50 min.'},v:[[184,102,88,16,97,0],[178,98,86,16,97,0],[176,96,84,15,98,0],[172,94,82,15,98,0]],ecg:'Ritmo sinusal'},
+ politrauma:{t:'Politrauma (precipitado)',proto:'SVA EXTENDIDO',call:{apellidos:'',nombre:'',edad:'35',sexo:'masculino',pob:'LAS PALMAS DE GRAN CANARIA',calle:'OBRA CALLE SIMULADA',num:'3',notas:'Andamio',tipoLl:'Accidente casual',razon:'Precipitado',prio:'EM',kw:'PRIORIDAD 0',sosp:'Trabajador precipitado desde andamio de unos 6 m. Responde a la voz, dolor torácico y abdominal, deformidad en muslo derecho.'},v:[[88,52,128,30,90,28],[84,50,132,32,91,27],[96,58,120,26,94,30],[100,60,114,24,95,31]],ecg:'Taquicardia QRS estrecho'},
+ trafico:{t:'Accidente de tráfico',proto:'SVA EXTENDIDO',call:{apellidos:'',nombre:'',edad:'28',sexo:'masculino',pob:'SAN BARTOLOMÉ DE TIRAJANA',calle:'GC-1 KM 40 SENTIDO SUR',num:'',notas:'',tipoLl:'Accidente de tráfico',razon:'Traumatismo',prio:'EM',kw:'PRIORIDAD 0',sosp:'Colisión moto-turismo. Motorista consciente, dolor torácico y en pierna izquierda.'},v:[[96,58,122,26,92,30],[92,55,126,28,93,30],[100,62,116,24,95,31],[104,64,110,22,96,32]],ecg:'Taquicardia QRS estrecho'}
+};
+
+/* ============ opciones de las ventanas (estructura real) ============ */
+const OPT={
+ va:[{o:['Estridor (insp)','Estridor (exp)','Intubado','Vía aérea permeable','Cuerpo extraño (obstrucción total)','Cuerpo extraño (obstrucción parcial)','Inhalación humo.','Otros']}],
+ vb:[{o:['Bradipnea','Taquipnea','Hiperventilación','Gasping','Cianosis central','Cianosis periférica','Secreciones resp.','Otros']},{h:'Ruido Respiratorio',o:['Estertores izquierdos','Hipofonesis Izquierda','Crepitantes gruesos Hemitorax izquierdo','Crepitantes finos Hemitorax izquierdo','Estertores derechos','Hipofonesis Derecha','Crepitantes gruesos Hemitorax derecho','Crepitantes finos Hemitorax derecho','Sibilancias','Otros (ruido)']},{h:'Manejo Vía Respiratoria',o:['Asistido','Controlado','CPAP','BIPAP','VC','PC','PS','Otros (manejo)']}],
+ vc:[{o:['Inestable','Hemorragia Severa']},{h:'Pulso Palpable',o:['Pulso detectable','Periférico','Pulso fuerte','Izquierda','Pulso no detectable','Central','Pulso débil','Derecha']},{h:'Hemorragia Severa',o:['Extremidad superior Izquierda','Extremidad superior Derecha','Extremidad inferior Izquierda','Extremidad inferior Derecha','Tórax','Abdomen','Cuello','Pelvis','Otros (hemorragia)']},{h:'Piel',o:['Normal (piel)','Sudoración fría','Sudoración','Recapilarización lenta > 2 segundos','Pálido','Pliegues en piel','Edema','Rubor/Eritema','Otros (piel)']}],
+ vecg:[{h:'ECG',o:['no evaluable','Arritmia absoluta','Bradicardia','Taquicardia QRS estrecho','Taquicardia QRS ancho','BAV 1er grado','BAV 2º grado Mobitz 2','BAV 2º grado Wenckebach','BAV completo o 3er grado','SCACEST','SCASEST','R en T','Extrasístole','Fibrilación Ventricular','Actividad eléctrica Caótica','Asistolia','Ritmo de marcapasos','Fibrilación auricular','Flutter auricular','Otros']},{h:'SCACEST, unidad Hemodinámica Activada:',o:['Sí','No','Denegado'],k:'hemo',single:1,show:p=>has(p,'vecg','SCACEST')}],
+ ia:[{h:'Manejo inicial de Vía Aérea',o:['Apertura de Vía Aérea','Aspiración de secreciones','Extracción de un cuerpo extraño','Posición lateral de seguridad','Cánula orofaríngea (Guedell)','Prótesis/piezas dentales sueltas','Otros']},{h:'Manejo avanzado de la Vía Aérea/ Intubación',log:'intub',adv:1}],
+ ib:[{h:'Drenaje Torácico',o:['izq','dch'],adv:1,extra:'dren'},{h:'Otro',o:['Asistido','Controlado','CPAP','BIPAP','VC','PC','PS','Otros']},{h:'Oxigenoterapia',log:'o2'},{h:'Ventilación',log:'vent',adv:1}],
+ ic:[{h:'Reanimación',o:['RCP-B','RCP-A']},{h:'Hemostática',log:'hemost'},{h:'Intervenciones Eléctricas',custom:'elec'},{h:'IV Acceso',log:'iv'}],
+ im:[{h:'Medicación seleccionada',log:'med'}],
+ vpsi:[{h:'Conducta',o:['Colaborador','Agitación psicomotriz','Agresividad verbal','Agresividad física','Inhibición','Alucinaciones','Ideación delirante','Desorientación']},{h:'Medidas',o:['Contención verbal','Contención farmacológica','Contención mecánica','Presencia de fuerzas de seguridad','Orden judicial','Familiar acompañante']}],
+ vsec:[{h:'Motivo del traslado',o:['Pruebas diagnósticas','Ingreso en UCI','Valoración por especialista','Retorno a centro de origen','Cirugía urgente','Hemodinámica','Otros']}]
+};
+Object.assign(OPT,{
+ vact:[{h:'Actitud/Comportamiento',o:['Agresivo','Deprimido','Ideas Delirantes','Confuso','Ansioso','Eufórico','Alucinaciones','Atemorizado','Ideas Autolíticas','Agitado','Irritable','Otros']}],
+ iexist:[{o:['Vía Venosa','Collarín Cervical.','Sonda vesical.','Contención Física.','Sueroterapia','Férula de tracción.','Sonda nasogástrica.','Contención Farmacológica.','Bomba de Perfusión.','Férula Yeso.','Ventilación (VMNI)','Incubadora.','Marcapasos Ext.','Oxigenoterapia.','Ventilación (VMI)','Otros']}],
+ infec:[{h:'Infecciones/Aislamientos',o:['Piel','Herida','Boca','Membrana mucosa','Sospecha Covid-19','Covid-19 confirmado','Aislamiento Estándar','Aislamiento de Contacto','Aislamiento de transmisión por gotas','Aislamiento Respiratorio','Aislamiento Inverso','EDO','Otros']}],
+ iinm:[{h:'Inmovilización / Movilización',o:['Collarín','Camilla Tijera','Caminando','Cabestrillo','Tablero Espinal','Férula de Vacío','Silla','Contención Mecánica','Inmovilizador Tetracameral (Dama Elche)','Férula Hinchable','Camilla','Acompañamiento por fuerzas orden público','Colchón de vacío','Kendrick (FernoKed)','Camilla Nido','Otros']},{h:'Posición de traslado',o:['Decúbito Supino','Decúbito prono','Antishock/Trendelemburg','Anti-Trendelemburg','Rodilla en ángulo','Posición fetal','PLS Izquierda','PLS Derecha','A favor de la marcha','En contra de la marcha','Otros|pos']}],
+ igin:[{h:'Gineco-Obstétricos',o:['Dilatación','Gestación Controlada','Gestación Múltiple','Actividad Uterina (Regular)','Expulsión','Gestación No Controlada','Episiotomía','Actividad Uterina (Irregular)','Alumbramiento','Gestación de Riesgo','Parto Iniciado','Rotura Uterina','Placenta Expulsada','Edad Gestacional Incierta','Parto Distócico','Atonía uterina','Primípara','Gestación a Término','Parto Eutócico','Agresión Sexual (confirmada)','Multípara','Gestación Pre-término','Metrorragia','Agresión Sexual (sospecha)','Aborto en curso','Aborto retenido/incompleto','Aborto completo','Otros']}]
+});
+const MEC={'Tráfico':['Colisión frontal','Colisión lateral','Alcance posterior','Vuelco','Atropello','Motocicleta','Bicicleta / patinete','Expulsión del vehículo','Fallecido en el mismo habitáculo','Atrapado / excarcelación','Sin cinturón / sin casco','Deformidad importante del vehículo'],'Caída':['Precipitado desde altura','Caída de propia altura','Caída por escaleras'],'Penetrante':['Arma blanca','Arma de fuego','Empalamiento'],'Otros mecanismos':['Aplastamiento','Explosión / onda expansiva','Agresión','Accidente deportivo','Accidente laboral','Electrocución','Ahogamiento / inmersión','Hipotermia / exposición','Otros|mec']};
+const REG_F=[['Cabeza','<circle cx="100" cy="28" r="20"/>'],['Cara','<ellipse cx="100" cy="34" rx="9" ry="8"/>'],['Cuello','<rect x="91" y="48" width="18" height="12"/>'],['Tórax','<rect x="70" y="60" width="60" height="48" rx="6"/>'],['Abdomen','<rect x="72" y="108" width="56" height="38"/>'],['Pelvis','<rect x="72" y="146" width="56" height="26" rx="4"/>'],['Brazo der.','<rect x="46" y="62" width="20" height="56" rx="9"/>'],['Antebrazo/mano der.','<rect x="42" y="120" width="20" height="62" rx="9"/>'],['Brazo izq.','<rect x="134" y="62" width="20" height="56" rx="9"/>'],['Antebrazo/mano izq.','<rect x="138" y="120" width="20" height="62" rx="9"/>'],['Muslo der.','<rect x="74" y="174" width="24" height="64" rx="10"/>'],['Pierna/pie der.','<rect x="74" y="240" width="24" height="62" rx="10"/>'],['Muslo izq.','<rect x="102" y="174" width="24" height="64" rx="10"/>'],['Pierna/pie izq.','<rect x="102" y="240" width="24" height="62" rx="10"/>']];
+const REG_B=[['Cabeza (occipital)','<circle cx="100" cy="28" r="20"/>'],['Columna cervical','<rect x="91" y="48" width="18" height="12"/>'],['Espalda superior','<rect x="70" y="60" width="60" height="48" rx="6"/>'],['Columna lumbar','<rect x="72" y="108" width="56" height="38"/>'],['Glúteos / sacro','<rect x="72" y="146" width="56" height="26" rx="4"/>'],['Brazo der. (post.)','<rect x="134" y="62" width="20" height="120" rx="9"/>'],['Brazo izq. (post.)','<rect x="46" y="62" width="20" height="120" rx="9"/>'],['Pierna der. (post.)','<rect x="102" y="174" width="24" height="128" rx="10"/>'],['Pierna izq. (post.)','<rect x="74" y="174" width="24" height="128" rx="10"/>']];
+const LES_T=['Contusión','Erosión / abrasión','Herida incisa','Herida contusa','Herida penetrante','Hematoma','Deformidad','Sospecha de fractura','Fractura abierta','Luxación','Amputación','Desguantamiento','Hemorragia activa','Dolor a la palpación','Crepitación','Volet / movimiento paradójico'];
+const BURN=[['Cabeza y cuello',9],['Tórax anterior',9],['Abdomen',9],['Espalda superior',9],['Espalda inferior / glúteos',9],['Brazo derecho',9],['Brazo izquierdo',9],['Pierna derecha (anterior)',9],['Pierna derecha (posterior)',9],['Pierna izquierda (anterior)',9],['Pierna izquierda (posterior)',9],['Genitales / periné',1]];
+const ENF=['Cardiovascular','Respiratoria','Neurológica','Metabólica / endocrina','Digestiva','Infecciosa','Intoxicación','Psiquiátrica','Obstétrica','Pediátrica','Otra'];
+const LOGS={
+ triage:{t:'TRIAGE (Start)',f:[['Grupo de TRIAGE (Start)',['ROJO','AMARILLO','VERDE','NEGRO']],['Puntuación','txt'],['Puntuación evaluada por','txt']]},
+ intub:{t:'Intubación',f:[['Dispositivo',['Tubo orotraqueal','Mascarilla laríngea','i-gel','Cricotiroidotomía']],['Nº tubo','num'],['Intentos','num'],['Confirmación',['Capnografía','Auscultación','Visualización directa']]]},
+ o2:{t:'Oxigenoterapia',f:[['Dispositivo',['Gafas nasales','Mascarilla simple','Mascarilla reservorio','Venturi','Alto flujo']],['Flujo l/min','num'],['FiO₂ %','num']]},
+ vent:{t:'Ventilación',f:[['Modo',['VC','PC','PS','CPAP','BIPAP']],['FR','num'],['Vt ml','num'],['PEEP','num'],['FiO₂ %','num']]},
+ hemost:{t:'Hemostasia',f:[['Método',['Compresión directa','Vendaje compresivo','Torniquete','Agente hemostático','Cinturón pélvico']],['Localización','txt']]},
+ iv:{t:'Acceso IV',f:[['Tipo',['Periférica','Intraósea','Central']],['Calibre',['14G','16G','18G','20G','22G','IO']],['Localización','txt']]},
+ med:{t:'Medicación',f:[['Fármaco',MEDS],['Dosis','txt'],['Vía',['IV','IM','SC','VO','SL','IO','Nebulizada','Intranasal','Rectal']]]}
+};
+const QUICK={vact:{q:['Normal']},rn:{q:['no requerido'],blue:1},iexist:{q:['Ninguno'],blue:1},infec:{q:['Ninguno'],blue:1},triage:{q:['Sin puntuaciones'],blue:1,mod:['Añadir puntuación','start']},iinm:{q:['Ninguno']},igin:{q:['Ninguno'],blue:1},va:{q:['Normal']},vb:{q:['Normal','No Respira'],x:1},vc:{q:['Estable','PCR'],x:1},vecg:{q:['No relevante','Ritmo sinusal'],x:1},ia:{q:['Ninguno'],btn:['Intubación','intub']},ib:{q:['Ninguna'],btn:['Oxigenoterapia','o2']},ic:{q:['Ninguna'],btn:['Acceso IV','iv']},im:{q:['Ninguna'],btn:['Medicación','med']},vpsi:{q:['Sin alteraciones']},vsec:{q:[]}};
+const NEG=['no requerido','Sin puntuaciones','Normal','Ninguno','Ninguna','Estable','No relevante','Ritmo sinusal','Sin alteraciones'];
+
+/* secciones: dependen del protocolo */
+function sections0(p){
+ const pr=p.proto,L=[],EXT=pr==='SVA EXTENDIDO';
+ const add=(id,t,s,ic,tile,extra={})=>L.push({id,t,s,ic,tile,...extra});
+ add('equipo','Equipo de Guardia','Datos','🚑','n');
+ add('incidente','INCIDENTE','Datos','📞','n');
+ add('paciente','Paciente','Datos','👤','n');
+ if(/TRANSP\.SECUNDARIO/.test(pr))add('vsec','TRASLADO SECUNDARIO','Centro de origen y motivo','⇄','n',{opt:1});
+ add('anam','VALORACIÓN INICIAL','Anamnesis','🔍','n');
+ add('va','VALORACIÓN INICIAL','A Vía Aérea','A','n',{opt:1});
+ add('vb','VALORACIÓN INICIAL','B Respiración','B','n',{opt:1});
+ add('vc','VALORACIÓN INICIAL','C Circulación','C','n',{opt:1});
+ add('vecg','VALORACIÓN INICIAL','C ECG','♥','n',{opt:1});
+ add('vd','VALORACIÓN INICIAL','D. Neurológica','D','n');
+ if(EXT){add('vact','VALORACIÓN INICIAL','D. Actitud/Comportamiento','🧠','n',{opt:1});add('rn','VALORACIÓN INICIAL','RN VIVO','👶','n',{noReq:1});add('iexist','VALORACIÓN INICIAL','Intervenciones existentes','⊕','n',{opt:1,noReq:1});}
+ if(pr==='SVA PSIQUIÁTRICO')add('vpsi','VALORACIÓN INICIAL','Psiquiátrica','Ψ','n',{opt:1});
+ if(pr==='SVA NEONATO')add('apgar','VALORACIÓN INICIAL','APGAR / Neonato','👶','n');
+ add('vit','VALORACIÓN INICIAL','Constantes Vitales','⏱','n');
+ if(EXT){add('mec','VALORACIÓN INICIAL','Mecanismo de lesión','🚗','n');add('infec','VALORACIÓN INICIAL','Infecciones/Aislamientos','✱','n',{opt:1,noReq:1});}
+ add('diag','VALORACIÓN INICIAL','Diagnóstico/Conclusión','🩺','n');
+ if(EXT)add('triage','TRIAGE (Start)','','⏲','n',{noReq:1});
+ if(pr==='SVA EXITUS')add('exitus','EXITUS','Certificación','✝','n');
+ add('ia','INTERVENCIONES','A Vía Aérea','A','rd',{opt:1});
+ add('ib','INTERVENCIONES','B Respiración','B','rd',{opt:1});
+ add('ic','INTERVENCIONES','C Circulación','C','rd',{opt:1});
+ if(EXT){add('iinm','INTERVENCIONES','Inmovilización / Movilización','⊕','rd',{opt:1});add('igin','INTERVENCIONES','Gineco-Obstétricos','⊕','rd',{opt:1,noReq:1});}
+ if(!isSVB(pr))add('im','INTERVENCIONES','Medicación','💊','rd',{opt:1});
+ add('reg','Registros','','📈','rd',{noReq:1});
+ if(pr!=='SVA EXITUS'){
+  add('ra','REEVALUACIÓN','A Vía Aérea','A','gr',{opt:1,copy:'va'});
+  add('rb','REEVALUACIÓN','B Respiración','B','gr',{opt:1,copy:'vb'});
+  add('rc','REEVALUACIÓN','C Circulación','C','gr',{opt:1,copy:'vc'});
+  add('recg','REEVALUACIÓN','C ECG','♥','gr',{opt:1,copy:'vecg'});
+  if(pr==='SVA EXTENDIDO')add('rd','REEVALUACIÓN','D. Neurológica','D','gr',{copy:'vd'});
+  add('tras','TRASLADO','Destino','🏥','gr');
+  add('ent','ENTREGA','Estado del paciente','✋','gr');
+ }
+ return L;
+}
+const optKey=id=>({ra:'va',rb:'vb',rc:'vc',recg:'vecg'}[id]||id);
+
+/* ============ estado ============ */
+let S=store.get()||fresh();
+function fresh(){return{screen:'shift',online:true,queue:0,guide:true,shift:{serv:'GSC',veh:VEH[0],est:EST[0],busca:'',proto:'SVA EXTENDIDO',crew:[],dev:{},check:{},started:false},pcrs:[],cur:-1,sel:-1,open:null,incoming:null,step:{}}}
+let M=null;const save=()=>store.set(S);const P=()=>S.pcrs[S.cur];
+const has=(p,sec,v)=>(p.o[sec]||[]).includes(v);
+
+/* ============ completitud ============ */
+function done0(p,s){
+ if(s.noReq)return true;
+ const d=p.d;
+ switch(s.id){
+  case 'equipo':return S.shift.crew.length>0;
+  case 'incidente':return filled(d.calle)&&filled(d.hLlegada);
+  case 'paciente':return p.sp.niegaDatos||((filled(d.apellidos)||d.desconocido)&&filled(d.edad)&&filled(d.sexo));
+  case 'anam':return filled(d.anam);
+  case 'vd':case 'rd':return filled(d[s.id+'_avdn']);
+  case 'vit':return p.vitals.length>0||d.vitNoReq||d.vitRech;
+  case 'diag':return dxAny(p);
+  case 'mec':return (p.o.mec||[]).length>0||filled(d.mecPel)||filled(d.mecTxt);
+  case 'apgar':return d.apgarTot!==undefined;
+  case 'exitus':return filled(d.exHora)&&!!p.sig.exitus;
+  case 'tras':return filled(d.destino);
+  case 'ent':return ['Domicilio','No traslado','Traslado por otro recurso'].includes(d.destino)||(filled(d.recibe)&&filled(d.hTransf));
+ }
+ if(s.opt){const k=s.id;return (p.o[k]||[]).length>0||Object.keys(p.logs).some(l=>(OPT[optKey(k)]||[]).some(g=>g.log===l)&&p.logs[l].length)||filled(d['ft_'+k])}
+ return true;
+}
+function summary0(p,s){
+ const d=p.d;
+ switch(s.id){
+  case 'equipo':return `${S.shift.veh} (${S.shift.veh}), ${S.shift.est}`;
+  case 'incidente':return [d.calle,d.num,d.pob].filter(Boolean).join(' ').toUpperCase();
+  case 'paciente':return '';
+  case 'anam':return d.anam||'';
+  case 'vd':case 'rd':{const g=gcs(p,s.id);return [d[s.id+'_avdn'],g?`GCS: ${g}(${d[s.id+'_go']}/${d[s.id+'_gv']}/${d[s.id+'_gm']})  a ${d[s.id+'_gh']||''}`:''].filter(Boolean).join('\n')}
+  case 'vit':{const v=p.vitals.at(-1);return v?`${v.h} TA ${v.tas||'-'}/${v.tad||'-'} FC ${v.fc||'-'} FR ${v.fr||'-'} SpO2 ${v.spo2||'-'}%`:(d.vitNoReq?'valores medidos no requeridos':d.vitRech?'Rechazado por el paciente':'')}
+  case 'diag':return dxAll(p);
+  case 'mec':return [...(p.o.mec||[]).map(lab),d.mecEv?'Evento '+d.mecEv:'',d.mecPel?'Peligros: '+d.mecPel:''].filter(Boolean).join(', ');
+  case 'rn':return ['rnEG','rnPeso','rnParto','rnApgar'].map(k=>d[k]).filter(Boolean).join(' · ')||(p.o.rn||[]).join('');
+  case 'triage':return (p.logs.triage||[]).map(e=>e.txt).join(' | ')||(p.o.triage||[]).join('');
+  case 'apgar':return d.apgarTot!==undefined?'APGAR '+d.apgarTot:'';
+  case 'exitus':return d.exHora?'Exitus '+d.exHora+(d.exTipo?' · '+d.exTipo:''):'';
+  case 'reg':return p.vitals.length?p.vitals.length+' tomas · '+Object.values(p.logs).flat().length+' intervenciones':'';
+  case 'tras':return d.destino||'';
+  case 'ent':return [d.recibe,d.hTransf].filter(Boolean).join(' · ');
+ }
+ const sel=(p.o[s.id]||[]);const logs=(OPT[optKey(s.id)]||[]).filter(g=>g.log).flatMap(g=>(p.logs[g.log]||[]).map(e=>e.h+' '+e.txt));
+ return [...sel.map(lab),...logs].join(', ')+(d['ft_'+s.id]?(sel.length?' | ':'')+d['ft_'+s.id]:'')||'';
+}
+function gcs(p,id='vd'){const d=p.d;return d[id+'_go']&&d[id+'_gv']&&d[id+'_gm']?(+d[id+'_go'])+(+d[id+'_gv'])+(+d[id+'_gm']):0}
+function dxText0(p){const d=p.d;const c=k=>{const x=CIE.find(c=>c[0]===d[k]);return x?`CIE9: ${x[0]} (${x[1]})`:''};let t='';if(d.dx1)t+=`Diagnóstico principal (${d.dx1c||'Asegurado'}): ${c('dx1')}`;if(d.dx2)t+=` | Diagnóstico secundario: ${c('dx2')}`;return t}
+function dxAny(p){const d=p.d;return filled(d.dx1)||filled(d.dxLibre)||(p.o.dxEnf||[]).length>0||(p.les||[]).length>0||(p.burns||[]).length>0||(p.frost||[]).length>0}
+function scq(p){return (p.burns||[]).filter(b=>b.g!=='1º').reduce((s,b)=>s+(+b.pct||0),0)}
+function dxAll(p){const d=p.d,t=[];if((p.o.dxEnf||[]).length)t.push('Enfermedad: '+p.o.dxEnf.join(', '));const c=dxText(p);if(c)t.push(c);if(d.dxLibre)t.push('Conclusión: '+d.dxLibre);
+ if((p.les||[]).length)t.push('Lesiones: '+p.les.map(l=>`${l.r} – ${l.t}${l.ab?' ('+l.ab+')':''}${l.g?' ['+l.g+']':''}`).join('; '));
+ if((p.burns||[]).length)t.push(`Quemaduras: SCQ ${scq(p)}% · `+p.burns.map(b=>`${b.r} ${b.pct}% ${b.g}`).join('; ')+(d.burnAg?' · agente '+d.burnAg:''));
+ if((p.frost||[]).length)t.push('Congelación: '+p.frost.map(f=>`${f.r} ${f.g}`).join('; '));return t.join('\n')}
+function prenotifNeed(p){const k=PRENOTIF_CIE[p.d.dx1]||(has(p,'vecg','SCACEST')?'SCACEST':null);return k&&!p.prenotif?k:null}
+
+/* ============ PCR ============ */
+function newPCR(call,scen){
+ const inc=String(15800000+Math.floor(Math.random()*9999)),afe=String(23900000+Math.floor(Math.random()*99999));
+ const p={id:Date.now(),inc,afe,scen:scen||null,proto:S.shift.proto,created:hm(),fecha:today(),d:{fecha:today(),inicio:S.shift.est},o:{},logs:{},vitals:[],photos:[],events:[],sp:{},sig:{},just:{},annex:[],closed:false,prenotif:null,copied:false,fromCAD:!!call};
+ if(call){Object.assign(p.d,call);p.d.hInc=hm(new Date(Date.now()-60000));p.d.hActiv=hm()}
+ if(call&&/PRIORIDAD 0|Emergencia/i.test(call.kw||'')){p.d.prioritarios='Con prioritarios';setTimeout(()=>toast(`Palabra clave <b>«${esc(call.kw)}»</b> → «Conducir con prioritarios»`),500)}
+ log(p,'Registro creado'+(call?' desde la sala (PGE)':' manualmente'));
+ S.pcrs.push(p);S.cur=S.pcrs.length-1;S.open=null;return p;
+}
+function log(p,t){p.events.push({h:hms(),ts:Date.now(),t})}
+
+/* ============ render ============ */
+function render(){
+ ({shift:rShift,home:rHome,pcr:rPCR,report:rReport})[S.screen]();
+ save();document.querySelectorAll('canvas.sg').forEach(initSig);
+}
+function topHTML(pcr){
+ const sig=`<button class="sig ${S.online?'':'off'}" data-act="net" title="Cobertura">${S.online?'▮▮▮ ((•))':'✕ sin cobertura'+(S.queue?' ('+S.queue+')':'')}</button>`;
+ if(!pcr)return `<button class="tb env" data-act="mod" data-m="print" title="Imprimir/enviar">✉</button><button class="tb srch" data-act="mod" data-m="search">🔍</button><span class="name"></span>${sig}<span class="tm">${today()} | <span class="clock">${hms()}</span></span><button class="tb x" data-act="mod" data-m="settings" title="Ajustes">✕</button>`;
+ const p=P();return `<button class="tb env" data-act="mod" data-m="print" title="Imprimir / enviar">✉</button>${p.closed?'<span class="tb ok">✔</span>':''}<span class="tm" id="chrono">${chrono(p)}</span><button class="tb srch" data-act="mod" data-m="share" title="Buscar PCR relacionados">🔍</button><button class="tb card" data-act="card" title="Leer tarjeta sanitaria">▭</button><span class="name">${esc(p.d.apellidos||'')}</span><span class="inc">${p.inc}</span>${sig}<span class="tm">${today()} | <span class="clock">${hms()}</span></span>`;
+}
+function chrono(p){if(!p.d.hLlegada||p.closed)return '--:--:--';const[h,m]=p.d.hLlegada.split(':').map(Number);const t=new Date();t.setHours(h,m,0,0);let s=Math.max(0,Math.floor((Date.now()-t)/1000));return [s/3600|0,(s%3600)/60|0,s%60].map(x=>String(x).padStart(2,'0')).join(':')}
+function banner(){const p=P(),b=$('#ban');const k=S.screen==='pcr'&&p&&!p.closed&&prenotifNeed(p);b.innerHTML=k?`<div class="banner" data-act="mod" data-m="prenotif">⚠ Sospecha de ${k}: prenotificación pendiente a la Sala y al hospital receptor. Toca para enviar.</div>`:''}
+
+/* ---- inicio de turno ---- */
+function rShift(){
+ $('#top').innerHTML=topHTML(null);banner();$('#side').innerHTML='';
+ const sh=S.shift,req=REQROLES(sh.proto),have=sh.crew.map(c=>c.role),miss=req.filter(r=>!have.includes(r)),auth=sh.crew.some(c=>c.auth);
+ $('#main').innerHTML=`<div class="r ok" style="cursor:default"><span class="st">✓</span><span class="tt"><b>Equipo de Guardia</b><span>Inicio de turno</span></span><span class="q"></span><span class="sm">${esc(sh.veh)} (${esc(sh.veh)}), ${esc(sh.est)}</span><span class="ic">🚑</span></div>
+ <div class="panel">${S.guide?'<div class="tip">Registra el vehículo, la tripulación y los dispositivos antes de empezar el turno. Al menos un miembro debe autenticarse con contraseña, que se pedirá de nuevo al cerrar el registro.</div>':''}
+ ${vehHTML(false)}
+ <div class="hd">Personal</div><div class="box">${crewHTML(true)}
+  <div class="small" style="margin:6px 0">Roles requeridos para <b>${esc(sh.proto)}</b>: ${req.map(r=>have.includes(r)?`<b style="color:#2e7d32">${r} ✓</b>`:`<span style="background:#d0d0d0;padding:0 4px">${r}</span>`).join(' · ')}</div>
+  <div class="cols"><div class="frm"><label>Rol</label><select id="cR">${ROLES.map(r=>`<option ${miss[0]===r?'selected':''}>${r}</option>`).join('')}</select><label>Nombre</label><input id="cN" placeholder="Nombre y apellidos"><label>Nº pers./Cód. barras</label><input id="cB"><label>Contraseña</label><input id="cP" type="password" placeholder="mín. 4 caracteres"></div>
+  <div style="display:flex;flex-direction:column;gap:6px;justify-content:flex-end"><button class="bb dk" data-act="addCrew">＋ Añadir e identificar</button><button class="bb" data-act="demoCrew">Tripulación de ejemplo</button></div></div></div>
+ <div class="hd">Dispositivos</div><div class="box">${devHTML()}</div>
+ <div style="text-align:center;margin:14px"><p class="small">${miss.length?'Faltan: '+miss.join(', ')+'. ':''}${auth?'':'Ningún miembro autenticado.'}</p><button class="bb dk" style="font-size:17px;padding:8px 26px" data-act="startShift" ${!miss.length&&auth?'':'disabled'}>✔ ${sh.started?'Guardar':'Iniciar turno'}</button></div></div>`;
+ $('#bar').innerHTML='';
+}
+function vehHTML(ro){const sh=S.shift,dis=ro?'disabled':'';return `<div class="hd">Vehículo</div><div class="box"><div class="cols"><div class="frm"><label>Servicio</label><input data-sh="serv" value="${esc(sh.serv)}" ${dis}><label>Vehículo</label><select data-sh="veh" ${dis}>${VEH.map(v=>`<option ${v===sh.veh?'selected':''}>${v}</option>`).join('')}</select><label>Nº Busca</label><input data-sh="busca" value="${esc(sh.busca)}" ${dis}><label>Tipo de protocolo</label><select data-sh="proto" ${dis}>${PROTOS.map(v=>`<option ${v===sh.proto?'selected':''}>${v}</option>`).join('')}</select></div><div class="frm"><label>Estación</label><select data-sh="est" ${dis}>${EST.map(v=>`<option ${v===sh.est?'selected':''}>${v}</option>`).join('')}</select></div></div></div>`}
+function crewHTML(del){const c=S.shift.crew;return c.length?`<table class="tbl"><tr><th></th><th>Rol</th><th>Nombre</th><th>Calificación</th>${del?'<th></th>':''}</tr>${c.map((x,i)=>`<tr><td>${x.auth?'<b style="color:#2e7d32">✔</b>':''}</td><td>${esc(x.role)}</td><td>${esc(x.name)}</td><td>${esc(x.role.replace('-Conductor/a',' Conductor'))}</td>${del?`<td><button class="bb" data-act="delCrew" data-i="${i}">✕</button></td>`:''}</tr>`).join('')}</table>`:'<p class="small">Sin personal.</p>'}
+function devHTML(){const d=S.shift.dev;return `<div class="logw"><div class="lt"><table class="tbl"><tr><th></th><th>Dispositivo</th><th>Nombre</th><th>Dirección</th><th>Última transmisión</th></tr>${Object.entries(DEVS).filter(([k])=>d[k]).map(([k,v])=>`<tr><td>${d[k].st==='on'?'🟢':'🟡'}</td><td>${v.d}</td><td>${v.n} ${esc(S.shift.veh)}</td><td>${v.mac}</td><td>${d[k].last||''}</td></tr>`).join('')}</table>${Object.keys(DEVS).filter(k=>!d[k]).map(k=>`<button class="bb" style="margin:4px" data-act="devOn" data-k="${k}">Conectar ${DEVS[k].d}</button>`).join('')}${Object.keys(d).map(k=>`<button class="bb" style="margin:4px" data-act="devOff" data-k="${k}">Desconectar ${DEVS[k].d}</button>`).join('')}</div><button class="plus" data-act="devOn" data-k="${d.zoll?'wein':'zoll'}">+</button></div><p class="small">Bluetooth: alcance limitado y reducido por objetos metálicos. Mantén la tablet cerca del equipo.</p>`}
+
+/* ---- pantalla principal (lista) ---- */
+function rHome(){
+ $('#top').innerHTML=topHTML(null);banner();$('#side').innerHTML='';
+ const sh=S.shift,crew=sh.crew,inc=S.incoming;
+ $('#main').innerHTML=`<div class="hhead"><button class="vd" data-act="mod" data-m="dotacion"><span style="font-size:28px">🚑</span>Validar<br>Dotación</button>
+ <div>${crew.map(c=>`${esc(c.role)}: ${esc(c.name)}`).join('<br>')}</div>
+ <div class="kv"><span>Unidad #:</span><span>${esc(sh.veh)}</span><span>Vehículo:</span><span>${esc(sh.veh)}</span><span>Tipo de protocolo:</span><span>${esc(sh.proto)}</span></div></div>
+ ${inc?`<div class="incoming"><b style="font-size:17px">🚨 Nueva asignación de la Sala</b><div class="kv2" style="margin-top:6px"><b>Nº incidente</b><span>${inc.inc}</span><b>Dirección</b><span>${esc(inc.call.calle+' '+inc.call.num+' '+inc.call.pob)}</span><b>Paciente</b><span>${esc([inc.call.apellidos,inc.call.nombre].filter(Boolean).join(', ')||'Sin filiar')} · ${esc(inc.call.edad)} años</span><b>Tipo / razón</b><span>${esc(inc.call.tipoLl)} · ${esc(inc.call.razon)}</span><b>Palabra clave</b><span style="color:var(--red);font-weight:700">${esc(inc.call.kw)}</span><b>Información</b><span>${esc(inc.call.sosp)}</span></div><div style="display:flex;gap:8px;margin-top:10px"><button class="bb dk" data-act="accept">✔ Aceptar</button><button class="bb" data-act="reject">Rechazar</button></div></div>`:''}
+ <div class="list"><table><tr><th></th><th></th><th>Número</th><th>Apellidos</th><th>Lugar del Incidente</th><th>DESTINO PACIENTE</th><th>Alarma</th><th>Fecha</th></tr>
+ ${S.pcrs.map((p,i)=>`<tr class="${S.sel===i?'sel':''}" data-act="selRow" data-i="${i}" data-dbl="1"><td>${p.closed?'🔒':''}</td><td>${sections(p).every(s=>done(p,s))?'<b style="color:#3cb34a">✔</b>':''}</td><td>${p.afe}</td><td>${esc((p.d.apellidos||'').slice(0,16))}${(p.d.apellidos||'').length>16?'…':''}</td><td>${esc((p.d.calle||'').toUpperCase())}</td><td>${esc(p.d.destino||'')}</td><td>${p.d.hActiv||p.created}</td><td>${p.fecha}</td></tr>`).join('')}</table>
+ ${S.pcrs.length?'':'<p class="small" style="padding:10px">Sin registros en este turno.</p>'}</div>
+ ${!inc?`<div class="trainer"><h3>🎓 Modo formación: simular asignación de la Sala</h3><div class="chips">${Object.entries(SCEN).map(([k,s])=>`<button class="bb" data-act="simCall" data-k="${k}">${s.t}</button>`).join('')}</div><p class="small">o pulsa «Crear informe (incidencia)» para una asistencia sin aviso previo. Toca dos veces una fila (o «Editar registro») para abrirla.</p></div>`:''}`;
+ $('#bar').innerHTML=`<div class="in"><button class="g" data-act="manual"><b>📝</b>Crear informe<br>(incidencia)</button><button data-act="editSel" ${S.sel<0?'disabled':''}><b>✎</b>Editar<br>registro</button><button data-act="printSel" ${S.sel<0?'disabled':''}><b>🖨</b>Imprimir<br>registro</button><button data-act="mod" data-m="settings"><b>⚙</b>Ajustes</button><button data-act="mod" data-m="endShift"><b>⇥</b>Finalizar turno</button></div>`;
+}
+
+/* ---- registro (PCR) ---- */
+function rPCR0(){
+ const p=P();$('#top').innerHTML=topHTML(true);banner();
+ let h=p.closed?`<div class="lock">🔒 Registro cerrado a las ${p.closedAt}. Datos médicos bloqueados: usa «Anexo» para añadir información.</div>`:'';
+ if(!p.fromCAD&&!p.closed)h+=`<div class="tip">Registro creado sin aviso de la Sala. <button class="bb" data-act="merge">Fusionar con datos de la central</button></div>`;
+ sections(p).forEach(s=>{h+=rowHTML(p,s);if(S.open===s.id)h+=`<div class="panel" id="pnl">${panelHTML(p,s)}</div>`});
+ $('#main').innerHTML=h;
+ $('#side').innerHTML=`<button data-act="scr" data-v="top">⤒</button><button data-act="scr" data-v="bot">⤓</button><button data-act="scr" data-v="up">▲</button><button data-act="scr" data-v="dn">▼</button>`;
+ $('#bar').innerHTML=p.closed?`<div class="in"><button data-act="home"><b>⇄</b>Cambiar<br>registro</button><button data-act="mod" data-m="extras"><b>★</b>Extras</button><button data-act="mod" data-m="annex"><b>✎</b>Anexo</button><button data-act="report"><b>📄</b>Informe</button></div>`:
+ `<div class="in"><button data-act="mod" data-m="close"><b style="color:#2e7d32">✔</b>Cerrar<br>registro</button><button data-act="home"><b>⇄</b>Cambiar<br>registro</button><button data-act="mod" data-m="extras"><b>★</b>Extras</button><button data-act="mod" data-m="atajo"><b>🔗</b>Atajo</button><button data-act="mod" data-m="horas"><b>🕒</b>Horas</button><button data-act="mod" data-m="devices"><b>🔌</b>Conectar</button></div>`;
+}
+function rowHTML(p,s){const ok=done(p,s);return `<div class="r ${ok?'ok':''} ${S.open===s.id?'open':''}" data-act="toggle" data-id="${s.id}" id="row_${s.id}"><span class="st">${ok?'✓':'!'}</span><span class="tt"><b>${s.t}</b><span>${s.s}</span></span><span class="q" data-noprop="1">${quickHTML(p,s)}</span><span class="sm">${esc(summary(p,s))}</span><span class="ic ${s.tile}">${s.ic}</span></div>`}
+const dis=p=>p.closed?'disabled':'';
+const lab=v=>String(v).replace(/\|.*$/,'').replace(/ \((ruido|manejo|hemorragia|piel|posición)\)$/,'');
+function ck0(p,sec,v,o={}){const on=o.on!==undefined?o.on:has(p,o.k?sec+'.'+o.k:sec,v);return `<button class="ck ${o.cls||''} ${on?'on':''}" data-opt="1" data-sec="${sec}" data-v="${esc(v)}" ${o.k?`data-k="${o.k}"`:''} ${o.single?'data-single="1"':''} ${o.q?'data-q="1"':''} ${(o.dis??p.closed)?'disabled':''}><span>${esc(lab(v))}</span></button>`}
+function quickHTML0(p,s){
+ const d=p.d,D=dis(p);
+ if(QUICK[s.id]||s.copy){const Q=QUICK[s.id]||{q:[{va:'Normal',vb:'Normal',vc:'Estable',vecg:'Ritmo sinusal'}[s.copy]].filter(Boolean)};let h='';
+  if(s.copy&&s.copy!=='vd')h+=`<button class="bb" data-act="copyEval" data-id="${s.id}" data-from="${s.copy}" ${D}>Copiar Evaluación Inicial</button>`;
+  h+=(Q.q||[]).map(v=>ck(p,s.id,v,{cls:'sm'+(Q.blue?' blue':''),q:1})).join('');
+  if(Q.mod)h+=`<button class="bb" data-act="mod" data-m="${Q.mod[1]}" ${D}><b style="color:var(--or)">✚</b> ${Q.mod[0]}</button>`;
+  if(Q.btn&&(!['intub'].includes(Q.btn[1])||!isSVB(p.proto)))h+=`<button class="bb dk" data-act="openLog" data-id="${s.id}" data-log="${Q.btn[1]}" ${D}><b style="color:var(--or)">✚</b> ${Q.btn[0]}</button>`;
+  if(s.copy==='vd')h+=`<button class="bb" data-act="copyEval" data-id="rd" data-from="vd" ${D}>Copiar Evaluación Inicial</button>`;
+  return h}
+ switch(s.id){
+  case 'incidente':return `<button class="bb dk ${p.sp.anulado?'':''}" data-act="mod" data-m="anulado" ${D} title="Servicio anulado">🚑<b style="color:#ff5b5b">✕</b>${p.sp.anulado?' '+esc(p.sp.anulado):''}</button>${ck(p,'inc','Tiempo excedido',{on:!!d.tExc,cls:'sm'}).replace('data-opt="1"','data-act="tExc"')}`;
+  case 'paciente':return `<div style="display:grid;grid-template-columns:auto 1fr;gap:3px 6px;align-items:center;font-size:13px;min-width:220px;flex:1">Apellidos:<input data-k="apellidos" value="${esc(d.apellidos)}" ${p.closed?'':''} style="text-transform:uppercase">Nombre:<input data-k="nombre" value="${esc(d.nombre)}" style="text-transform:uppercase"></div><button class="bb" data-act="desconocido" title="Paciente desconocido" ${D}>👤<b style="color:var(--red)">?</b></button><span style="font-size:13px">Edad:</span><input data-k="edad" type="number" value="${esc(d.edad)}" style="width:60px"> <span style="font-size:13px">años</span><button class="bb ${d.sexo==='femenino'?'dk':''}" data-act="sexo" data-v="femenino" style="${d.sexo==='femenino'?'background:#3cb34a;color:#fff':''}">♀</button><button class="bb" data-act="sexo" data-v="masculino" style="${d.sexo==='masculino'?'background:#3cb34a;color:#fff':''}">♂</button>`;
+  case 'vd':case 'rd':return `${ck(p,s.id,'Alerta',{on:d[s.id+'_avdn']==='Alerta',cls:'sm'}).replace('data-opt="1"',`data-act="avdn" data-id="${s.id}"`)}<button class="bb dk" data-act="gcsOpen" data-id="${s.id}" ${D}><b>?</b> <span style="color:#ff6b6b;font-weight:700">GCS</span></button>`;
+  case 'vit':return `<button class="clk" data-act="vitNow" ${D}>🕒</button><input type="time" data-k="f_h" value="${esc(d.f_h)}" style="width:100px" ${D}><button class="bb dk" data-act="vitAdd" ${D}>➜ Intro Datos de Tabla</button>`;
+  case 'diag':return `<button class="bb" data-act="toggle" data-id="diag" style="font-size:22px;min-width:120px;background:linear-gradient(#f7a868,#ee8a3c)">🩺</button>`;
+  case 'mec':return `<button class="bb dk" data-act="toggle" data-id="mec" style="font-size:22px;min-width:110px">🚗</button><span style="font-size:13px">Evento</span><button class="clk" data-act="now" data-k="mecEv" ${D}>🕒</button><input type="time" data-k="mecEv" value="${esc(d.mecEv)}" style="width:100px" ${D}>`;
+  case 'tras':return d.destino&&prenotifNeed(p)?`<button class="bb" style="background:var(--red);color:#fff" data-act="mod" data-m="prenotif">Prenotificar</button>`:'';
+  case 'ent':return p.closed?'':`<button class="bb" data-act="copyReg">⧉ Copiar del Registro</button>`;
+ }
+ return '';
+}
+function panelHTML(p,s){
+ const tip=S.guide&&TIPS[s.id]?`<div class="tip">${TIPS[s.id]}</div>`:'';
+ const note=`<button class="note" data-act="mod" data-m="ft" data-id="${s.id}" title="Texto libre">✎</button>`;
+ if(s.opt)return tip+optPanel(p,s)+note;
+ return tip+(PANEL[s.id]?PANEL[s.id](p,s):'')+note;
+}
+function optPanel0(p,s){const k=optKey(s.id);let h='';
+ (OPT[k]||[]).forEach(g=>{
+  if(g.show&&!g.show(p))return; if(g.adv&&isSVB(p.proto))return;
+  if(g.h)h+=`<div class="hd">${g.h}</div>`;
+  h+='<div class="box">';
+  if(g.o)h+=`<div class="grid">${g.o.map(v=>ck(p,s.id,v,{k:g.k,single:g.single,cls:s.noReq||g.blue?'blue':''})).join('')}</div>`;
+  if(g.extra==='dren')h+=`<div class="frm" style="margin-top:6px"><label>Lugar</label><input data-k="drenLugar" value="${esc(p.d.drenLugar)}" ${dis(p)}><label>Tamaño (ch)</label><input type="number" data-k="drenCh" value="${esc(p.d.drenCh)}" ${dis(p)}></div>`;
+  if(g.log)h+=logHTML(p,g.log);
+  if(g.custom==='elec')h+=elecHTML(p);
+  h+='</div>';
+ });return h}
+function logHTML0(p,id){const L=LOGS[id],E=p.logs[id]||[];const open=S.logForm===id&&!p.closed;
+ return `<div class="logw"><div class="lt"><table class="tbl"><tr><th style="width:80px">Hora</th><th>Resumen</th>${p.closed?'':'<th></th>'}</tr>${E.map((e,i)=>`<tr><td>${e.h}</td><td>${esc(e.txt)}</td>${p.closed?'':`<td><button class="bb" data-act="delLog" data-log="${id}" data-i="${i}">✕</button></td>`}</tr>`).join('')}</table>
+ ${open?`<div style="padding:6px;border-top:1px solid #ccc"><div class="frm">${L.f.map((f,i)=>`<label>${f[0]}</label>${Array.isArray(f[1])?`<select id="lf_${i}">${f[1].map(o=>`<option>${o}</option>`).join('')}</select>`:`<input id="lf_${i}" ${f[1]==='num'?'type="number"':''}>`}`).join('')}<label>Hora</label><div style="display:flex;gap:4px"><input type="time" id="lf_h" value="${hm()}"></div></div><div style="margin-top:6px;display:flex;gap:6px"><button class="bb dk" data-act="saveLog" data-log="${id}">Guardar</button><button class="bb" data-act="cancelLog">Cancelar</button></div></div>`:''}</div>
+ <button class="plus dk" data-act="openLog" data-log="${id}" ${dis(p)}>+</button></div>`}
+function elecHTML(p){const d=p.d,D=dis(p),adv=!isSVB(p.proto);
+ const row=(k,t,a,b)=>`<div style="display:grid;grid-template-columns:200px 1fr;border-bottom:1px solid #bbb;padding:4px 0;align-items:center"><button class="bb" data-act="elec" data-k="${k}" ${D}>${t}</button><div style="padding-left:10px;font-size:14px">${a} <input type="number" data-k="${k}_a" value="${esc(d[k+'_a'])}" style="width:80px" ${D}> &nbsp; ${b} <input type="number" data-k="${k}_b" value="${esc(d[k+'_b'])}" style="width:80px" ${D}></div></div>`;
+ return (adv?row('mp','Marcapasos (externo)','Frecuencia por minuto','Corriente mA'):'')+row('df',adv?'Desfibrilación':'Desfibrilación DEA','Número de descargas','Última descarga Julios')+(adv?row('cv','Cardioversión eléctrica','Número de descargas','Última descarga Julios'):'')+`<p class="small">Pulsa el botón azul para registrar cada descarga con su hora.</p>`}
+
+const TIPS={
+ incidente:'Datos recibidos del PGE a través del CAD Interface. Registra cada hito con el reloj 🕒. Para un servicio anulado usa el botón de la ambulancia con la ✕.',
+ paciente:'Si no hay datos, usa 👤? (paciente desconocido) o lee la tarjeta sanitaria con el icono ▭ de la barra superior.',
+ anam:'Pulsa «abc» para insertar frases predefinidas, que se configuran en el portal.',
+ vit:'⚠ Las constantes que llegan del monitor tienen al menos 30 s de retraso y son periódicas. Valora al paciente en el monitor. Rellena los campos y pulsa «Intro Datos de Tabla» para guardar la toma con su hora.',
+ vecg:'Si marcas SCACEST aparece «Unidad Hemodinámica Activada» y el aviso de prenotificación.',
+ diag:'Busca el código CIE-9. La lista del simulador es de ejemplo; la real la configura el SUC.',
+ ia:'Las técnicas avanzadas no aparecen en los protocolos SVB.',
+ reg:'Gráfica de tendencias de constantes e intervenciones. Cambia a tabla con el icono ▦.',
+ ra:'«Copiar Evaluación Inicial» copia lo que marcaste en la valoración inicial. Después modifica lo que haya cambiado.',
+ ent:'«Copiar del Registro» copia las últimas constantes en el estado de entrega.'
+};
+const PANEL={
+ equipo(p){return vehHTML(true)+`<div class="hd">Personal</div><div class="box">${crewHTML(false)}</div><div class="hd">Dispositivos</div><div class="box">${devHTML()}</div><p class="small">El protocolo del registro actual es <b>${esc(p.proto)}</b>. Para cambiarlo: Extras → Cambiar protocolo.</p>`},
+ incidente(p){const d=p.d,D=dis(p),T=(k,l)=>`<div class="tbx"><label>${l}:</label><div class="t"><button class="clk" data-act="now" data-k="${k}" ${D}>🕒</button><input type="time" data-k="${k}" value="${esc(d[k])}" ${D}></div></div>`;
+  return `<div class="cols"><div><div class="hd">Lugar del Incidente</div><div class="box frm"><label>CP/Población:</label><div style="display:flex;gap:4px"><input data-k="cp" value="${esc(d.cp)}" style="width:80px" ${D}><input data-k="pob" value="${esc(d.pob)}" ${D}></div><label>Nº Calle:</label><div style="display:flex;gap:4px"><input data-k="calle" value="${esc(d.calle)}" ${D}><input data-k="num" value="${esc(d.num)}" style="width:60px" ${D}></div><label>Instalación:</label><input data-k="inst" value="${esc(d.inst)}" ${D}><label>Parte objeto/Sito:</label><input data-k="sito" value="${esc(d.sito)}" ${D}><label></label><textarea data-k="notas" rows="2" ${D}>${esc(d.notas)}</textarea><label>Descripción:</label><select data-k="desc" ${D}>${['','Domicilio','Vía pública','Lugar de trabajo','Centro sanitario','Residencia','Lugar público','Parque infantil','Playa','Carretera'].map(o=>`<option ${d.desc===o?'selected':''}>${o}</option>`).join('')}</select><label>Primero en escena:</label><input data-k="primero" value="${esc(d.primero)}" ${D}><label>Conducción:</label><select data-k="prioritarios" ${D}>${['','Con prioritarios','Sin prioritarios'].map(o=>`<option ${d.prioritarios===o?'selected':''}>${o}</option>`).join('')}</select></div>
+  <div class="hd">Dirección de inicio</div><div class="box"><input data-k="inicio" value="${esc(d.inicio)}" ${D}></div></div>
+  <div><div class="hd">Información Adicional del Incidente</div><div class="box frm"><label>Nº Afectado/Nº Incidente:</label><div style="display:flex;gap:4px"><input value="${p.inc}" disabled><input value="${p.afe}" disabled></div><label>Fecha del Incidente:</label><input value="${p.fecha}" disabled><label>Tipo Llamada:</label><select data-k="tipoLl" ${D}>${['','Enfermedad','Accidente de tráfico','Accidente casual','Agresión','Intoxicación','Parto','Traslado interhospitalario','Otros'].map(o=>`<option ${d.tipoLl===o?'selected':''}>${o}</option>`).join('')}</select><label>Razón del transp.:</label><input data-k="razon" value="${esc(d.razon)}" ${D}><label>Prioridad:</label><select data-k="prio" ${D}>${['','EM','UR','NU'].map(o=>`<option ${d.prio===o?'selected':''}>${o}</option>`).join('')}</select><label>Palabra clave:</label><input value="${esc(d.kw)}" disabled><label>Información de la Sala:</label><textarea rows="2" disabled>${esc(d.sosp)}</textarea><label>Expedido por:</label><input data-k="expedido" value="${esc(d.expedido)}" ${D}></div></div></div>
+  <div class="hd">Hora</div><div class="box times">${T('hInc','Hora de Incidente')}${T('hActiv','Activación')}${T('hMov','Movilización')}${T('hLlegada','Llegada al lugar')}${T('hAsist','Asistencia')}${T('hTransp','Transporte')}${T('hHosp','Llegada')}${T('hFin','Finalización')}</div>`},
+ paciente(p){const d=p.d,D='',F=(k,l,t='')=>`<label>${l}</label><input data-k="${k}" value="${esc(d[k])}" ${t}>`;const imc=d.peso&&d.altura?(d.peso/Math.pow(d.altura/100,2)).toFixed(1):'';
+  return `<div class="cols"><div><div class="hd">Dirección Paciente</div><div class="box frm">${F('pcp','CP/Población:')}${F('pcalle','Nº Calle:')}${F('ppais','País/Provincia:')}${F('fn','FN:','type="date"')}<label>Género:</label><input value="${esc(d.sexo)}" disabled>${F('nac','Nacionalidad:')}${F('tel','Núm. de teléfono:')}${F('tutor','Tutor:')}${F('contacto','Nombre de contacto:')}${F('origen','Origen:')}<label></label><button class="bb" data-act="copyAddr">⧉ Copiar Dirección Llamada</button></div>
+  <div class="hd">Información Adicional Paciente</div><div class="box frm">${F('altura','Altura Paciente (cm)','type="number"')}${F('peso','Peso Paciente (kg)','type="number"')}<label>IMC:</label><input value="${imc}" disabled><label></label><div style="display:flex;gap:4px">${ck(p,'x','Tutor avisado',{on:!!d.tutorAv,dis:false}).replace('data-opt="1"','data-act="tutorAv"')}<button class="bb" data-act="mod" data-m="tutor">Autorización de tratamiento</button></div></div></div>
+  <div><div class="hd">Seguro</div><div class="box frm">${F('seguro','Seguro / Compañía')}${F('nseg','Nº Seguro Médico')}${F('nhc','NHC / Cód. ingreso')}${F('doc','DNI/Pasaporte')}<label>Tipo de documento</label><select data-k="tdoc">${['','DNI','NIE','Pasaporte','Tarjeta sanitaria','Sin documento'].map(o=>`<option ${d.tdoc===o?'selected':''}>${o}</option>`).join('')}</select><label>Tipo de seguro</label><select data-k="tseg">${['','Servicio Canario de la Salud','Mutua','Seguro privado','Accidente de tráfico','Accidente laboral','Sin seguro'].map(o=>`<option ${d.tseg===o?'selected':''}>${o}</option>`).join('')}</select></div>
+  <div class="hd">Facturación-Otros</div><div class="box"><button class="bb" data-act="clearCard">▭✕ Borrar/Actualizar</button></div></div></div><p class="small">Los datos administrativos (nombre, edad, documento…) se pueden completar incluso con el registro cerrado.</p>`},
+ anam(p){return `<div class="hd">Descripción de la anamnesis</div><div class="box" style="display:flex;gap:6px"><textarea data-k="anam" rows="7" style="flex:1" ${dis(p)}>${esc(p.d.anam)}</textarea><div style="display:flex;flex-direction:column;gap:4px">${p.closed?'':`<button class="bb" data-act="mod" data-m="macros" style="font-size:18px;font-weight:700">a<sub>c</sub>b</button>`}</div></div>`},
+ vd:neuroPanel,rd:neuroPanel,
+ vit(p){const d=p.d,D=dis(p),I=(k,u,w=80)=>`<input type="number" data-k="f_${k}" value="${esc(d['f_'+k])}" style="width:${w}px" ${D}> ${u}`,C=(k,l)=>ck(p,'vitf',l,{on:!!d['f_'+k]}).replace('data-opt="1"',`data-act="vitChk" data-k="f_${k}"`);
+  const mapa=d.f_tas&&d.f_tad?Math.round((+d.f_tas+2*d.f_tad)/3):'';const conn=S.shift.dev.zoll?.st==='on';
+  return `${p.closed?'':`<div style="display:flex;gap:6px;margin:6px 0;flex-wrap:wrap"><button class="bb dk" data-act="importMon" ${conn?'':'disabled'}>⇩ Datos del monitor ZOLL</button>${conn?'':'<span class="small">Conecta el ZOLL (botón «Conectar») para importar.</span>'}</div>`}
+  <div class="vrow"><div class="c" style="background:#e04b3c">❤</div><div class="f"><span class="lab">Tensión:</span>${I('tas','/',70)} ${I('tad','mmHg',70)} <span>MAPA: <b>${mapa}</b></span>${C('brIz','brazo izquierdo')}${C('brDe','brazo derecho')}<br><span class="lab">IBP:</span>${I('ibs','/',70)} ${I('ibd','mmHg',70)} ${C('palp','palpación')}${C('dif','Presente diferencia')}<br><span class="lab">Pulso:</span>${I('pulso','/min')} <span>HR:</span>${I('hr','/min')} ${C('reg','regular')}${C('irr','irregular')}</div></div>
+  <div class="vrow"><div class="c" style="background:#39b54a">🫁</div><div class="f"><span class="lab">FR:</span>${I('fr','/min')}<br><span class="lab">SpO₂</span>${I('spo2','%')} ${C('o2','Con Oxígeno')}<br><span class="lab">etCO₂</span>${I('etco2','mmHg')} CO₂ ${I('co2','%',60)} MetHb ${I('methb','%',60)} COHb ${I('cohb','%',60)}</div></div>
+  <div class="vrow"><div class="c" style="background:#3f51b5">🕒</div><div class="f"><span class="lab">Gl.</span>${I('gl','mg/dl')} ${C('hipo','Hipoglucemia')}${C('hiper','Hiperglucemia')}<br><span class="lab">Temp:</span>${I('temp','°C')} ${C('oido','en oído')}${C('boca','en boca')}${C('rect','rectal')}<br><span class="lab">Dolor:</span>${[...Array(11).keys()].map(n=>`<button class="ck sm ${String(d.f_dolor)===String(n)?'on':''}" style="min-width:52px" data-act="dolor" data-v="${n}" ${D}><span>${n}</span></button>`).join('')}</div></div>
+  <div style="display:flex;gap:6px;margin-top:6px">${ck(p,'x','valores medidos no requeridos',{on:!!d.vitNoReq}).replace('data-opt="1"','data-act="flag" data-k="vitNoReq"')}${ck(p,'x','Rechazado por el paciente',{on:!!d.vitRech}).replace('data-opt="1"','data-act="flag" data-k="vitRech"')}</div>
+  ${p.closed?'':'<div style="margin:8px 0"><button class="bb dk" data-act="vitAdd">➜ Intro Datos de Tabla</button></div>'}
+  <div class="hd">Tomas registradas (${p.vitals.length})</div><div class="box" style="overflow-x:auto">${vitTable(p,!p.closed)}</div>`},
+ diag(p){const d=p.d,D=dis(p),m=S.dxMode;
+  const sel=(k,l)=>ck(p,'x',l,{on:m===k,dis:false}).replace('data-opt="1"',`data-act="dxMode" data-v="${k}"`);
+  let h=`<div class="hd">Resumen</div><div class="box" style="font-size:14.5px;min-height:60px;white-space:pre-line;background:#fff">${esc(dxAll(p))||'<span class="small">Sin diagnóstico.</span>'}</div>`;
+  h+=`<div class="hd">Diagnóstico, seleccionar tipo</div><div class="box dxsel"><div><div class="small"><b>Enfermedad</b></div>${sel('enf','Enfermedad')}${sel('cie','CIE9')}${sel('libre','Diagnóstico libre/Conclusión')}</div><div><div class="small"><b>Trauma</b></div>${sel('les','Lesiones')}${sel('quem','Quemadura/Escaldadura')}${sel('cong','Congelación')}</div></div>`;
+  if(m==='enf')h+=`<div class="hd">Enfermedad (categoría)</div><div class="box grid">${ENF.map(v=>ck(p,'dxEnf',v)).join('')}</div>`;
+  if(m==='cie')h+=cieHTML(p);
+  if(m==='libre')h+=`<div class="hd">Diagnóstico libre / Conclusión</div><div class="box"><textarea data-k="dxLibre" rows="4" ${D}>${esc(d.dxLibre)}</textarea></div>`;
+  if(m==='les')h+=lesHTML(p);
+  if(m==='quem')h+=burnHTML(p);
+  if(m==='cong')h+=frostHTML(p);
+  return h},
+ mec(p){const d=p.d,D=dis(p);return `<div class="tip">Opciones de mecanismo reconstruidas para el simulador (la ventana interna del botón 🚗 no estaba en las fotos). Los campos Evento, Peligros y encontrados son los reales.</div>
+  <div class="hd">Razón</div><div class="box"><div class="cols"><div class="frm"><label>Peligros:</label><input data-k="mecPel" value="${esc(d.mecPel)}" placeholder="p. ej. tráfico activo, combustible" ${D}><label>encontrados:</label><input data-k="mecEnc" value="${esc(d.mecEnc)}" placeholder="p. ej. casco roto, airbag" ${D}></div><textarea data-k="mecTxt" rows="3" placeholder="Descripción del mecanismo" ${D}>${esc(d.mecTxt)}</textarea></div></div>
+  ${Object.entries(MEC).map(([g,o])=>`<div class="hd">${g}</div><div class="box grid">${o.map(v=>ck(p,'mec',v)).join('')}</div>`).join('')}
+  <div class="frm" style="margin-top:6px"><label>Velocidad estimada (km/h)</label><input type="number" data-k="mecVel" value="${esc(d.mecVel)}" ${D}><label>Altura de caída (m)</label><input type="number" data-k="mecAlt" value="${esc(d.mecAlt)}" ${D}></div>
+  ${(p.o.mec||[]).length?'<div class="warn">Mecanismo registrado. Si es de alta energía, valora los criterios de activación del Código Politrauma del protocolo del SUC y la prenotificación al hospital útil.</div>':''}`},
+ rn(p){const d=p.d,D=dis(p),T=(k,l)=>`<div class="hd">${l}</div><div class="box"><textarea data-k="${k}" rows="2" ${D}>${esc(d[k])}</textarea></div>`;
+  return `<div class="cols"><div>${T('rnEG','Edad gestacional')}${T('rnPeso','Peso/tamaño')}${T('rnParto','Parto')}${T('rnOtros','Otros eventos')}<div class="hd">APGAR SCORE</div><div class="box" style="display:flex;gap:6px"><input data-k="rnApgar" value="${esc(d.rnApgar)}" ${D}><button class="bb" data-act="mod" data-m="apgarRN" ${D}>Calcular</button></div></div>
+  <div><div class="hd">Detalles</div><div class="box frm"><label>Hora de inicio de síntoma:</label><div style="display:flex;gap:4px"><button class="clk" data-act="now" data-k="rnHora" ${D}>🕒</button><input type="time" data-k="rnHora" value="${esc(d.rnHora)}" ${D}></div></div></div></div>`},
+ triage(p){return `<div class="hd">TRIAGE (Start)</div><div class="box">${logHTML(p,'triage')}<div style="margin-top:6px"><button class="bb dk" data-act="mod" data-m="start" ${dis(p)}>Asistente START</button> <span class="small">Calcula el color y lo añade a la tabla.</span></div></div>`},
+ apgar(p){const d=p.d;const items=[['Color',['Cianosis/palidez','Acrocianosis','Rosado']],['Frecuencia cardiaca',['Ausente','< 100','≥ 100']],['Reflejos',['Sin respuesta','Mueca','Llanto/tos']],['Tono muscular',['Flácido','Flexión leve','Movimiento activo']],['Respiración',['Ausente','Débil/irregular','Llanto fuerte']]];
+  return `<div class="tip">Sección añadida por el protocolo SVA NEONATO (aproximación del simulador).</div>${items.map(([k,o],ix)=>`<div class="hd">${k}</div><div class="box grid">${o.map((t,i)=>ck(p,'x',i+' · '+t,{on:d['ap'+ix]===i}).replace('data-opt="1"',`data-act="apgar" data-i="${ix}" data-v="${i}"`)).join('')}</div>`).join('')}<p style="font-size:22px;font-weight:700">APGAR: ${d.apgarTot??'—'}/10</p>
+  <div class="frm"><label>Minuto</label><select data-k="apMin" ${dis(p)}>${['1','5','10'].map(o=>`<option ${d.apMin===o?'selected':''}>${o}</option>`).join('')}</select><label>Peso estimado (g)</label><input type="number" data-k="nPeso" value="${esc(d.nPeso)}" ${dis(p)}><label>Semanas de gestación</label><input type="number" data-k="nSem" value="${esc(d.nSem)}" ${dis(p)}></div>`},
+ exitus(p){const d=p.d,D=dis(p);return `<div class="tip">Sección añadida por el protocolo SVA EXITUS (aproximación del simulador).</div><div class="frm"><label>Hora del exitus</label><div style="display:flex;gap:4px"><button class="clk" data-act="now" data-k="exHora" ${D}>🕒</button><input type="time" data-k="exHora" value="${esc(d.exHora)}" ${D}></div><label>Lugar</label><input data-k="exLugar" value="${esc(d.exLugar)}" ${D}><label>Tipo de muerte</label><select data-k="exTipo" ${D}>${['','Natural','No natural','Desconocida'].map(o=>`<option ${d.exTipo===o?'selected':''}>${o}</option>`).join('')}</select><label>Detectado por</label><select data-k="exDet" ${D}>${['','Médico de urgencias','Médico privado','Emergenciólogo'].map(o=>`<option ${d.exDet===o?'selected':''}>${o}</option>`).join('')}</select><label>Policía avisada</label><select data-k="exPol" ${D}>${['','Sí','No','No procede'].map(o=>`<option ${d.exPol===o?'selected':''}>${o}</option>`).join('')}</select><label>Familia informada</label><select data-k="exFam" ${D}>${['','Sí','No','Sin familia presente'].map(o=>`<option ${d.exFam===o?'selected':''}>${o}</option>`).join('')}</select></div><div class="hd">Médico con firma</div><div class="box">${sigHTML(p,'exitus')}</div>`},
+ reg(p){const f=S.regF||{vit:1,int:1,neu:1};const C=(k,l)=>ck(p,'x',l,{on:!!f[k],dis:false}).replace('data-opt="1"',`data-act="regF" data-k="${k}"`);
+  return `<div style="display:grid;grid-template-columns:200px 1fr;gap:8px" class="regw"><div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;gap:4px"><button class="bb ${S.regT?'dk':''}" data-act="regT" data-v="1" style="font-size:20px;flex:1">▦</button><button class="bb ${S.regT?'':'dk'}" data-act="regT" data-v="0" style="font-size:20px;flex:1">⤴</button></div>${C('vit','Datos Vitales')}${C('int','INTERVENCIONES')}${C('neu','Neurología')}${C('cir','Circulación')}${C('otr','Otro')}</div><div style="overflow-x:auto">${S.regT?regTable(p,f):regChart(p,f)}</div></div><div class="warn">Las constantes del monitor llegan con al menos 30 s de retraso respecto al equipo.</div>`},
+ tras(p){const d=p.d,D=dis(p);return `<div class="tip">Ventanas de traslado y entrega no fotografiadas: reconstruidas a partir del manual.</div><div class="hd">Destino del paciente</div><div class="box grid">${DESTINOS.map(v=>ck(p,'x',v,{on:d.destino===v}).replace('data-opt="1"',`data-act="setK" data-k="destino" data-v="${esc(v)}"`)).join('')}</div>
+  ${d.destino==='No traslado'?`<div class="hd">Motivo de no traslado</div><div class="box grid">${['Exitus in situ','Rechazo del paciente','Resuelto in situ','Alta a domicilio','Otros'].map(v=>ck(p,'x',v,{on:d.noTras===v}).replace('data-opt="1"',`data-act="setK" data-k="noTras" data-v="${v}"`)).join('')}</div>`:''}
+  <div class="hd">Transporte</div><div class="box grid">${['Con prioritarios','Sin prioritarios','Decúbito supino','Semisentado','Decúbito lateral','Sedestación'].map(v=>ck(p,'tr',v)).join('')}</div>`},
+ ent(p){const d=p.d,D=dis(p);return `<div class="hd">Paciente transferido a</div><div class="box grid">${['Médico de urgencias','Enfermería de urgencias','Otro recurso sanitario','Familiar / acompañante','Fuerzas de seguridad'].map(v=>ck(p,'x',v,{on:d.recibe===v}).replace('data-opt="1"',`data-act="setK" data-k="recibe" data-v="${v}"`)).join('')}</div>
+  <div class="frm" style="margin-top:6px"><label>Hora de transferencia</label><div style="display:flex;gap:4px"><button class="clk" data-act="now" data-k="hTransf" ${D}>🕒</button><input type="time" data-k="hTransf" value="${esc(d.hTransf)}" ${D}></div></div>
+  <div class="hd">Estado a la entrega ${p.closed?'':'<button class="bb" style="float:right;min-height:24px;padding:0 8px" data-act="copyReg">⧉ Copiar del Registro</button>'}</div><div class="box"><div style="display:flex;flex-wrap:wrap;gap:8px">${[['eTas','TAS'],['eTad','TAD'],['eFc','FC'],['eSpo2','SpO₂'],['eGcs','GCS']].map(([k,l])=>`<label style="font-size:13px">${l}<br><input type="number" data-k="${k}" value="${esc(d[k])}" style="width:80px" ${D}></label>`).join('')}</div>
+  <div class="grid" style="margin-top:6px">${['Estable','Mejoría','Sin cambios','Empeoramiento'].map(v=>ck(p,'x',v,{on:d.sitEnt===v}).replace('data-opt="1"',`data-act="setK" data-k="sitEnt" data-v="${v}"`)).join('')}</div>
+  <div class="frm" style="margin-top:6px"><label>Objetos de valor entregados</label><input data-k="objetos" value="${esc(d.objetos)}" ${D}></div></div>`}
+};
+function neuroPanel(p,s){const id=s.id,d=p.d,D=dis(p);const g=k=>d[id+'_'+k];
+ const eye=side=>{const v=g('p'+side)||'Normal';const size={Normal:9,Miosis:4,Midriasis:14,Arreactiva:14}[v];return `<div style="text-align:center"><button class="eye" style="--p:${size}px" data-act="eye" data-id="${id}" data-s="${side}" ${D}><i>${side}</i></button><div class="small">${v}</div></div>`};
+ const G=(k,l,o)=>`<div class="small" style="margin-top:6px">${l}</div><div class="grid" style="grid-template-columns:repeat(${o.length},1fr)">${o.map(([n,t])=>ck(p,'x',n+' '+t,{on:String(g(k))===String(n)}).replace('data-opt="1"',`data-act="gcs" data-id="${id}" data-k="${k}" data-v="${n}"`)).join('')}</div>`;
+ return `<div class="cols"><div><div class="box" style="display:flex;justify-content:space-between;align-items:flex-start;background:#fff;min-height:200px">${eye('R')}<svg viewBox="0 0 120 240" width="120" style="opacity:.8"><circle cx="60" cy="22" r="16" fill="#bbb"/><rect x="40" y="40" width="40" height="80" rx="10" fill="#bbb"/><rect x="22" y="44" width="14" height="72" rx="7" fill="#bbb"/><rect x="84" y="44" width="14" height="72" rx="7" fill="#bbb"/><rect x="42" y="122" width="16" height="100" rx="8" fill="#bbb"/><rect x="62" y="122" width="16" height="100" rx="8" fill="#bbb"/></svg>${eye('L')}</div>${ck(p,'x','motórico/pupila normal',{on:!!g('normal')}).replace('data-opt="1"',`data-act="neuroNorm" data-id="${id}"`)}<div class="small">Toca cada ojo para cambiar el estado de la pupila.</div></div>
+ <div><div class="hd">Estado de Consciencia-AVDN</div><div class="box grid" style="grid-template-columns:repeat(2,1fr)">${['Alerta','Respuesta a la voz','Respuesta al dolor','No reacciona/ Inconsciente'].map(v=>ck(p,'x',v,{on:g('avdn')===v}).replace('data-opt="1"',`data-act="avdn" data-id="${id}" data-v="${v}"`)).join('')}</div>
+ <div class="hd">Disfunciones Neurológicas</div><div class="box grid" style="grid-template-columns:repeat(3,1fr)">${['Déficit Neurológico','Demencia','Meningismo','Síntomas Paraplejia','Signo Babinski','AFASIA','Lateralización (ojos/movimiento)','Parálisis Facial','Alteración Visual','Respuestas Incoherentes','Incontinencia Urinaria','Incontinencia Fecal','Ataxia Motora','Sin Disfunciones','no evaluable'].map(v=>ck(p,id,v)).join('')}</div>
+ <div class="hd">ICTUS / FAST</div><div class="box" style="display:flex;gap:6px;align-items:center"><button class="bb" data-act="fastT" data-id="${id}" ${D}>FAST</button><span class="small">${esc(fastTxt(p,id))}</span></div></div></div>
+ ${S.gcsOpen===id?`<div class="hd">Escala de coma de Glasgow ${gcs(p,id)?'· <b>'+gcs(p,id)+'</b>/15':''}</div><div class="box">${G('go','Apertura ocular',[[4,'Espontánea'],[3,'A la voz'],[2,'Al dolor'],[1,'Ninguna']])}${G('gv','Respuesta verbal',[[5,'Orientado'],[4,'Confuso'],[3,'Inapropiada'],[2,'Incomprensible'],[1,'Ninguna']])}${G('gm','Respuesta motora',[[6,'Obedece'],[5,'Localiza'],[4,'Retira'],[3,'Flexión'],[2,'Extensión'],[1,'Ninguna']])}</div>`:''}
+ ${S.fastOpen===id?`<div class="hd">FAST / Cincinnati</div><div class="box"><div class="frm"><label>Hora inicio síntomas</label><div style="display:flex;gap:4px"><button class="clk" data-act="now" data-k="${id}_fh" ${D}>🕒</button><input type="time" data-k="${id}_fh" value="${esc(g('fh'))}" ${D}></div></div>${['Rostro caído','Debilidad en el brazo','Dificultad para hablar'].map((q,i)=>`<div class="small" style="margin-top:6px">${q}</div><div class="grid" style="grid-template-columns:repeat(4,1fr)">${['Sí','No','Desconocido',...(i===1?['Rechazada']:[])].map(o=>ck(p,'x',o,{on:g('f'+i)===o}).replace('data-opt="1"',`data-act="fast" data-id="${id}" data-i="${i}" data-v="${o}"`)).join('')}</div>`).join('')}${fastPos(p,id)?'<div class="warn">FAST positivo: valora activar el Código Ictus y prenotificar.</div>':''}</div>`:''}`}
+function cieHTML0(p){const d=p.d,D=dis(p),q=(S.dxq||'').toLowerCase();const res=CIE.filter(c=>!q||c[0].includes(q)||c[1].toLowerCase().includes(q));const tgt=S.dxt||'dx1';
+  return `${p.closed?'':`<div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">${ck(p,'x','Diagnóstico principal',{on:tgt==='dx1',dis:false}).replace('data-opt="1"','data-act="dxt" data-v="dx1"')}${ck(p,'x','Diagnóstico secundario',{on:tgt==='dx2',dis:false}).replace('data-opt="1"','data-act="dxt" data-v="dx2"')}<span style="flex:1"></span>${['Asegurado','Sospecha'].map(c=>ck(p,'x',c,{on:(d.dx1c||'Asegurado')===c,dis:false}).replace('data-opt="1"',`data-act="dxc" data-v="${c}"`)).join('')}</div>
+  <input id="dxq" placeholder="Buscar por código o texto (p. ej. 410, ictus, exitus)" value="${esc(S.dxq||'')}">
+  <div style="max-height:260px;overflow:auto;margin-top:6px;background:#fff;border:1px solid #999">${res.map(c=>`<div style="padding:7px 8px;border-bottom:1px solid #eee;cursor:pointer;${d[tgt]===c[0]?'background:#cfe3c9':''}" data-act="dxPick" data-v="${c[0]}"><b class="mono">${c[0]}</b> · ${esc(c[1])}</div>`).join('')}</div>
+  ${d.dx2?`<button class="bb" data-act="dxDel" style="margin-top:6px">Quitar diagnóstico secundario</button>`:''}`}`}
+function lesHTML(p){const D=p.closed,st=S.les||(S.les={side:'F'}),regs=st.side==='F'?REG_F:REG_B;const n=r=>(p.les||[]).filter(l=>l.r===r).length;
+ const svg=`<svg viewBox="0 0 200 305" width="190">${regs.map(([r,sh])=>sh.replace(/\/>$/,` data-r="${r}" ${D?'':'data-act="lesReg"'} fill="${st.r===r?'#7cc3ec':n(r)?'#f08c1e':'#e8eef5'}"><title>${r}</title></${sh.match(/^<(\w+)/)[1]}>`).replace(/<(\w+)([^>]*)><title>/,'<$1$2><title>')).join('')}<text x="100" y="300" text-anchor="middle" font-size="11">${st.side==='F'?'ANTERIOR':'POSTERIOR'}</text></svg>`;
+ const G=(k,l,o,multi)=>`<div class="small" style="margin-top:6px">${l}</div><div class="grid">${o.map(v=>`<button class="ck sm ${(multi?(st[k]||[]).includes(v):st[k]===v)?'on':''}" data-act="lesSet" data-k="${k}" data-v="${esc(v)}" ${multi?'data-multi="1"':''}><span>${v}</span></button>`).join('')}</div>`;
+ return `<div class="hd">Lesiones</div><div class="box"><div class="bodyw"><div>${svg}<div style="display:flex;gap:4px;justify-content:center"><button class="bb ${st.side==='F'?'dk':''}" data-act="lesSide" data-v="F">Anterior</button><button class="bb ${st.side==='B'?'dk':''}" data-act="lesSide" data-v="B">Posterior</button></div></div>
+ <div style="flex:1;min-width:240px">${D?'':st.r?`<b>Región: ${st.r}</b>${G('t','Tipo de lesión',LES_T)}${G('ab','Abierta / cerrada',['Cerrada','Abierta'])}${G('g','Gravedad',['Leve','Moderada','Grave','Crítica'])}${G('dist','Estado distal',['Pulso distal presente','Pulso distal ausente','Sensibilidad alterada','Motilidad alterada','Relleno capilar > 2 s'],1)}<div style="margin-top:8px"><button class="bb dk" data-act="lesAdd" ${st.t?'':'disabled'}>＋ Añadir lesión</button></div>`:'<p class="small">Toca una región del cuerpo para registrar una lesión.</p>'}
+ <div class="small" style="margin-top:10px"><b>Lesiones registradas (${(p.les||[]).length})</b></div>${(p.les||[]).map((l,i)=>`<div class="les">${l.h} · <b>${esc(l.r)}</b>: ${esc(l.t)}${l.ab?' · '+l.ab:''}${l.g?' · <b>'+l.g+'</b>':''}${l.dist&&l.dist.length?' · '+esc(l.dist.join(', ')):''} ${D?'':`<button class="bb" style="min-height:22px;padding:0 6px" data-act="lesDel" data-i="${i}">✕</button>`}</div>`).join('')||'<p class="small">Ninguna.</p>'}</div></div></div>`}
+function burnHTML(p){const d=p.d,D=p.closed,st=S.burn||(S.burn={g:'2º superficial'});
+ return `<div class="hd">Quemadura / Escaldadura</div><div class="box"><div class="small">Agente</div><div class="grid">${['Térmica (llama)','Escaldadura','Contacto','Química','Eléctrica','Radiación'].map(v=>`<button class="ck sm ${d.burnAg===v?'on':''}" data-act="setK" data-k="burnAg" data-v="${v}" ${D?'disabled':''}><span>${v}</span></button>`).join('')}</div>
+ <div class="small" style="margin-top:6px">Profundidad para las zonas que marques</div><div class="grid">${['1º','2º superficial','2º profundo','3º'].map(v=>`<button class="ck sm ${st.g===v?'on':''}" data-act="burnG" data-v="${v}"><span>${v}</span></button>`).join('')}</div>
+ <div class="small" style="margin-top:6px">Zonas (regla de los 9 del adulto). Toca para añadir la zona completa o escribe un % parcial.</div>
+ <div class="grid">${BURN.map(([r,pc])=>{const b=(p.burns||[]).find(x=>x.r===r);return `<div style="display:flex;flex-direction:column;gap:3px;padding:3px;border:1px solid ${b?'#4f9a45':'#c9cdd2'};background:${b?'#e3f1df':'#f4f5f6'}"><button class="bb" style="min-height:30px" data-act="burnT" data-r="${r}" data-pc="${pc}" ${D?'disabled':''}>${r} (${pc}%)</button>${b?`<div style="display:flex;gap:4px;align-items:center;font-size:12px"><input type="number" style="width:60px;padding:2px 4px" data-burnpct="${esc(r)}" value="${b.pct}" ${D?'disabled':''}>% · ${b.g}</div>`:''}</div>`}).join('')}</div>
+ <p>Superficie corporal quemada (excluye 1º grado): <span class="scq">${scq(p)}%</span></p>
+ <div class="frm"><label>Vía aérea / inhalación</label><select data-k="burnInh" ${D?'disabled':''}>${['','Sin signos','Sospecha de inhalación (hollín, voz ronca, vibrisas)','Quemadura facial']. map(o=>`<option ${d.burnInh===o?'selected':''}>${o}</option>`).join('')}</select><label>Peso (kg) para fluidos</label><input type="number" data-k="peso" value="${esc(d.peso)}" ${D?'disabled':''}></div>
+ ${scq(p)&&d.peso?`<div class="tip">Referencia (fórmula de Parkland, 4 ml × kg × %SCQ en 24 h): ${Math.round(4*d.peso*scq(p))} ml, la mitad en las primeras 8 h desde la quemadura. Sigue el protocolo del SUC.</div>`:''}
+ <p class="small">En niños la regla de los 9 no es válida: usa la tabla de Lund-Browder o la palma de la mano (≈1%).</p></div>`}
+function frostHTML(p){const D=p.closed,st=S.fr||(S.fr={});
+ return `<div class="hd">Congelación</div><div class="box"><div class="small">Zona</div><div class="grid">${['Manos','Pies','Orejas','Nariz','Cara','Otra'].map(v=>`<button class="ck sm ${st.r===v?'on':''}" data-act="frSet" data-k="r" data-v="${v}"><span>${v}</span></button>`).join('')}</div>
+ <div class="small" style="margin-top:6px">Grado</div><div class="grid">${['1º (eritema)','2º (flictenas claras)','3º (flictenas hemorrágicas)','4º (necrosis)'].map(v=>`<button class="ck sm ${st.g===v?'on':''}" data-act="frSet" data-k="g" data-v="${v}"><span>${v}</span></button>`).join('')}</div>
+ ${D?'':`<button class="bb dk" style="margin-top:6px" data-act="frAdd" ${st.r&&st.g?'':'disabled'}>＋ Añadir</button>`}<div style="margin-top:6px">${(p.frost||[]).map((f,i)=>`<span class="les">${f.r} · ${f.g} ${D?'':`<button class="bb" style="min-height:22px;padding:0 6px" data-act="frDel" data-i="${i}">✕</button>`}</span>`).join('')}</div></div>`}
+const fastPos=(p,id)=>[0,1,2].some(i=>p.d[id+'_f'+i]==='Sí');
+const fastTxt=(p,id)=>[0,1,2].some(i=>p.d[id+'_f'+i])?(fastPos(p,id)?'FAST positivo':'FAST negativo')+(p.d[id+'_fh']?' · inicio '+p.d[id+'_fh']:''):'';
+function vitTable(p,del){return p.vitals.length?`<table class="tbl"><tr><th>Hora</th><th>Origen</th><th>TA</th><th>FC</th><th>FR</th><th>SpO₂</th><th>etCO₂</th><th>Gl</th><th>Tª</th><th>Dolor</th>${del?'<th></th>':''}</tr>${p.vitals.map((v,i)=>`<tr><td>${v.h}</td><td>${v.src}</td><td>${v.tas||'-'}/${v.tad||'-'}</td><td>${v.fc||'-'}</td><td>${v.fr||'-'}</td><td>${v.spo2||'-'}${v.o2?' (O₂)':''}</td><td>${v.etco2||'-'}</td><td>${v.gl||'-'}</td><td>${v.temp||'-'}</td><td>${v.dolor??'-'}</td>${del?`<td><button class="bb" data-act="delVit" data-i="${i}">✕</button></td>`:''}</tr>`).join('')}</table>`:'<p class="small">Sin tomas.</p>'}
+function regItems(p,f){const it=[];if(f.vit)p.vitals.forEach(v=>it.push({ts:v.ts,h:v.h,t:`Constantes (${v.src}): TA ${v.tas||'-'}/${v.tad||'-'} FC ${v.fc||'-'} FR ${v.fr||'-'} SpO₂ ${v.spo2||'-'}`}));if(f.int)Object.entries(p.logs).forEach(([k,E])=>E.forEach(e=>it.push({ts:e.ts,h:e.h,t:LOGS[k]?.t+': '+e.txt})));if(f.neu&&p.d.vd_gh)it.push({ts:p.d.vd_gts||0,h:p.d.vd_gh,t:'GCS '+gcs(p)});if(f.otr)p.events.forEach(e=>it.push({ts:e.ts,h:e.h,t:e.t}));if(f.otr)p.photos.forEach(ph=>it.push({ts:ph.ts,h:ph.h,t:'📷 Foto '+(ph.c||'')}));return it.sort((a,b)=>a.ts-b.ts)}
+function regTable(p,f){const it=regItems(p,f);return it.length?`<table class="tbl"><tr><th>Hora</th><th>Registro</th></tr>${it.map(i=>`<tr><td>${i.h}</td><td>${esc(i.t)}</td></tr>`).join('')}</table>`:'<p class="small">Sin datos.</p>'}
+function regChart(p,f){const v=p.vitals.slice().sort((a,b)=>a.ts-b.ts);const ints=f.int?Object.values(p.logs).flat():[];
+ const all=[...v.map(x=>x.ts),...ints.map(x=>x.ts),...p.photos.map(x=>x.ts)];const t0=all.length?Math.min(...all):Date.now()-600000,t1=Math.max(...all,t0+600000);
+ const W=700,H=300,L=40,R=10,T=34,B=30,x=t=>L+(t-t0)/(t1-t0)*(W-L-R),y=val=>T+(1-val/300)*(H-T-B);
+ const grid=[...Array(16).keys()].map(i=>`<line x1="${L}" x2="${W-R}" y1="${y(i*20)}" y2="${y(i*20)}" stroke="#ccc"/><text x="${L-4}" y="${y(i*20)+4}" font-size="10" text-anchor="end">${i*20}</text>`).join('');
+ const vgrid=[...Array(13).keys()].map(i=>{const tx=L+i*(W-L-R)/12;return `<line x1="${tx}" x2="${tx}" y1="${T}" y2="${H-B}" stroke="#ddd"/>`}).join('');
+ const line=(k,c,sym)=>{const q=v.filter(e=>+e[k]);return q.map(e=>`<text x="${x(e.ts)}" y="${y(+e[k])+4}" fill="${c}" font-size="13" text-anchor="middle">${sym}</text>`).join('')+(q.length>1?`<polyline fill="none" stroke="${c}" stroke-width="1" points="${q.map(e=>x(e.ts)+','+y(+e[k])).join(' ')}"/>`:'')};
+ const marks=ints.map(e=>`<text x="${x(e.ts)}" y="${T-6}" font-size="11" text-anchor="middle" fill="#c8423b">▼<title>${esc(e.h+' '+e.txt)}</title></text>`).join('')+(f.neu&&p.d.vd_gts?`<text x="${x(p.d.vd_gts)}" y="${T+14}" font-size="16" font-weight="700" text-anchor="middle">G</text>`:'');
+ return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="background:#fff;border:1px solid #999;min-width:520px">${grid}${vgrid}${f.vit?line('tas','#c8423b','▼')+line('tad','#c8423b','▲')+line('fc','#d81b60','♥')+line('spo2','#5e35b1','◆')+line('fr','#2e7d32','●'):''}${marks}<text x="${L}" y="${H-10}" font-size="11">${new Date(t0).toTimeString().slice(0,5)}</text><text x="${W-R}" y="${H-10}" font-size="11" text-anchor="end">${new Date(t1).toTimeString().slice(0,5)}</text></svg><div class="small"><span style="color:#c8423b">▼▲ TA</span> · <span style="color:#d81b60">♥ FC</span> · <span style="color:#5e35b1">◆ SpO₂</span> · <span style="color:#2e7d32">● FR</span> · <span style="color:#c8423b">▼ arriba: intervención</span> · G: GCS</div>`}
+
+/* ---- informe ---- */
+function rReport(){const p=P();$('#top').innerHTML=topHTML(true);$('#ban').innerHTML='';$('#side').innerHTML='';
+ const F=(l,v)=>filled(v)?`<b>${l}</b><span>${esc([].concat(v).join(', '))}</span>`:'';
+ let h=`<div class="report"><div class="rh"><div><h1>Informe asistencial</h1><div class="small">Nº incidente ${p.inc} · Nº afectado ${p.afe} · ${esc(S.shift.veh)} · ${esc(p.proto)}<br>${p.closed?'DEFINITIVO · cerrado '+p.closedAt:'PRELIMINAR · '+hm()}</div></div><div style="display:flex;gap:6px"><div class="logo">Logo SUC</div><div class="logo">Logo GSC</div></div></div>`;
+ h+=`<h4>Incidente</h4><div class="kv2">${F('Dirección',[p.d.calle,p.d.num,p.d.pob].filter(Boolean).join(' '))}${F('Tipo de llamada',p.d.tipoLl)}${F('Razón',p.d.razon)}${F('Prioridad',p.d.prio)}${F('Activación',p.d.hActiv)}${F('Llegada al lugar',p.d.hLlegada)}${F('Transporte',p.d.hTransp)}${F('Llegada',p.d.hHosp)}${F('Finalización',p.d.hFin)}</div>`;
+ h+=`<h4>Paciente</h4><div class="kv2">${F('Apellidos, nombre',[p.d.apellidos,p.d.nombre].filter(Boolean).join(', ')||(p.d.desconocido?'Desconocido':''))}${F('Edad',p.d.edad?p.d.edad+' años':'')}${F('Género',p.d.sexo)}${F('Documento',p.d.doc)}</div>`;
+ sections(p).forEach(s=>{if(['equipo','incidente','paciente','reg'].includes(s.id))return;const sm=summary(p,s);if(sm)h+=`<h4>${s.t} · ${s.s}</h4><div style="white-space:pre-line">${esc(sm)}</div>`;if(s.id==='vit'&&p.vitals.length)h+=vitTable(p,false)});
+ if(p.prenotif)h+=`<h4>Prenotificación</h4><div class="kv2">${F('Enviada',p.prenotif.h)}${F('Hospital',p.prenotif.hosp)}${F('Hora estimada de llegada',p.prenotif.eta)}${F('Prioridad',p.prenotif.prio)}</div>`;
+ const sp=spText(p);if(sp)h+=`<h4>Situaciones especiales</h4>${sp}`;
+ if(p.photos.length)h+=`<h4>Fotografías</h4>${p.photos.map(f=>`<img src="${f.src}">`).join('')}`;
+ if(Object.keys(p.just).length)h+=`<h4>Campos obligatorios justificados</h4>${Object.entries(p.just).map(([k,v])=>`<div>${esc(k)}: <i>${esc(v)}</i></div>`).join('')}`;
+ if(p.annex.length)h+=`<h4>Anexos</h4>${p.annex.map(a=>`<div>${a.h} · ${esc(a.t)}</div>`).join('')}`;
+ if(p.sig.cierre)h+=`<h4>Firma</h4><img src="${p.sig.cierre}" style="max-width:240px;border:1px solid #ddd"><div class="small">${esc(p.closedBy||'')}</div>`;
+ h+=`<p class="small">Solo se imprimen los campos cumplimentados. Documento del simulador formativo.</p></div>`;
+ $('#main').innerHTML=h;
+ $('#bar').innerHTML=`<div class="in"><button data-act="backPCR"><b>←</b>Volver al registro</button><button data-act="mod" data-m="print"><b>✉</b>Enviar</button><button data-act="mod" data-m="xml"><b>&lt;/&gt;</b>XML</button><button data-act="mod" data-m="annex"><b>✎</b>Anexo</button>${p.closed?'<button data-act="mod" data-m="feedback"><b>🎓</b>Evaluación</button>':''}<button data-act="home"><b>☰</b>Lista</button></div>`;
+}
+function spText(p){const s=p.sp,r=[];if(s.niegaDatos)r.push('Se niega a dar datos');if(s.rechazo)r.push('Rechazo de '+s.rechazo.tipo);if(s.tutor)r.push('Autorización de tutor legal');if(s.menor)r.push('Paciente menor de edad');if(s.violencia)r.push('Violencia contra el personal: '+Object.values(s.violencia).filter(Boolean).join(' · '));if(s.anulado)r.push('Servicio anulado: '+s.anulado);return r.map(x=>`<div>• ${esc(x)}</div>`).join('')}
+
+/* ============ modales ============ */
+function openM(m){M=m;$("#mod").classList.add("show");drawM()}
+function closeM(){M=null;$('#mod').classList.remove('show');render()}
+function drawM(){if(!M)return;const r=MOD[M.type](P());$('#mT').textContent=r[0];$('#mB').innerHTML=r[1];$('#mB').querySelectorAll('canvas.sg').forEach(initSig)}
+function sigHTML(p,k){return p.sig[k]?`<img src="${p.sig[k]}" style="width:100%;max-height:130px;object-fit:contain;background:#fff;border:1px solid #999">${p.closed?'':`<button class="bb" data-act="clrSig" data-k="${k}">Borrar firma</button>`}`:(p.closed?'<p class="small">Sin firma.</p>':`<canvas class="sg" data-sig="${k}"></canvas><p class="small">Firma con el dedo o el ratón.</p>`)}
+function initSig(c){const r=c.getBoundingClientRect();if(!r.width)return;c.width=r.width*2;c.height=r.height*2;const x=c.getContext('2d');x.scale(2,2);x.lineWidth=2.2;x.lineCap='round';let dr=false,u=false;const pos=e=>{const b=c.getBoundingClientRect();return[e.clientX-b.left,e.clientY-b.top]};c.onpointerdown=e=>{dr=true;c.setPointerCapture(e.pointerId);x.beginPath();x.moveTo(...pos(e))};c.onpointermove=e=>{if(!dr)return;x.lineTo(...pos(e));x.stroke();u=true};c.onpointerup=()=>{dr=false;if(u){P().sig[c.dataset.sig]=c.toDataURL('image/png');save()}}}
+const MOD={
+ dotacion(){const C={'Vehículo':['Combustible','Luces y sirena','Oxígeno','Limpieza'],'Equipos electromédicos':['Desfibrilador / monitor','Respirador','Aspirador','Bombas de perfusión'],'Medicación':['Caducidades revisadas','Estupefacientes'],'Comunicaciones':['Tablet cargada','Emisora']};
+  return ['Validar Dotación',Object.entries(C).map(([g,it])=>`<div class="hd">${g}</div><div class="box">${it.map(i=>{const k=g+'|'+i,v=S.shift.check[k]||{};return `<div style="display:flex;gap:6px;align-items:center;margin:3px 0;flex-wrap:wrap"><span style="flex:1;min-width:150px">${i}</span>${['Conforme','No conforme'].map(o=>`<button class="ck sm ${v.s===o?'on':''}" data-act="chk" data-k="${esc(k)}" data-v="${o}"><span>${o}</span></button>`).join('')}${v.s==='No conforme'?`<input style="flex-basis:100%" placeholder="Anotación" data-chknote="${esc(k)}" value="${esc(v.n)}">`:''}</div>`}).join('')}</div>`).join('')]},
+ settings(){return ['Ajustes',`<div class="box" style="display:flex;flex-direction:column;gap:8px">${ck({closed:false,o:{}},'x','Modo guía (consejos del manual)',{on:S.guide}).replace('data-opt="1"','data-act="guide"')}<button class="bb" data-act="net">${S.online?'Simular pérdida de cobertura':'Restablecer cobertura'}</button><button class="bb" data-act="editShift">Editar equipo de guardia</button><button class="bb" style="background:var(--red);color:#fff" data-act="reset">Reiniciar simulador (borra todo)</button></div>`]},
+ endShift(){return ['Finalizar turno',`<p>Se cerrará la sesión del turno. Los registros abiertos quedarán pendientes.</p><button class="bb dk" data-act="endShift">Finalizar turno</button>`]},
+ anulado(p){return ['Servicio anulado',`<div class="grid">${['Servicio anulado por la Sala','Paciente trasladado por otros medios','Paciente no localizado','Falsa alarma','Otro recurso en el lugar'].map(v=>ck(p,'x',v,{on:p.sp.anulado===v}).replace('data-opt="1"',`data-act="anul" data-v="${v}"`)).join('')}</div>`]},
+ macros(){return ['Frases predefinidas',`<div class="grid" style="grid-template-columns:repeat(2,1fr)">${MACROS.map(m=>`<button class="bb" data-act="macro" data-v="${esc(m)}">${esc(m)}</button>`).join('')}</div>`]},
+ ft(p){const k='ft_'+M.id;return ['Texto libre',`<textarea rows="6" data-k="${k}" ${dis(p)}>${esc(p.d[k])}</textarea><p class="small">Texto libre para completar lo que no recogen las casillas.</p>`]},
+ extras(p){const sp=p.sp,D=p.closed;return ['Extras',`<div class="hd">Escalas</div><div class="box grid">${['START triaje','APGAR','NACA','GCS'].map(s=>`<button class="bb" data-act="mod" data-m="${s.split(' ')[0].toLowerCase()}">${s}</button>`).join('')}</div>
+  <div class="hd">Situaciones especiales</div><div class="box grid">${ck(p,'x','Se niega a dar datos',{on:!!sp.niegaDatos}).replace('data-opt="1"','data-act="sp" data-k="niegaDatos"')}<button class="bb" data-act="mod" data-m="rechazo">Rechazo de asistencia / traslado${sp.rechazo?' ✓':''}</button><button class="bb" data-act="mod" data-m="tutor">Autorización de tutor${sp.tutor?' ✓':''}</button>${ck(p,'x','Paciente menor de edad',{on:!!sp.menor}).replace('data-opt="1"','data-act="sp" data-k="menor"')}<button class="bb" data-act="mod" data-m="violencia">Violencia contra el personal${sp.violencia?' ✓':''}</button><button class="bb" data-act="mod" data-m="photos">📷 Fotos (${p.photos.length})</button></div>
+  <div class="hd">Cambiar protocolo</div><div class="box grid">${PROTOS.map(pr=>ck(p,'x',pr,{on:p.proto===pr}).replace('data-opt="1"',`data-act="proto" data-v="${pr}"`)).join('')}</div><p class="small">Al cambiar de protocolo se conservan los datos registrados. Las secciones de cada protocolo son una aproximación del simulador.</p>
+  <div class="hd">Otros</div><div class="box grid"><button class="bb" data-act="mod" data-m="share">🔑 Compartir con otro recurso</button><button class="bb" data-act="mod" data-m="library">📚 Biblioteca</button><button class="bb" data-act="mod" data-m="prenotif">📤 Prenotificación</button></div>`]},
+ atajo(p){return ['Atajo',`<p class="small">Saltos rápidos a las secciones más usadas:</p><div class="grid">${sections(p).filter(s=>!['equipo'].includes(s.id)).map(s=>`<button class="bb" data-act="goSec" data-id="${s.id}">${s.t==='VALORACIÓN INICIAL'?'':s.t+' · '}${s.s||s.t}</button>`).join('')}</div>`]},
+ horas(p){const d=p.d,T=(k,l)=>`<div class="tbx"><label>${l}:</label><div class="t"><button class="clk" data-act="now" data-k="${k}">🕒</button><input type="time" data-k="${k}" value="${esc(d[k])}"></div></div>`;return ['Horas',`<div class="times">${T('hInc','Hora de Incidente')}${T('hActiv','Activación')}${T('hMov','Movilización')}${T('hLlegada','Llegada al lugar')}${T('hAsist','Asistencia')}${T('hTransp','Transporte')}${T('hHosp','Llegada')}${T('hFin','Finalización')}${T('hTransf','Transferencia')}</div>`]},
+ devices(){return ['Conectar dispositivos',devHTML()]},
+ start(){const a=M.a||{};const Q=(k,q,o)=>`<div class="small" style="margin-top:6px">${q}</div><div class="chips">${o.map(v=>`<button class="ck sm ${a[k]===v?'on':''}" data-act="startA" data-k="${k}" data-v="${v}"><span>${v}</span></button>`).join('')}</div>`;let r='';if(a.c==='Sí')r='VERDE';else if(a.c==='No'){if(a.r==='No')r=a.ab==='Sí'?'ROJO':a.ab==='No'?'NEGRO':'';else if(a.r==='Sí'){if(a.fr==='> 30')r='ROJO';else if(a.fr==='≤ 30'){if(a.pf==='> 2 s / sin pulso radial')r='ROJO';else if(a.pf==='< 2 s')r=a.ob==='No'?'ROJO':a.ob==='Sí'?'AMARILLO':''}}}
+  const col={VERDE:'#2e9e5b',AMARILLO:'#e3b400',ROJO:'#d63a2f',NEGRO:'#111'}[r];
+  return ['START',Q('c','¿Camina?',['Sí','No'])+(a.c==='No'?Q('r','¿Respira?',['Sí','No']):'')+(a.r==='No'?Q('ab','¿Respira tras abrir la vía aérea?',['Sí','No']):'')+(a.r==='Sí'?Q('fr','FR',['> 30','≤ 30']):'')+(a.fr==='≤ 30'?Q('pf','Relleno capilar / pulso radial',['< 2 s','> 2 s / sin pulso radial']):'')+(a.pf==='< 2 s'?Q('ob','¿Obedece órdenes?',['Sí','No']):'')+(r?`<div style="margin-top:12px;padding:12px;color:#fff;font-size:20px;font-weight:700;text-align:center;background:${col}">${r}</div><button class="bb dk" style="margin-top:8px" data-act="score" data-k="start" data-v="${r}">Guardar en el registro</button>`:'')]},
+ apgar(p){return ['APGAR',PANEL.apgar(p)]},
+ apgarRN(p){const d=p.d;const it=[['Color',['Cianosis/palidez','Acrocianosis','Rosado']],['Frecuencia cardiaca',['Ausente','< 100','≥ 100']],['Reflejos',['Sin respuesta','Mueca','Llanto/tos']],['Tono muscular',['Flácido','Flexión leve','Movimiento activo']],['Respiración',['Ausente','Débil/irregular','Llanto fuerte']]];
+  return ['APGAR SCORE',it.map(([k,o],ix)=>`<div class="hd">${k}</div><div class="box grid">${o.map((t,i)=>`<button class="ck sm ${d['ap'+ix]===i?'on':''}" data-act="apgar" data-i="${ix}" data-v="${i}"><span>${i} · ${t}</span></button>`).join('')}</div>`).join('')+`<p style="font-size:22px;font-weight:700">APGAR: ${d.apgarTot??'—'}/10</p><div class="chips">${['1 min','5 min','10 min'].map(m=>`<button class="bb" data-act="apgarRN" data-v="${m}" ${d.apgarTot===undefined?'disabled':''}>Guardar como ${m}</button>`).join('')}</div>`]},
+ naca(p){return ['NACA',`<div class="grid" style="grid-template-columns:1fr">${[['I','Leve'],['II','Leve, estudio ambulatorio'],['III','Moderada, requiere ingreso'],['IV','Grave, posible riesgo vital'],['V','Riesgo vital inmediato'],['VI','Reanimación con éxito'],['VII','Fallecido']].map(([n,t])=>ck(p,'x','NACA '+n+' · '+t,{on:p.d.naca===n}).replace('data-opt="1"',`data-act="score" data-k="naca" data-v="${n}"`)).join('')}</div>`]},
+ gcs(p){S.open='vd';S.gcsOpen='vd';closeM();return ['','']},
+ rechazo(p){const r=p.sp.rechazo||{tipo:'traslado',id:'ES'};const T={ES:`Yo, el abajo firmante, confirmo que he sido informado por el personal sanitario de las posibles consecuencias de mi decisión y rechazo voluntariamente el ${r.tipo}. Sé que puedo volver a llamar al 1-1-2 si empeoro.`,EN:`I confirm the medical staff have informed me of the possible consequences and I voluntarily refuse ${r.tipo==='traslado'?'transport':'care'}. I can call 112 again if my condition worsens.`,DE:`Ich bestätige, über die möglichen Folgen aufgeklärt worden zu sein, und lehne ${r.tipo==='traslado'?'den Transport':'die Behandlung'} freiwillig ab.`};
+  return ['Rechazo',`<div class="chips">${['asistencia','traslado'].map(t=>`<button class="ck sm ${r.tipo===t?'on':''}" data-act="rech" data-k="tipo" data-v="${t}"><span>Rechazo de ${t}</span></button>`).join('')}</div><div class="chips" style="margin-top:6px">${['ES','EN','DE'].map(t=>`<button class="ck sm ${r.id===t?'on':''}" data-act="rech" data-k="id" data-v="${t}"><span>${t}</span></button>`).join('')}</div><div class="box" style="margin-top:6px;background:#fff">${T[r.id]}</div><div class="cols"><div><div class="small">Firma del paciente</div>${sigHTML(p,'rechP')}</div><div><div class="small">Firma del testigo / sanitario</div>${sigHTML(p,'rechT')}</div></div><p class="small">Texto de ejemplo del simulador.</p>`]},
+ tutor(p){const t=p.sp.tutor||{};return ['Autorización de tratamiento',`<div class="frm"><label>Nombre del tutor</label><input data-sp="tutor.nombre" value="${esc(t.nombre)}"></div><div class="chips" style="margin:6px 0">${['Guardián presente','Guardián no presente'].map(o=>`<button class="ck sm ${t.pres===o?'on':''}" data-act="spSet" data-k="tutor.pres" data-v="${o}"><span>${o}</span></button>`).join('')}</div><div class="box small">Con esta firma autorizo al personal sanitario a prestar asistencia al menor o persona a mi cargo.</div>${sigHTML(p,'tutor')}`]},
+ violencia(p){const v=p.sp.violencia||{};const G=(k,l,o)=>`<div class="small" style="margin-top:6px">${l}</div><div class="grid">${o.map(t=>`<button class="ck sm ${v[k]===t?'on':''}" data-act="spSet" data-k="violencia.${k}" data-v="${t}"><span>${t}</span></button>`).join('')}</div>`;return ['Violencia contra el personal',G('ag','Agresor',['Paciente','Familiar','Acompañante','Otro'])+G('ti','Tipo',['Verbal / amenazas','Empujones','Golpes','Con objeto / arma'])+G('re','Resultado',['Sin daño','Daño material','Daño físico leve','Daño físico con lesión'])+G('vi','Víctima',['Médico/a','Enfermero/a','TES','Varios'])]},
+ photos(p){return ['Fotos',`${p.closed?'':`<label class="bb dk" style="display:inline-block;padding:10px">📷 Hacer / adjuntar foto<input type="file" accept="image/*" capture="environment" id="phIn" style="display:none"></label>`}<p class="small">Se sitúan en la línea de tiempo (Registros) y se incluyen en el informe.</p><div class="chips">${p.photos.map((f,i)=>`<div style="width:160px;background:#fff;padding:4px"><img src="${f.src}" style="width:100%"><div class="small">${f.h}</div><input data-phc="${i}" value="${esc(f.c)}" placeholder="Comentario" ${dis(p)}>${p.closed?'':`<button class="bb" data-act="delPh" data-i="${i}">Eliminar</button>`}</div>`).join('')}</div>`]},
+ share(p){if(!p.key)p.key='K-'+p.inc.slice(-4)+'-'+Math.random().toString(36).slice(2,6).toUpperCase();return ['PCR relacionados',`<p>Los recursos enviados al mismo incidente comparten una clave común: solo ellos ven los datos y los PCR firmados de los demás.</p><div class="box" style="text-align:center;font:700 26px Consolas">${p.key}</div><p class="small">El otro recurso pulsa 🔍 y ve los PCR relacionados para imprimirlos. Solo funciona mediante la interfaz de despacho.</p>`]},
+ library(){return ['Biblioteca',`<div class="box"><b>Puntos clave del manual</b><ul><li>Registro cerrado = datos médicos bloqueados; usar «Anexo».</li><li>Constantes en la tablet con ≥30 s de retraso.</li><li>Sin cobertura se sigue trabajando y se sincroniza solo.</li><li>Ante SCACEST o ictus: prenotificación.</li></ul></div><div class="box small">Aquí estarían los manuales de equipos y los protocolos cargados por el SUC.</div>`]},
+ prenotif(p){const f=M.f||(M.f={eta:hm(new Date(Date.now()+20*60000)),hosp:HOSP[0],prio:'Inmediata'});const v=p.vitals.at(-1)||{};const k=prenotifNeed(p);
+  if(p.prenotif)return ['Prenotificación',`<div class="tip">✅ Enviada a las ${p.prenotif.h} a ${esc(p.prenotif.hosp)} (ETA ${p.prenotif.eta}).</div>`];
+  return ['Registro del paciente · prenotificación',`${k?`<div class="warn">Sospecha de <b>${k}</b>.</div>`:''}<div class="frm"><label>Hora estimada de llegada</label><input type="time" data-pn="eta" value="${f.eta}"><label>Email / fax</label><input data-pn="mail" value="${esc(f.mail||'')}" placeholder="urgencias@hospital.ejemplo"></div><div class="small" style="margin-top:6px">Hospital</div><div class="grid">${HOSP.map(h=>`<button class="ck sm ${f.hosp===h?'on':''}" data-act="pn" data-k="hosp" data-v="${h}"><span>${h}</span></button>`).join('')}</div><div class="small" style="margin-top:6px">Prioridad</div><div class="chips">${['Inmediata','Urgente','Normal'].map(h=>`<button class="ck sm ${f.prio===h?'on':''}" style="${h==='Inmediata'&&f.prio===h?'background:#e57373':''}" data-act="pn" data-k="prio" data-v="${h}"><span>${h}</span></button>`).join('')}</div>
+  <div class="small" style="margin-top:6px">Últimas constantes (insertadas automáticamente)</div><div class="chips">${[['TAS',v.tas],['TAD',v.tad],['FC',v.fc],['SpO₂',v.spo2]].map(([l,x])=>`<label style="font-size:13px">${l}<br><input type="number" style="width:80px" value="${esc(x??'')}"></label>`).join('')}<label style="font-size:13px">GCS<br><input style="width:80px" value="${gcs(p)||''}" disabled></label></div>
+  <div class="frm" style="margin-top:6px"><label>Diagnóstico</label><input value="${esc(dxText(p)||(has(p,'vecg','SCACEST')?'ECG: SCACEST':''))}" disabled></div><div style="text-align:center;margin-top:10px"><button class="bb" style="background:var(--red);color:#fff;padding:8px 20px" data-act="sendPN">📤 Enviar a la Sala y al hospital</button></div>`]},
+ print(p){if(!p)return ['Imprimir','<p>Selecciona un registro.</p>'];const f=M.f||(M.f={dest:'',mail:'',via:'email',exp:{Registro:1,ECGs:1}});return ['Imprimir registro',`${p.closed?'':'<div class="tip">Registro abierto: se enviará un <b>informe preliminar</b>.</div>'}<div class="small">Enviar registro a hospital predefinido</div><div class="grid">${HOSP.slice(0,4).map(h=>`<button class="ck sm ${f.dest===h?'on':''}" data-act="pf" data-k="dest" data-v="${h}"><span>${h}</span></button>`).join('')}</div><div class="chips" style="margin:6px 0">${['email','fax'].map(v=>`<button class="ck sm ${f.via===v?'on':''}" data-act="pf" data-k="via" data-v="${v}"><span>${v}</span></button>`).join('')}</div><div class="frm"><label>Definir destino</label><input data-pf="mail" value="${esc(f.mail)}"></div><div class="small" style="margin-top:6px">Exportar</div><div class="grid">${['Registro','ECGs','Fotos','Rechazo de transporte','Autorización de tratamiento','Impresión fusionada'].map(x=>`<button class="ck sm ${f.exp[x]?'on':''}" data-act="pfx" data-k="${x}"><span>${x}</span></button>`).join('')}</div><div class="chips" style="margin-top:10px"><button class="bb dk" data-act="sendRep">📤 Enviar (simulado)</button><button class="bb" data-act="mod" data-m="share">Compartir</button><button class="bb" data-act="report">Previsualización</button></div>`]},
+ xml(p){return ['XML (ilustrativo)',`<p class="small">Al cerrar, AmbulancePad envía al PGE un XML con todo el caso. La estructura real es confidencial: esto es una ilustración.</p><pre class="xml">${esc(toXML(p))}</pre><button class="bb" data-act="copyXML">Copiar XML</button>`]},
+ annex(p){return ['Anexo',`${p.closed?'<p>Datos médicos bloqueados. Añade aquí la información o la corrección, que quedará registrada con su hora.</p>':'<div class="tip">El registro está abierto: también puedes editar directamente.</div>'}<textarea id="anx" rows="4"></textarea><button class="bb dk" style="margin-top:6px" data-act="addAnx">＋ Añadir anexo</button><div class="hd">Anexos</div><div class="box">${p.annex.map(a=>`<div>${a.h} · ${esc(a.t)}</div>`).join('')||'<span class="small">Ninguno.</span>'}</div>`]},
+ close(p){const miss=sections(p).filter(s=>!done(p,s));const crew=S.shift.crew.filter(c=>c.auth);return ['Cerrar PCR',`${prenotifNeed(p)?'<div class="warn">⚠ Prenotificación pendiente.</div>':''}${miss.length?`<div class="hd">Campos obligatorios abiertos</div><div class="box">${miss.map(s=>`<div style="margin:6px 0"><b>${s.t} · ${s.s}</b><div class="chips">${['no posible','no relevante','no requerido','sin tiempo'].map(j=>`<button class="ck sm ${p.just[s.t+' · '+s.s]===j?'on':''}" data-act="just" data-k="${esc(s.t+' · '+s.s)}" data-v="${j}"><span>${j}</span></button>`).join('')}</div></div>`).join('')}</div>`:'<div class="tip">✅ Todos los apartados obligatorios completos.</div>'}
+  <div class="hd">Firma</div><div class="box">${sigHTML(p,'cierre')}</div><div class="frm" style="margin-top:6px"><label>Miembro</label><select id="clW">${crew.map((c,i)=>`<option value="${i}">${esc(c.role+' · '+c.name)}</option>`).join('')}</select><label>Contraseña</label><input type="password" id="clP"></div><div class="warn">Al cerrar: datos médicos bloqueados, PDF en el servidor y XML al PGE.</div><div style="text-align:center"><button class="bb dk" style="font-size:16px;padding:8px 24px" data-act="doClose">🔒 Cerrar registro</button></div>`]},
+ feedback(p){const r=evaluate(p),ok=r.filter(x=>x[1]).length;return ['Evaluación formativa',`<p style="font-size:22px;font-weight:700">${ok}/${r.length} buenas prácticas</p>${r.map(([t,v,w])=>`<div style="margin:5px 0">${v?'✅':'⬜'} <b>${t}</b>${!v&&w?`<div class="small" style="margin-left:24px">${w}</div>`:''}</div>`).join('')}<button class="bb dk" style="margin-top:8px" data-act="home">Volver a la lista</button>`]},
+ search(){return ['Buscar',`<p class="small">Busca registros del turno o PCR compartidos por otros recursos del mismo incidente.</p>${S.pcrs.map((p,i)=>`<div class="box" style="margin:4px 0;cursor:pointer" data-act="openI" data-i="${i}">${p.afe} · ${esc(p.d.apellidos||'Sin filiar')} · ${esc(p.d.calle||'')}</div>`).join('')||'<p>Sin registros.</p>'}`]},
+ confirmReset(){return ['Reiniciar','<p>Se borrarán el turno y todos los registros de práctica.</p><button class="bb" style="background:var(--red);color:#fff" data-act="resetYes">Sí, reiniciar</button>']}
+};
+function evaluate0(p){const r=[],d=p.d;
+ r.push(['Hora de llegada al lugar registrada',filled(d.hLlegada),'Usa el reloj 🕒 en INCIDENTE o en «Horas».']);
+ r.push(['Al menos 2 tomas de constantes',p.vitals.length>=2,'Registra constantes al inicio y antes de la entrega.']);
+ r.push(['GCS registrado',!!gcs(p),'D. Neurológica → botón GCS.']);
+ r.push(['Reevaluación realizada',['ra','rb','rc','recg'].some(k=>(p.o[k]||[]).length),'Usa «Copiar Evaluación Inicial» y ajusta lo que haya cambiado.']);
+ if(PRENOTIF_CIE[d.dx1]||has(p,'vecg','SCACEST'))r.push(['Prenotificación enviada',!!p.prenotif,'Ante SCACEST o ictus, prenotifica desde el aviso rojo.']);
+ if(has(p,'vecg','SCACEST'))r.push(['Activación de Hemodinámica documentada',filled((p.o['vecg.hemo']||[])[0]),'Marca Sí/No/Denegado bajo el ECG.']);
+ if(p.scen==='ictus')r.push(['FAST y hora de inicio registrados',fastPos(p,'vd')&&filled(d.vd_fh),'D. Neurológica → FAST.']);
+ if(['trafico','politrauma'].includes(p.scen)||(p.les||[]).length){
+  r.push(['Protocolo SVA EXTENDIDO',p.proto==='SVA EXTENDIDO','Para politrauma, usa SVA EXTENDIDO (Extras → Cambiar protocolo).']);
+  r.push(['Mecanismo de lesión documentado',(p.o.mec||[]).length>0&&filled(d.mecEv),'Mecanismo de lesión: marca el mecanismo y la hora del evento.']);
+  r.push(['C Circulación: pulso / hemorragia / piel valorados',(p.o.vc||[]).filter(x=>!NEG.includes(x)).length>=2,'Despliega C Circulación y marca pulso, hemorragia y piel.']);
+  r.push(['Lesiones registradas en el mapa corporal',(p.les||[]).length>0,'Diagnóstico/Conclusión → Trauma → Lesiones.']);
+  r.push(['Gravedad indicada en las lesiones',(p.les||[]).length>0&&p.les.every(l=>l.g),'Indica la gravedad de cada lesión.']);
+  r.push(['Inmovilización y posición de traslado',(p.o.iinm||[]).some(x=>!NEG.includes(x)),'INTERVENCIONES → Inmovilización / Movilización.']);
+  r.push(['Acceso IV / hemostasia registrados',(p.logs.iv||[]).length>0||(p.logs.hemost||[]).length>0,'INTERVENCIONES → C Circulación → IV Acceso / Hemostática.']);
+  r.push(['Reevaluación neurológica (D)',!!gcs(p,'rd'),'REEVALUACIÓN → D. Neurológica.']);
+ }
+ r.push(['Diagnóstico registrado',dxAny(p),'Diagnóstico/Conclusión.']);
+ r.push(['Entrega con «Copiar del Registro»',p.copied||['Domicilio','No traslado'].includes(d.destino),'Ahorra tiempo y evita errores.']);
+ r.push(['Cerrado sin apartados justificados',!Object.keys(p.just).length,Object.keys(p.just).length+' apartado(s) justificado(s).']);
+ return r}
+function toXML(p){const t=(k,v)=>filled(v)?`    <${k}>${esc([].concat(v).join(', '))}</${k}>\n`:'';return `<?xml version="1.0" encoding="UTF-8"?>\n<pcr incident="${p.inc}" affected="${p.afe}" vehicle="${esc(S.shift.veh)}" protocol="${esc(p.proto)}" status="${p.closed?'closed':'open'}">\n  <patient>\n${t('name',p.d.apellidos)}${t('firstname',p.d.nombre)}${t('age',p.d.edad)}${t('sex',p.d.sexo)}  </patient>\n  <times>\n${t('activation',p.d.hActiv)}${t('onScene',p.d.hLlegada)}${t('transport',p.d.hTransp)}${t('arrival',p.d.hHosp)}${t('end',p.d.hFin)}  </times>\n  <assessment>\n${['va','vb','vc','vecg'].map(k=>t(k,p.o[k])).join('')}${t('gcs',gcs(p)||'')}${t('diagnosis',dxText(p))}  </assessment>\n  <vitals>\n${p.vitals.map(v=>`    <vital time="${v.h}" sbp="${v.tas||''}" dbp="${v.tad||''}" hr="${v.fc||''}" spo2="${v.spo2||''}"/>\n`).join('')}  </vitals>\n  <interventions>\n${Object.entries(p.logs).flatMap(([k,E])=>E.map(e=>`    <action type="${k}" time="${e.h}">${esc(e.txt)}</action>\n`)).join('')}  </interventions>\n${t('destination',p.d.destino)}</pcr>`}
+
+/* ============ acciones ============ */
+const A={
+ net(){S.online=!S.online;if(S.online&&S.queue){toast(`Cobertura recuperada: sincronizados ${S.queue} elemento(s) con el PGE`);S.queue=0}else if(!S.online)toast('Sin cobertura: sigue documentando. Los datos se guardan en la tablet.');render();drawM()},
+ addCrew(){const role=$('#cR').value,name=$('#cN').value.trim(),pass=$('#cP').value;if(!name)return toast('Introduce el nombre');if(pass&&pass.length<4)return toast('Contraseña de al menos 4 caracteres');S.shift.crew.push({role,name,num:$('#cB').value,pass,auth:!!pass});render()},
+ demoCrew(){const r=REQROLES(S.shift.proto),n=['Dra. Ana Ejemplo','Luis Prueba','Marta Simulada'];S.shift.crew=r.map((x,i)=>({role:x,name:n[i]||'Tripulante '+(i+1),num:'',pass:i===0?'1234':'',auth:i===0}));toast(`Tripulación de ejemplo. Contraseña de ${n[0]}: <b>1234</b>`,5000);render()},
+ delCrew(e){S.shift.crew.splice(+e.dataset.i,1);render()},
+ devOn(e){const k=e.dataset.k;if(S.shift.dev[k])return;S.shift.dev[k]={st:'wait'};render();drawM();setTimeout(()=>{S.shift.dev[k]={st:'on',last:''};toast(DEVS[k].d+' conectado por Bluetooth');render();drawM()},1200)},
+ devOff(e){delete S.shift.dev[e.dataset.k];render();drawM()},
+ startShift(){S.shift.started=true;S.screen='home';render()},
+ editShift(){M=null;$('#mod').classList.remove('show');S.screen='shift';render()},
+ endShift(){M=null;$('#mod').classList.remove('show');S.shift.started=false;S.screen='shift';render()},
+ simCall(e){const k=e.dataset.k;S.incoming={scen:k,call:{...SCEN[k].call},inc:String(15800000+Math.floor(Math.random()*9999))};render()},
+ accept(){const i=S.incoming;S.incoming=null;const p=newPCR(i.call,i.scen);p.inc=i.inc;const sp=SCEN[i.scen]?.proto;if(sp&&p.proto!==sp){p.proto=sp;setTimeout(()=>toast('Caso de trauma: registro abierto con protocolo <b>'+sp+'</b>',3500),900)}S.screen='pcr';S.open='incidente';toast('Llamada aceptada: datos cargados desde el PGE');render()},
+ reject(){S.incoming=null;render()},
+ manual(){newPCR(null,null);S.screen='pcr';S.open='incidente';render()},
+ selRow(e){const i=+e.dataset.i;if(S.sel===i&&e.dataset.dbl){S.cur=i;S.screen='pcr';S.open=null;render();return}S.sel=i;render()},
+ editSel(){if(S.sel<0)return;S.cur=S.sel;S.screen='pcr';S.open=null;render()},
+ printSel(){if(S.sel<0)return;S.cur=S.sel;S.screen='report';render()},
+ openI(e){M=null;$('#mod').classList.remove('show');S.cur=+e.dataset.i;S.screen='pcr';render()},
+ home(){M=null;$('#mod').classList.remove('show');S.screen='home';S.sel=S.cur;render()},
+ merge(){const p=P(),k=Object.keys(SCEN)[Math.floor(Math.random()*3)];Object.entries(SCEN[k].call).forEach(([a,b])=>{if(!filled(p.d[a]))p.d[a]=b});p.fromCAD=true;p.scen=p.scen||k;log(p,'Datos fusionados con la central');toast('Datos de la central fusionados. Se conservan los que ya habías introducido.');render()},
+ toggle(e){const id=e.dataset.id;S.open=S.open===id?null:id;S.logForm=null;render();if(S.open)setTimeout(()=>document.getElementById('row_'+id)?.scrollIntoView({block:'start',behavior:'smooth'}),30)},
+ goSec(e){M=null;$('#mod').classList.remove('show');S.open=e.dataset.id;render();setTimeout(()=>document.getElementById('row_'+e.dataset.id)?.scrollIntoView({block:'start'}),30)},
+ scr(e){const v=e.dataset.v,h=innerHeight*.7;({top:()=>scrollTo(0,0),bot:()=>scrollTo(0,document.body.scrollHeight),up:()=>scrollBy(0,-h),dn:()=>scrollBy(0,h)})[v]()},
+ mod(e){const m=e.dataset.m;if(m==='gcs'){S.open='vd';S.gcsOpen='vd';M=null;$('#mod').classList.remove('show');render();return}openM({type:m,id:e.dataset.id})},
+ mClose(){closeM()},mOk(){closeM()},
+ now(e){const p=P();p.d[e.dataset.k]=hm();if(e.dataset.k==='hLlegada')log(p,'Llegada al lugar');rerender()},
+ tExc(){const p=P();p.d.tExc=!p.d.tExc;render()},
+ anul(e){const p=P();p.sp.anulado=p.sp.anulado===e.dataset.v?undefined:e.dataset.v;if(p.sp.anulado)log(p,'Servicio anulado: '+p.sp.anulado);drawM();render()},
+ desconocido(){const p=P();p.d.desconocido=!p.d.desconocido;if(p.d.desconocido){p.d.apellidos=p.d.apellidos||'DESCONOCIDO';toast('Paciente marcado como desconocido')}render()},
+ sexo(e){P().d.sexo=e.dataset.v;render()},
+ card(){const p=P();Object.assign(p.d,{apellidos:p.d.apellidos||'PÉREZ FICTICIO',nombre:p.d.nombre||'JUAN',doc:'00000000T',tdoc:'Tarjeta sanitaria',tseg:'Servicio Canario de la Salud'});toast('Tarjeta sanitaria leída (simulado, datos ficticios)');render()},
+ clearCard(){const p=P();['doc','tdoc','nseg','seguro','tseg','nhc'].forEach(k=>delete p.d[k]);render()},
+ copyAddr(){const p=P();p.d.pcalle=[p.d.calle,p.d.num].filter(Boolean).join(' ');p.d.pcp=p.d.pob||'';render()},
+ tutorAv(){const p=P();p.d.tutorAv=!p.d.tutorAv;render()},
+ macro(e){const p=P();p.d.anam=(p.d.anam||'')+e.dataset.v;closeM()},
+ copyEval(e){const p=P(),to=e.dataset.id,from=e.dataset.from;if(from==='vd'){['avdn','go','gv','gm','gh','pR','pL','normal'].forEach(k=>p.d['rd_'+k]=p.d['vd_'+k]);p.o.rd=[...(p.o.vd||[])]}else{p.o[to]=[...(p.o[from]||[])];if(p.o[from+'.hemo'])p.o[to+'.hemo']=[...p.o[from+'.hemo']]}log(p,'Reevaluación: copiada evaluación inicial');toast('Evaluación inicial copiada. Modifica lo que haya cambiado.');render()},
+ avdn(e){const p=P(),id=e.dataset.id||'vd',v=e.dataset.v||'Alerta';p.d[id+'_avdn']=p.d[id+'_avdn']===v?undefined:v;rerender()},
+ gcsOpen(e){const id=e.dataset.id;S.open=id;S.gcsOpen=S.gcsOpen===id?null:id;render()},
+ gcs(e){const p=P(),id=e.dataset.id;p.d[id+'_'+e.dataset.k]=+e.dataset.v;if(gcs(p,id)){p.d[id+'_gh']=hm();p.d[id+'_gts']=Date.now()}rerender()},
+ eye(e){const p=P(),k=e.dataset.id+'_p'+e.dataset.s,o=['Normal','Miosis','Midriasis','Arreactiva'];p.d[k]=o[(o.indexOf(p.d[k]||'Normal')+1)%4];rerender()},
+ neuroNorm(e){const p=P(),k=e.dataset.id+'_normal';p.d[k]=!p.d[k];rerender()},
+ fastT(e){S.fastOpen=S.fastOpen===e.dataset.id?null:e.dataset.id;render()},
+ fast(e){const p=P(),k=e.dataset.id+'_f'+e.dataset.i;p.d[k]=p.d[k]===e.dataset.v?undefined:e.dataset.v;rerender()},
+ vitNow(){P().d.f_h=hm();render()},
+ vitChk(e){const p=P();p.d[e.dataset.k]=!p.d[e.dataset.k];rerender()},
+ dolor(e){P().d.f_dolor=+e.dataset.v;rerender()},
+ flag(e){const p=P();p.d[e.dataset.k]=!p.d[e.dataset.k];rerender()},
+ vitAdd(){const p=P(),d=p.d;const ks=['tas','tad','ibs','ibd','pulso','hr','fr','spo2','etco2','co2','methb','cohb','gl','temp'];if(!ks.some(k=>filled(d['f_'+k]))&&d.f_dolor===undefined){toast('Introduce al menos un valor');return}
+  const h=d.f_h||hm();const[hh,mm]=h.split(':').map(Number);const t=new Date();t.setHours(hh,mm,new Date().getSeconds(),0);
+  const v={h,ts:t.getTime(),src:'Manual',fc:d.f_pulso||d.f_hr,o2:d.f_o2,dolor:d.f_dolor};ks.forEach(k=>{if(filled(d['f_'+k]))v[k]=+d['f_'+k]});p.vitals.push(v);
+  [...ks,'h','dolor','o2','brIz','brDe','palp','dif','reg','irr','hipo','hiper','oido','boca','rect'].forEach(k=>delete d['f_'+k]);if(!S.online)S.queue++;toast('Toma guardada en la tabla ('+h+')');render()},
+ delVit(e){P().vitals.splice(+e.dataset.i,1);render()},
+ importMon(){const p=P(),sc=SCEN[p.scen]||SCEN.torax,i=S.step[p.id]||0,b=sc.v[Math.min(i,3)];S.step[p.id]=i+1;toast('⇩ Recibiendo datos del ZOLL… (retraso ≥30 s)',1400);
+  setTimeout(()=>{const d=new Date(Date.now()-30000),j=n=>n?Math.round(n+Math.random()*4-2):undefined;p.vitals.push({h:hm(d),ts:d.getTime(),src:'ZOLL X',tas:j(b[0]),tad:j(b[1]),fc:j(b[2]),fr:b[3],spo2:Math.min(100,j(b[4])),etco2:b[5]||undefined});S.shift.dev.zoll.last=hms();if(!S.online)S.queue++;render()},1400)},
+ openLog(e){const l=e.dataset.log;const sec=e.dataset.id||Object.keys(OPT).find(k=>OPT[k].some(g=>g.log===l));S.open=sec||S.open;S.logForm=l;const q=QUICK[sec];if(q){const p=P();p.o[sec]=(p.o[sec]||[]).filter(x=>!NEG.includes(x))}render()},
+ cancelLog(){S.logForm=null;render()},
+ saveLog(e){const p=P(),id=e.dataset.log,L=LOGS[id];const parts=L.f.map((f,i)=>{const v=$('#lf_'+i).value;return v?(f[1]==='num'||f[1]==='txt'?f[0]+' '+v:v):''}).filter(Boolean);const h=$('#lf_h').value||hm();const[hh,mm]=h.split(':').map(Number);const t=new Date();t.setHours(hh,mm,new Date().getSeconds(),0);
+  (p.logs[id]=p.logs[id]||[]).push({h,ts:t.getTime(),txt:parts.join(' · ')});log(p,L.t+': '+parts.join(' · '));S.logForm=null;if(!S.online)S.queue++;toast(L.t+' registrada a las '+h);render()},
+ delLog(e){P().logs[e.dataset.log].splice(+e.dataset.i,1);render()},
+ elec(e){const p=P(),k=e.dataset.k,n={mp:'Marcapasos',df:'Desfibrilación',cv:'Cardioversión'}[k];if(k!=='mp')p.d[k+'_a']=(+p.d[k+'_a']||0)+1;(p.logs.elec=p.logs.elec||[]).push({h:hm(),ts:Date.now(),txt:n+(k==='mp'?` ${p.d.mp_a||'-'} lpm ${p.d.mp_b||'-'} mA`:` nº ${p.d[k+'_a']} ${p.d[k+'_b']?p.d[k+'_b']+' J':''}`)});toast(n+' registrada '+hm());p.o.ic=(p.o.ic||[]).filter(x=>!NEG.includes(x));render()},
+ apgarRN(e){const p=P();p.d.rnApgar=[p.d.rnApgar,`${e.dataset.v}: ${p.d.apgarTot}`].filter(Boolean).join(' · ');[0,1,2,3,4].forEach(i=>delete p.d['ap'+i]);delete p.d.apgarTot;closeM()},
+ dxMode(e){S.dxMode=S.dxMode===e.dataset.v?null:e.dataset.v;rerender()},
+ lesSide(e){S.les={side:e.dataset.v};rerender()},
+ lesReg(e){const side=(S.les||{}).side||'F';S.les={side,r:e.dataset.r};rerender()},
+ lesSet(e){const st=S.les,k=e.dataset.k,v=e.dataset.v;if(e.dataset.multi){st[k]=st[k]||[];st[k]=st[k].includes(v)?st[k].filter(x=>x!==v):[...st[k],v]}else st[k]=st[k]===v?undefined:v;rerender()},
+ lesAdd(){const p=P(),st=S.les;(p.les=p.les||[]).push({r:st.r,t:st.t,ab:st.ab,g:st.g,dist:st.dist||[],h:hm()});log(p,'Lesión: '+st.r+' – '+st.t);S.les={side:st.side};toast('Lesión añadida');rerender()},
+ lesDel(e){P().les.splice(+e.dataset.i,1);rerender()},
+ burnG(e){S.burn={g:e.dataset.v};rerender()},
+ burnT(e){const p=P(),r=e.dataset.r;p.burns=p.burns||[];const i=p.burns.findIndex(b=>b.r===r);if(i>=0)p.burns.splice(i,1);else p.burns.push({r,pct:+e.dataset.pc,g:(S.burn||{}).g||'2º superficial'});rerender()},
+ frSet(e){S.fr=S.fr||{};S.fr[e.dataset.k]=e.dataset.v;rerender()},
+ frAdd(){const p=P();(p.frost=p.frost||[]).push({...S.fr});S.fr={};rerender()},
+ frDel(e){P().frost.splice(+e.dataset.i,1);rerender()},
+ dxt(e){S.dxt=e.dataset.v;render()},
+ dxc(e){P().d.dx1c=e.dataset.v;render()},
+ dxPick(e){const p=P(),t=S.dxt||'dx1';p.d[t]=e.dataset.v;if(t==='dx1'&&PRENOTIF_CIE[e.dataset.v]&&!p.prenotif)toast('⚠ Patología tiempo-dependiente: envía la prenotificación',3500);if(t==='dx1')S.dxt='dx2';render()},
+ dxDel(){delete P().d.dx2;render()},
+ apgar(e){const p=P();p.d['ap'+e.dataset.i]=+e.dataset.v;if([0,1,2,3,4].every(i=>p.d['ap'+i]!==undefined))p.d.apgarTot=[0,1,2,3,4].reduce((s,i)=>s+p.d['ap'+i],0);rerender()},
+ setK(e){const p=P();p.d[e.dataset.k]=p.d[e.dataset.k]===e.dataset.v?undefined:e.dataset.v;render()},
+ regF(e){S.regF=S.regF||{vit:1,int:1,neu:1};S.regF[e.dataset.k]=!S.regF[e.dataset.k];render()},
+ regT(e){S.regT=e.dataset.v==='1';render()},
+ copyReg(){const p=P(),v=p.vitals.at(-1);if(!v)return toast('No hay constantes en el registro');Object.assign(p.d,{eTas:v.tas,eTad:v.tad,eFc:v.fc,eSpo2:v.spo2,eGcs:gcs(p,'rd')||gcs(p)||''});p.copied=true;toast('Últimos datos copiados en la entrega. Revísalos.');S.open='ent';render()},
+ chk(e){const k=e.dataset.k;S.shift.check[k]={...(S.shift.check[k]||{}),s:e.dataset.v};drawM()},
+ guide(){S.guide=!S.guide;drawM();render()},
+ reset(){openM({type:'confirmReset'})},resetYes(){store.del();S=fresh();M=null;$('#mod').classList.remove('show');render()},
+ sp(e){const p=P(),k=e.dataset.k;p.sp[k]=!p.sp[k];if(p.sp[k])log(p,'Situación especial: '+k);drawM();render()},
+ spSet(e){const p=P(),[o,k]=e.dataset.k.split('.');p.sp[o]=p.sp[o]||{};p.sp[o][k]=p.sp[o][k]===e.dataset.v?undefined:e.dataset.v;drawM();save()},
+ rech(e){const p=P();p.sp.rechazo=p.sp.rechazo||{tipo:'traslado',id:'ES'};p.sp.rechazo[e.dataset.k]=e.dataset.v;drawM();save()},
+ proto(e){const p=P();if(p.proto===e.dataset.v)return;log(p,`Protocolo: ${p.proto} → ${e.dataset.v}`);p.proto=e.dataset.v;toast('Protocolo '+e.dataset.v+'. Se conservan los datos registrados.');drawM();render()},
+ startA(e){M.a=M.a||{};const o=['c','r','ab','fr','pf','ob'],k=e.dataset.k;M.a[k]=e.dataset.v;o.slice(o.indexOf(k)+1).forEach(x=>delete M.a[x]);drawM()},
+ score(e){const p=P();if(e.dataset.k==='start'){(p.logs.triage=p.logs.triage||[]).push({h:hm(),ts:Date.now(),txt:`Grupo de TRIAGE (Start) ${e.dataset.v} · Puntuación evaluada por ${S.shift.crew.find(c=>c.auth)?.name||''}`});p.o.triage=[]}p.d[e.dataset.k]=e.dataset.v;log(p,'Escala '+e.dataset.k.toUpperCase()+': '+e.dataset.v);toast('Guardado en el registro');drawM();save()},
+ pn(e){M.f[e.dataset.k]=e.dataset.v;drawM()},
+ sendPN(){const p=P(),f=M.f;p.prenotif={h:hm(),eta:f.eta,hosp:f.hosp,prio:f.prio};log(p,'Prenotificación a '+f.hosp);if(!p.d.destino)p.d.destino=f.hosp;S.online?toast('📤 Prenotificación enviada a la Sala y a '+esc(f.hosp)+' (simulado)'):(S.queue++,toast('Sin cobertura: queda en cola. Avisa por radio a la Sala.',5000));closeM()},
+ pf(e){M.f[e.dataset.k]=e.dataset.v;drawM()},pfx(e){M.f.exp[e.dataset.k]=!M.f.exp[e.dataset.k];drawM()},
+ sendRep(){const p=P();log(p,'Informe '+(p.closed?'definitivo':'preliminar')+' enviado');S.online?toast('📤 Informe enviado (simulado)'):(S.queue++,toast('Sin cobertura: envío en cola'));closeM()},
+ report(){M=null;$('#mod').classList.remove('show');S.screen='report';render()},
+ backPCR(){S.screen='pcr';render()},
+ copyXML(){navigator.clipboard.writeText(toXML(P())).then(()=>toast('XML copiado')).catch(()=>toast('No se pudo copiar'))},
+ addAnx(){const t=$('#anx').value.trim();if(!t)return;const p=P();p.annex.push({h:hm(),t});log(p,'Anexo');drawM();save()},
+ just(e){const p=P(),k=e.dataset.k;p.just[k]===e.dataset.v?delete p.just[k]:p.just[k]=e.dataset.v;drawM();save()},
+ clrSig(e){delete P().sig[e.dataset.k];drawM();render()},
+ delPh(e){P().photos.splice(+e.dataset.i,1);drawM();save()},
+ doClose(){const p=P(),miss=sections(p).filter(s=>!done(p,s)&&!p.just[s.t+' · '+s.s]);if(miss.length)return toast('Completa o justifica: '+miss.map(s=>s.s||s.t).join(', '),4500);if(!p.sig.cierre)return toast('Falta la firma');const c=S.shift.crew.filter(x=>x.auth)[+$('#clW').value];if(!c||$('#clP').value!==c.pass)return toast('Contraseña incorrecta');
+  p.closed=true;p.closedAt=hm();p.closedBy=c.role+' · '+c.name;log(p,'Registro cerrado');S.online?toast('🔒 Registro cerrado: PDF generado y XML enviado al PGE',4000):(S.queue+=2,toast('🔒 Cerrado. PDF y XML se enviarán al recuperar cobertura',4500));M=null;$('#mod').classList.remove('show');S.screen='report';render();setTimeout(()=>openM({type:'feedback'}),600)}
+};
+function rerender(){const y=scrollY;render();scrollTo(0,y);drawM()}
+
+/* ============ v4 · SVA EXTENDIDO según el paso a paso real del SUC ============ */
+const RAZON=['caída < 3 m','caída > 3 m','Trauma por inhalación','electrocución','Accidente de buceo','pasajero coche/camión','Tranvía/guagua','motociclista','ciclista','peatón golpeado','arma','pelea','golpe (por objeto)','Ahorcamiento','Otro'];
+OPT.ract=[{h:'Actitud/Comportamiento',o:['Agresivo','Deprimido','Ideas Delirantes','Confuso','Ansioso','Eufórico','Alucinaciones','Atemorizado','Ideas Autolíticas','Agitado','Irritable','Sin evaluación','Otros']}];
+OPT.fact=[];OPT.ib=[{h:'Drenaje Torácico',o:['izq','dch'],adv:1,extra:'dren',blue:1},{h:'Otro',o:['Asistido','Controlado','CPAP','BIPAP','VC','PC','PS','Otros']},{h:'Oxigenoterapia',log:'o2'},{h:'Ventilación',log:'vent',adv:1}];
+OPT.ic=[{h:'Reanimación',o:['RCP-B','RCP-A'],blue:1},{h:'Hemostática',log:'hemost'},{h:'Intervenciones Eléctricas',custom:'elec'},{h:'IV Acceso',log:'iv'}];
+Object.assign(QUICK,{ract:{q:['Normal'],blue:1},fact:{q:['disponible','no disp'],x:1,blue:1},ia:{q:['Ninguno'],btn:['Intubación','intub']},ib:{q:['Ninguna'],btn:['Oxigenoterapia','o2']},ic:{q:['Ninguna'],btn:['🧍💧','iv']},im:{q:['Ninguna'],btn:['💊✚','med']}});
+const PULSE=['Pulso detectable','Periférico','Pulso fuerte','Izquierda','Pulso no detectable','Central','Pulso débil','Derecha'],PULSE_SUB=['Periférico','Pulso fuerte','Izquierda','Central','Pulso débil','Derecha'];
+const ARREST=['Fibrilación Ventricular','Actividad eléctrica Caótica','Asistolia'];
+const QDEF={ra:['Normal'],rb:['Normal'],rc:['Estable'],recg:['Ritmo sinusal'],ract:['Normal']};
+const POS=OPT.iinm[1].o;
+CIE.push(['A81','Politraumatismo/lesion interna. toracica. pelvica'],['800','Fractura de bóveda craneal'],['801','Fractura de base de cráneo'],['852','Hemorragia subaracnoidea, subdural y extradural tras lesión'],['805','Fractura de columna vertebral sin lesión medular'],['806','Fractura de columna vertebral con lesión medular'],['807','Fractura de costilla(s), esternón, laringe y tráquea'],['808','Fractura de pelvis'],['820','Fractura de cuello de fémur'],['821','Fractura de otras partes del fémur'],['823','Fractura de tibia y peroné'],['860','Neumotórax y hemotórax traumáticos'],['861','Lesión de corazón y pulmón'],['863','Lesión del tracto gastrointestinal'],['864','Lesión de hígado'],['865','Lesión de bazo'],['902','Lesión de vasos sanguíneos de abdomen y pelvis'],['958.4','Shock traumático'],['948','Quemaduras clasificadas según extensión'],['991','Efectos de la temperatura reducida (congelación)']);
+const DXTIPOS=['Diagnóstico principal (Asegurado)','Diagnóstico de sospecha','Valoración SVB','Diagnóstico secundario'];
+const MEDS2=['ACIDO TRANEXÁMICO 500 mg/5ml ampollas (Intravenoso)','FENTANILO 0,15 mg/3ml ampollas (Intravenoso)','MORFINA 10 mg/1ml ampollas (Intravenoso)','KETAMINA 50 mg/ml vial (Intravenoso)','MIDAZOLAM 15 mg/3ml ampollas (Intravenoso)','PROPOFOL 1% 20 ml (Intravenoso)','ETOMIDATO 20 mg/10ml ampollas (Intravenoso)','ROCURONIO 50 mg/5ml vial (Intravenoso)','SUCCINILCOLINA 100 mg/2ml ampollas (Intravenoso)','ADRENALINA 1 mg/1ml ampollas (Intravenoso)','NORADRENALINA 10 mg/10ml ampollas (Intravenoso)','AMIODARONA 150 mg/3ml ampollas (Intravenoso)','ATROPINA 1 mg/1ml ampollas (Intravenoso)','SUERO FISIOLÓGICO 0,9% 500 ml (Intravenoso)','RINGER LACTATO 500 ml (Intravenoso)','SUERO SALINO HIPERTÓNICO 7,5% (Intravenoso)','MANITOL 20% 250 ml (Intravenoso)','PARACETAMOL 1 g/100 ml (Intravenoso)','METAMIZOL 2 g/5 ml ampollas (Intravenoso)','DEXKETOPROFENO 50 mg/2 ml ampollas (Intravenoso)','ONDANSETRÓN 4 mg/2 ml ampollas (Intravenoso)','METOCLOPRAMIDA 10 mg/2 ml ampollas (Intravenoso)','NALOXONA 0,4 mg/1 ml ampollas (Intravenoso)','SALBUTAMOL 5 mg/ml solución (Nebulizada)','OXÍGENO medicinal (Inhalada)'];
+Object.assign(LOGS,{
+ intub:{t:'Manejo avanzado de la Vía Aérea/ Intubación',cols:[{h:'Tipo',k:'tipo',o:['Intubación oral','Intubación nasal','Tubo laríngeo','Coniotomía','Mascarilla laríngea','Tubo Wendl','Endotraqueal','otro']},{h:'Tubo',nums:[['Tamaño ch/cm','tam'],['Distancia','dist'],['Número de intentos','int']]},{h:'Resultado',k:'res',o:['exitosa','ya existentes','dificultoso','complicación','fracasado','imposible']}],por:1},
+ o2:{t:'Oxigenoterapia',cols:[{h:'Tipo',k:'tipo',o:['Gafas nasales','Mascarilla Venturi','Mascarilla Reservorio','Mascarilla Nebulización','otro']},{h:'Volumen',nums:[['O2 l/min','vol']]}]},
+ iv:{t:'IV Acceso',cols:[{h:'Tipo',k:'tipo',o:['Venosa periférica','Venosa central','Intraósea Manual/Disparo','Intraóseo EZ-IO','arterial']},{h:'Lugar',k:'lugar',o:['Antebrazo','Flexura del codo','Dorso de la mano','Yugular externa','Tibia proximal','Húmero proximal','Otro']},{h:'Lado',k:'lado',o:['Izquierdo','Derecho']},{h:'Tamaño',k:'tam',o:['14G','16G','18G','20G','22G','24G','IO 15 mm','IO 25 mm','IO 45 mm']}],por:1,txt:[['Comentarios','com'],['Infusión','inf']]},
+ hemost:{t:'Hemostática',cols:[{h:'Tipo',k:'tipo',o:['venda compresora','Torniquete','venda','otro','Hemostática','cinturón abdominal']},{h:'Lugar',k:'lugar',o:['Extremidades superiores Izquierda','Extremidades superiores Derecha','Extremidades inferiores Derecha','Extremidades inferiores Izquierda','cabeza','Tórax','Cuello','Abdomen','Otros']}],por:1,txt:[['Comentario','com']]},
+ vent:{t:'Ventilación',cols:[{h:'Modo',k:'modo',o:['VC','PC','PS','CPAP','BIPAP']},{h:'Parámetros',nums:[['FR','fr'],['Vt ml','vt'],['PEEP','peep'],['FiO₂ %','fio2']]}]},
+ triage:{t:'TRIAGE (Start)',cols:[{h:'Grupo de TRIAGE (Start)',k:'g',o:['ROJO','AMARILLO','VERDE','NEGRO']},{h:'Puntuación',nums:[['Puntuación','pt']]}],por:1}
+});
+const RECON={iv:'Lugar, Lado y Tamaño estaban vacíos en las capturas: sus opciones son de ejemplo.',vent:'La ventana de Ventilación no aparecía en las capturas: campos reconstruidos.'};
+
+function sections(p){
+ const pr=p.proto,EXT=pr==='SVA EXTENDIDO',L=[];
+ const add=(id,t,s,ic,tile,x={})=>L.push({id,t,s,ic,tile,...x});
+ add('equipo','Equipo de Guardia','Datos','🚑','n');add('incidente','INCIDENTE','Datos','📞','n');add('paciente','Paciente','Datos','👤','n');
+ if(/TRANSP\.SECUNDARIO/.test(pr))add('vsec','TRASLADO SECUNDARIO','Centro de origen y motivo','⇄','n',{opt:1});
+ add('anam','VALORACIÓN INICIAL','Anamnesis','🔍','n');
+ add('va','VALORACIÓN INICIAL','A Vía Aérea','A','n',{opt:1});add('vb','VALORACIÓN INICIAL','B Respiración','B','n',{opt:1});
+ add('vc','VALORACIÓN INICIAL','C Circulación','C','n',{opt:1});add('vecg','VALORACIÓN INICIAL','C ECG','♥','n',{opt:1});
+ add('vd','VALORACIÓN INICIAL','D. Neurológica','D','n');
+ if(EXT){add('vact','VALORACIÓN INICIAL','D. Actitud/Comportamiento','🧠','n',{opt:1});add('rn','VALORACIÓN INICIAL','RN VIVO','👶','n',{noReq:1});add('iexist','VALORACIÓN INICIAL','Intervenciones existentes','⊕','n',{opt:1,noReq:1})}
+ if(pr==='SVA PSIQUIÁTRICO')add('vpsi','VALORACIÓN INICIAL','Psiquiátrica','Ψ','n',{opt:1});
+ if(pr==='SVA NEONATO')add('apgar','VALORACIÓN INICIAL','APGAR / Neonato','👶','n');
+ add('vit','VALORACIÓN INICIAL','Constantes Vitales','⏱','n');
+ if(EXT){add('mec','VALORACIÓN INICIAL','Mecanismo de lesión','🚗','n');add('infec','VALORACIÓN INICIAL','Infecciones/Aislamientos','✱','n',{opt:1,noReq:1})}
+ add('diag','VALORACIÓN INICIAL','Diagnóstico/Conclusión','🩺','n');
+ if(EXT)add('triage','TRIAGE (Start)','','⏲','n',{noReq:1});
+ if(pr==='SVA EXITUS')add('exitus','EXITUS','Certificación','✝','n');
+ add('ia','INTERVENCIONES','A Vía Aérea','A','rd',{opt:1});add('ib','INTERVENCIONES','B Respiración','B','rd',{opt:1});add('ic','INTERVENCIONES','C Circulación','C','rd',{opt:1});
+ if(EXT){add('iinm','INTERVENCIONES','Inmovilización / Movilización','⊕','rd',{opt:1});add('igin','INTERVENCIONES','Gineco-Obstétricos','⊕','rd',{opt:1,noReq:1})}
+ if(!isSVB(pr))add('im','INTERVENCIONES','Medicación','💊','rd',{opt:1});
+ add('reg','Registros','','📈','rd',EXT?{}:{noReq:1});
+ if(pr!=='SVA EXITUS'){
+  add('ra','REEVALUACIÓN','A Vía Aérea','A','gr',{opt:1,copy:'va',noReq:1});add('rb','REEVALUACIÓN','B Respiración','B','gr',{opt:1,copy:'vb',noReq:1});
+  add('rc','REEVALUACIÓN','C Circulación','C','gr',{opt:1,copy:'vc',noReq:1});add('recg','REEVALUACIÓN','C ECG','♥','gr',{opt:1,copy:'vecg',noReq:1});
+  if(EXT){add('rd','REEVALUACIÓN','D. Neurológica','D','gr',{copy:'vd',noReq:1});add('ract','REEVALUACIÓN','D. Actitud/Comportamiento','🧠','gr',{opt:1,copy:'vact',noReq:1});add('rvit','REEVALUACIÓN','Constantes Vitales','⏱','gr',{noReq:1})}
+  if(EXT){add('dest','DESTINO PACIENTE','','🏥','gr');add('transf','TRANSFERENCIA PACIENTE','Transferencia en Destino','🤝','gr');add('fact','Facturación-Otros','','💶','gr',{noReq:1});add('factr','Facturación-Tráfico','','📄','gr',{noReq:1})}
+  else{add('tras','TRASLADO','Destino','🏥','gr');add('ent','ENTREGA','Estado del paciente','✋','gr')}
+ }
+ return L;
+}
+function done(p,s){const d=p.d;
+ if(s.noReq)return true;
+ switch(s.id){
+  case 'reg':return p.vitals.length>0||Object.values(p.logs).some(e=>e.length);
+  case 'mec':return (p.o.mec||[]).length>0||filled(d.mecTxt);
+  case 'dest':return filled(d.destModo)&&(filled(d.destInst)||filled(d.destNoTras)||!!p.sp.rechazo||!!p.sp.exitus);
+  case 'transf':return filled(d.evol)&&filled(d.entFunc)&&filled(d.hEnt);
+ }
+ return done0(p,s);
+}
+const EVOL={'↗':'Mejoría','=':'Sin cambios','↘':'Empeoramiento'};
+function summary(p,s){const d=p.d;
+ switch(s.id){
+  case 'mec':return [...(p.o.mec||[]),d.mecEv?'Evento '+d.mecEv:'',d.mecPel?'Peligros: '+d.mecPel:'',d.mecEnc?'encontrados: '+d.mecEnc:''].filter(Boolean).join(', ');
+  case 'dest':return [d.destModo,d.destInst,d.destNoTras?'NO se traslada: '+d.destNoTras:'',p.sp.rechazo?'Rechazo de transporte':'',p.sp.exitus?'Exitus':''].filter(Boolean).join(' · ');
+  case 'transf':return [d.evol?EVOL[d.evol]:'',d.entFunc?'Entregado a: '+[d.entNom,d.entFunc].filter(Boolean).join(', '):'',d.hEnt?'hora '+d.hEnt:'',d.viol==='Sí'?'Violencia contra el personal':''].filter(Boolean).join(' · ');
+  case 'fact':return (p.o.fact||[]).join('');
+  case 'factr':return [d.ftCia,d.ftMat].filter(Boolean).join(' · ');
+  case 'rvit':return '';
+ }
+ return summary0(p,s);
+}
+function greyed(p,sec,v,o){
+ if(sec==='x'||!p.o)return false;
+ const k=optKey(sec)==='va'||optKey(sec)==='vb'||optKey(sec)==='vc'||optKey(sec)==='vecg'?optKey(sec):sec;
+ const base=p.o[sec]||[],Q=(QUICK[sec]&&QUICK[sec].q)||QDEF[sec]||[];
+ if(o.k==='hemo')return !base.includes('SCACEST');
+ const details=base.filter(x=>!Q.includes(x)),qsel=base.filter(x=>Q.includes(x));
+ if(Q.includes(v)){if(qsel.length&&!qsel.includes(v))return true;if(details.length&&!['PCR','No Respira','Estable'].includes(v))return true;return false}
+ if(qsel.some(x=>NEG.includes(x)&&x!=='Estable'&&x!=='Ritmo sinusal'&&x!=='No relevante'))return true;
+ if(k==='vc'){if(base.includes('PCR')&&PULSE.includes(v))return true;if(PULSE_SUB.includes(v)&&!base.includes('Pulso detectable'))return true;if(v==='Pulso detectable'&&base.includes('Pulso no detectable'))return true;if(v==='Pulso no detectable'&&base.includes('Pulso detectable'))return true}
+ if(k==='vecg'){const ne=base.includes('no evaluable')||base.includes('No evaluable');if(ne&&!/no evaluable/i.test(v))return true;if(/no evaluable/i.test(v)&&details.filter(x=>!/no evaluable/i.test(x)).length)return true;
+  if(base.some(x=>ARREST.includes(x))&&!['Fibrilación auricular','Flutter auricular','Otros'].includes(v))return true;
+  if(base.includes('SCACEST')&&(v==='SCASEST'||ARREST.includes(v)))return true;if(base.includes('SCASEST')&&v==='SCACEST')return true}
+ return false;
+}
+function ck(p,sec,v,o={}){const key=o.k?sec+'.'+o.k:sec;const on=o.on!==undefined?o.on:has(p,key,v);
+ const grey=!on&&o.on===undefined&&greyed(p,sec,v,o);const st=on?'on':grey?'grey':(o.blue?'blue':'');
+ return `<button class="ck ${o.cls||''} ${st}" data-opt="1" data-sec="${sec}" data-v="${esc(v)}" ${o.k?`data-k="${o.k}"`:''} ${o.single?'data-single="1"':''} ${o.q?'data-q="1"':''} ${(o.dis??p.closed)||grey?'disabled':''}><span>${esc(lab(v))}</span></button>`}
+function optPanel(p,s){const k=optKey(s.id);let h='';const dn=done(p,s)&&((p.o[s.id]||[]).length>0||s.noReq);
+ if(RECON[s.id])h+=`<div class="tip">${RECON[s.id]}</div>`;
+ (OPT[k]||[]).forEach(g=>{if(g.show&&!g.show(p))return;if(g.adv&&isSVB(p.proto))return;
+  if(g.h)h+=`<div class="hd">${g.h}</div>`;h+='<div class="box">';
+  if(g.o)h+=`<div class="grid">${g.o.map(v=>ck(p,s.id,v,{k:g.k,single:g.single||g.k==='hemo',blue:dn||g.blue||s.noReq})).join('')}</div>`;
+  if(g.extra==='dren')h+=`<div class="frm" style="margin-top:6px"><label>Lugar</label><input data-k="drenLugar" value="${esc(p.d.drenLugar)}" ${dis(p)}><label>tamaño (ch)</label><input type="number" data-k="drenCh" value="${esc(p.d.drenCh)}" ${dis(p)}></div>`;
+  if(g.log)h+=logHTML(p,g.log);if(g.custom==='elec')h+=elecHTML(p);h+='</div>'});return h}
+function logHTML(p,id){const L=LOGS[id],E=p.logs[id]||[];
+ return `<div class="logw"><div class="lt"><table class="tbl"><tr><th style="width:80px">${id==='med'?'Hora':'Tiempo'}</th><th>Resumen</th>${p.closed?'':'<th></th>'}</tr>${E.map((e,i)=>`<tr><td>${e.h}</td><td style="white-space:normal">${esc(e.txt)}</td>${p.closed?'':`<td><button class="bb" data-act="delLog" data-log="${id}" data-i="${i}">✕</button></td>`}</tr>`).join('')}</table></div><button class="plus ${id==='intub'||id==='iv'||id==='med'?'':'dk'}" data-act="openLog" data-log="${id}" ${dis(p)} style="${id==='intub'||id==='iv'?'background:#ee8a3c;color:#fff':''}">+</button></div>`}
+function quickHTML(p,s){const d=p.d,D=dis(p);
+ switch(s.id){
+  case 'mec':return `<button class="bb" data-act="mod" data-m="razon" style="font-size:22px;min-width:110px" ${D}>🚑</button><span style="font-size:13px">Evento</span><button class="clk" data-act="now" data-k="mecEv" ${D}>🕒</button><input type="time" data-k="mecEv" value="${esc(d.mecEv)}" style="width:100px" ${D}>`;
+  case 'dest':return ['Sentado','Camilla'].map(m=>`<button class="arrow ${d.destModo===m?'on':''}" style="background:${d.destModo===m?'':'linear-gradient(#f7a868,#ee8a3c)'}" data-act="setK" data-k="destModo" data-v="${m}" title="${m}" ${D}>${m==='Sentado'?'🪑':'🛏'}</button>`).join('');
+  case 'transf':return Object.keys(EVOL).map(a=>`<button class="arrow ${d.evol===a?'on':''}" data-act="setK" data-k="evol" data-v="${a}" title="${EVOL[a]}" ${D}>${a}</button>`).join('');
+  case 'fact':return `<span style="font-size:12px">Documento<br>Seguro</span>`+['disponible','no disp'].map(v=>ck(p,'fact',v,{cls:'sm blue',q:1,single:1})).join('');
+  case 'rvit':return quickHTML0(p,{...s,id:'vit'});
+  case 'ic':{const sel=ck(p,'ic','Ninguna',{cls:'sm',q:1});return sel+`<button class="bb" data-act="openLog" data-log="iv" style="background:linear-gradient(#f7a868,#ee8a3c);font-size:20px;min-width:110px" ${D}>🧍💉</button>`}
+  case 'im':return ck(p,'im','Ninguna',{cls:'sm',q:1})+`<button class="bb" data-act="openLog" data-log="med" style="background:linear-gradient(#f7a868,#ee8a3c);font-size:20px;min-width:110px" ${D}>💊<b style="color:#c00">✚</b></button>`;
+ }
+ return quickHTML0(p,s);
+}
+function dxText(p){const L=(p.dxs||[]);if(!L.length)return dxText0(p);return L.map(x=>`${x.tipo}: CIE9: ${x.c} (${x.t})`).join(' | ')}
+function cieHTML(p){const q=(S.dxq||'').toLowerCase(),res=CIE.filter(c=>!q||c[0].toLowerCase().includes(q)||c[1].toLowerCase().includes(q)),sel=S.cieSel,D=p.closed;
+ return `<div class="hd">CIE9</div><div class="box"><div style="display:flex;gap:6px;align-items:center">🔍<input id="dxq" placeholder="Buscar por texto o código (p. ej. Politr, A81, 808)" value="${esc(S.dxq||'')}"><input style="width:90px" value="${esc(sel||'')}" disabled></div>
+ <div class="cols" style="margin-top:6px"><div style="max-height:220px;overflow:auto;background:#fff;border:1px solid #999"><div class="small" style="padding:3px 6px;background:#eef"><b>CIE9 · texto</b></div>${res.map(c=>`<div style="padding:6px 8px;border-bottom:1px solid #eee;cursor:pointer;${sel===c[0]?'background:#2a7fd4;color:#fff':''}" data-act="cieSel" data-v="${c[0]}"><b class="mono">${c[0]}</b> ${esc(c[1])}</div>`).join('')}</div>
+ <div style="background:#fff;border:1px solid #999;min-height:120px"><div class="small" style="padding:3px 6px;background:#eef"><b>Código · texto (añadidos)</b></div>${(p.dxs||[]).map((x,i)=>`<div style="padding:6px 8px;border-bottom:1px solid #eee"><b class="mono">${x.c}</b> ${esc(x.t)}<br><span class="small">${esc(x.tipo)}</span> ${D?'':`<button class="bb" style="min-height:22px;padding:0 6px" data-act="dxDelI" data-i="${i}">✕</button>`}</div>`).join('')}</div></div>
+ <div class="hd">Tipo</div><div class="box grid" style="grid-template-columns:repeat(2,1fr)">${DXTIPOS.map(t=>`<button class="ck sm ${S.cieTipo===t?'on':(sel?'blue':'')}" data-act="cieTipo" data-v="${t}" ${D?'disabled':''}><span>${t}</span></button>`).join('')}</div>
+ ${D?'':`<button class="bb dk" style="margin-top:6px" data-act="cieAdd" ${sel&&S.cieTipo?'':'disabled'}>✚ Añadir diagnóstico</button>`}<p class="small">La lista CIE9 del simulador es de ejemplo (incluye el código A81 que usa el SUC para politraumatismo).</p></div>`}
+
+/* ---- paneles nuevos ---- */
+Object.assign(PANEL,{
+ mec(p){const d=p.d,D=dis(p);return `<div class="hd">Razón</div><div class="box"><div class="cols"><div class="frm"><label>Peligros:</label><input data-k="mecPel" value="${esc(d.mecPel)}" ${D}><label>encontrados:</label><input data-k="mecEnc" value="${esc(d.mecEnc)}" ${D}></div><textarea data-k="mecTxt" rows="3" placeholder="Descripción del mecanismo" ${D}>${esc(d.mecTxt)}</textarea></div>
+  <div style="margin-top:6px">${(p.o.mec||[]).map(m=>`<span class="les">${esc(m)}</span>`).join('')||'<span class="small">Pulsa el botón 🚑 de la fila para elegir la razón.</span>'}</div></div>
+  ${(p.o.mec||[]).length&&!d.mecEv?'<div class="warn">Registra también la hora del <b>Evento</b> (reloj de la fila).</div>':''}`},
+ rvit(p){return PANEL.vit(p)},
+ dest(p){const d=p.d,D=dis(p);return `<div class="cols"><div><div class="hd">Centro Sanitario de Destino</div><div class="box"><div class="grid" style="grid-template-columns:1fr">${HOSP.map(hh=>`<button class="ck sm ${d.destInst===hh?'on':'blue'}" data-act="setK" data-k="destInst" data-v="${esc(hh)}" ${D}><span>${hh}</span></button>`).join('')}</div>
+  <button class="ck sm ${d.destManual?'on':''}" style="margin-top:6px" data-act="flag" data-k="destManual" ${D}><span>introducir dirección manual</span></button>
+  ${d.destManual?`<div class="frm" style="margin-top:6px"><label>CP/Población</label><input data-k="destCP" value="${esc(d.destCP)}" ${D}><label>Nº Calle</label><input data-k="destCalle" value="${esc(d.destCalle)}" ${D}><label>Instalación</label><input data-k="destInst" value="${esc(d.destInst)}" ${D}><label>Parte objeto/Sito</label><input data-k="destSito" value="${esc(d.destSito)}" ${D}><label>Núm. de teléfono</label><input data-k="destTel" value="${esc(d.destTel)}" ${D}></div>`:''}</div></div>
+  <div><div class="hd">Otro</div><div class="box frm"><label>Descripción</label><input data-k="destDesc" value="${esc(d.destDesc)}" ${D}><label>Elección Instalación</label><input data-k="destElec" value="${esc(d.destElec)}" ${D}><label>Incidencias</label><input data-k="destInc" value="${esc(d.destInc)}" ${D}><label>Paciente NO se traslada</label><input data-k="destNoTras" value="${esc(d.destNoTras)}" ${D}></div>
+  <div style="display:flex;gap:6px;margin-top:8px"><button class="bb" style="flex:1" data-act="mod" data-m="exitusM" ${D}>EXITUS${p.sp.exitus?' ✓':''}</button><button class="bb" style="flex:1" data-act="mod" data-m="rechazo" ${D}>Rechazar Transporte${p.sp.rechazo?' ✓':''}</button></div></div></div>`},
+ transf(p){const d=p.d,D=dis(p);return `<div class="hd">Comentario (ejemplo: alergias, médico familiar, teléfono, parientes, objetos de valor)</div><div class="box" style="display:flex;gap:6px"><textarea data-k="entCom" rows="3" style="flex:1" ${D}>${esc(d.entCom)}</textarea>${D?'':`<button class="bb" data-act="mod" data-m="macros" data-id="entCom" style="font-weight:700">a<sub>c</sub>b</button>`}</div>
+  <div class="hd">Entrega de Paciente A:</div><div class="box"><div class="cols"><div class="frm"><label>Nombre</label><input data-k="entNom" value="${esc(d.entNom)}" ${D}><label class="req">Función</label><select data-k="entFunc" style="${d.entFunc?'':'background:#f7a868'}" ${D}>${['','Médico/a de urgencias','Enfermero/a de urgencias','Médico/a de guardia','Otro recurso del SUC','Familiar / acompañante','Fuerzas de seguridad'].map(o=>`<option ${d.entFunc===o?'selected':''}>${o}</option>`).join('')}</select><label>hora de entrega</label><div style="display:flex;gap:4px"><button class="clk" data-act="now" data-k="hEnt" ${D}>🕒</button><input type="time" data-k="hEnt" value="${esc(d.hEnt)}" ${D}></div></div><div><button class="bb" data-act="mod" data-m="print">🖨 Impreso Entrega</button></div></div></div>
+  <div class="hd">Pertenencias Paciente Entregadas</div><div class="box"><textarea data-k="objetos" rows="2" placeholder="modificar lista" ${D}>${esc(d.objetos)}</textarea></div>
+  <div class="hd">Violencia contra el personal del SUC</div><div class="box" style="display:flex;gap:6px;align-items:center">${['Sí','No'].map(v=>`<button class="ck sm ${d.viol===v?'on':'blue'}" data-act="setK" data-k="viol" data-v="${v}" ${D}><span>${v}</span></button>`).join('')}<button class="bb" data-act="mod" data-m="violencia" ${d.viol==='Sí'?'':'disabled'}>Detalles</button></div>`},
+ factr(p){const d=p.d,D=dis(p);return `<div class="tip">Ventana no incluida en las capturas: campos de ejemplo.</div><div class="frm"><label>Compañía aseguradora</label><input data-k="ftCia" value="${esc(d.ftCia)}" ${D}><label>Matrícula</label><input data-k="ftMat" value="${esc(d.ftMat)}" ${D}><label>Nº póliza</label><input data-k="ftPol" value="${esc(d.ftPol)}" ${D}><label>Implicado como</label><select data-k="ftImp" ${D}>${['','Conductor','Ocupante','Peatón'].map(o=>`<option ${d.ftImp===o?'selected':''}>${o}</option>`).join('')}</select></div>`},
+ fact(){return '<p class="small">Indica en la fila si el documento del seguro está disponible.</p>'}
+});
+PANEL.triage=function(p){return `<div class="hd">TRIAGE (Start)</div><div class="box">${logHTML(p,'triage')}<div style="margin-top:6px"><button class="bb dk" data-act="mod" data-m="start" ${dis(p)}>Asistente START</button></div></div>`};
+
+/* ---- ventanas (modales) ---- */
+function crewPick(sel,act){const c=S.shift.crew;return `<div class="crew" style="display:flex;flex-direction:column;gap:3px"><div class="small">Miembro de tripulación</div>${c.map((x,i)=>`<button class="${sel===x.role?'on':''}" data-act="${act}" data-v="${esc(x.role)}">${esc(x.role)} · ${esc(x.name)}</button>`).join('')}<button class="ck sm ${sel==='por otro servicio'?'on':'blue'}" data-act="${act}" data-v="por otro servicio"><span>por otro servicio</span></button></div>`}
+function tPick(k,v){return `<div style="display:flex;gap:4px"><button class="clk" data-act="mNow" data-k="${k}">🕒</button><input type="time" data-mf="${k}" value="${esc(v||'')}"></div>`}
+Object.assign(MOD,{
+ razon(p){const sel=p.o.mec||[];return ['Razón',`<div class="grid" style="grid-template-columns:repeat(5,1fr)">${RAZON.map(r=>`<button class="ck ${sel.includes(r)?'on':''}" data-act="razon" data-v="${esc(r)}"><span>${r}</span></button>`).join('')}</div><p class="small">Puedes marcar varias. Pulsa ✔ para volver.</p>`]},
+ logf(p){const L=LOGS[M.log],f=M.f;let h=RECON[M.log]?`<div class="tip">${RECON[M.log]}</div>`:'';
+  h+=`<div class="logm">${L.cols.map(c=>`<div><div class="lh">${c.h}</div><div class="lb">${c.o?c.o.map(o=>`<button class="ck sm ${f[c.k]===o?'on':(f[c.k]?'blue':'')}" data-act="lfSet" data-k="${c.k}" data-v="${esc(o)}"><span>${o}</span></button>`).join(''):c.nums.map(([l,k])=>`<label style="font-size:13px">${l}<input type="number" data-mf="${k}" value="${esc(f[k]||'')}"></label>`).join('')}</div></div>`).join('')}
+  ${L.por?`<div><div class="lh">Realizado por</div><div class="lb">${crewPick(f.por,'lfPor')}</div></div>`:''}
+  <div><div class="lh">Tiempo</div><div class="lb">${tPick('h',f.h)}${(L.txt||[]).map(([l,k])=>`<div class="lh" style="margin-top:6px">${l}</div><textarea rows="2" data-mf="${k}">${esc(f[k]||'')}</textarea>`).join('')}</div></div></div>
+  <div style="text-align:center;margin-top:10px"><button class="bb dk" style="padding:8px 26px" data-act="logSave">✚ Añadir</button></div>`;return [L.t,h]},
+ medf(p){if(M.step!=='admin'){const q=(M.q||'').toLowerCase();const L=MEDS2.filter(m=>!q||m.toLowerCase().includes(q));
+   return ['Añadir nueva medicación',`<input data-ms="1" placeholder="Buscar medicamento" value="${esc(M.q||'')}"><div style="background:#fff;border:1px solid #999;max-height:340px;overflow:auto;margin-top:6px"><div class="small" style="padding:3px 6px;background:#eef"><b>Medicamento</b></div>${L.map(m=>`<div style="padding:7px 8px;border-bottom:1px solid #eee;cursor:pointer" data-act="medPick" data-v="${esc(m)}">${esc(m)}</div>`).join('')}</div><p class="small">Listado de ejemplo: el vademécum real lo carga el SUC.</p>`]}
+  const f=M.f,prev=(p.logs.med||[]).filter(e=>e.txt.startsWith(M.med));
+  return ['Administración de medicación',`<div class="logm"><div style="flex:2"><div class="lb"><div class="ck on" style="pointer-events:none"><span>${esc(M.med)}</span></div>
+   <div class="frm"><label>Dosis</label><div style="display:flex;gap:4px;align-items:center"><input type="number" data-mf="dosis" value="${esc(f.dosis||'')}" style="width:100px"> mg <span class="small" style="margin-left:10px">Peso paciente (kg)</span><input type="number" data-k="peso" value="${esc(p.d.peso||'')}" style="width:70px"></div>
+   <label>Caudal</label><div style="display:flex;gap:4px;align-items:center"><input type="number" data-mf="caudal" value="${esc(f.caudal||'')}" style="width:100px"> ml ${['/min','/h'].map(u=>`<button class="ck sm ${(f.u||'/min')===u?'on':'blue'}" style="min-width:60px" data-act="medU" data-v="${u}"><span>${u}</span></button>`).join('')}</div></div>
+   <button class="bb dk" data-act="medDose" style="margin-top:6px">✔ Añadir dosis</button>
+   <div class="lh" style="margin-top:8px">Dosis</div>${(M.doses||[]).map((x,i)=>`<div class="les">${x.d} mg${x.c?' · '+x.c+' ml'+x.u:''} <button class="bb" style="min-height:22px;padding:0 6px" data-act="medDoseDel" data-i="${i}">✕</button></div>`).join('')||'<span class="small">Sin dosis añadidas.</span>'}
+   <div class="lh" style="margin-top:8px">entradas previas de esta medicación</div>${prev.map(e=>`<div class="small">${e.h} ${esc(e.txt.replace(M.med,''))}</div>`).join('')||'<span class="small">Ninguna.</span>'}</div></div>
+   <div><div class="lh">aplicado por</div><div class="lb">${crewPick(f.por,'medPor')}</div><div class="lh">Hora</div><div class="lb">${tPick('h',f.h)}</div><div class="lh">Atributos de la medicación</div><div class="lb"><button class="ck sm ${f.cia?'on':'blue'}" data-act="medCia"><span>Compañía de emergencia</span></button></div></div></div>
+   <div style="text-align:center;margin-top:10px"><button class="bb dk" style="padding:8px 26px" data-act="medSave">✔ Guardar administración</button></div>`]},
+ exitusM(p){return ['EXITUS',PANEL.exitus(p)+`<button class="bb dk" style="margin-top:6px" data-act="exitusOk">Confirmar exitus</button>`]},
+ ft(p){const s=sections(p).find(x=>x.id===M.id);const k='ft_'+M.id;return ['Comentario adicional, '+(s?(s.s||s.t):''),`<div class="yellow"><textarea rows="8" data-k="${k}" ${dis(p)} placeholder="${M.id==='iinm'?'p. ej. Cinturón pélvico':''}">${esc(p.d[k])}</textarea></div>`]},
+ macros(){return ['Frases predefinidas',`<div class="grid" style="grid-template-columns:repeat(2,1fr)">${MACROS.map(m=>`<button class="bb" data-act="macro" data-v="${esc(m)}">${esc(m)}</button>`).join('')}</div>`]},
+ guia(p){const L=GUIDE.map((g,i)=>{const ok=g.ok(p);return `<div class="gstep ${ok?'ok':''}"><span class="n">${ok?'✅':String(i+1).padStart(2,'0')}</span><div><b>${g.t}</b>${ok?'':`<div class="small">${g.h}</div>`}</div>${g.go?`<button class="bb" data-act="goSec" data-id="${g.go}">Ir</button>`:''}</div>`}).join('');const n=GUIDE.filter(g=>g.ok(p)).length;
+  return ['Guía paso a paso · Politrauma (SVA EXTENDIDO)',`<p><b>${n}/${GUIDE.length}</b> pasos completados. Orden tomado del paso a paso del SUC en la tablet.</p>${L}`]}
+});
+const GUIDE=[
+ {t:'Protocolo SVA EXTENDIDO',go:'equipo',h:'Equipo de Guardia → Tipo de protocolo, o Extras → Cambiar protocolo.',ok:p=>p.proto==='SVA EXTENDIDO'},
+ {t:'Paciente: apellidos, nombre, edad y sexo',go:'paciente',h:'Si no se conoce, marca paciente desconocido (👤?).',ok:p=>done0(p,{id:'paciente'})},
+ {t:'Anamnesis',go:'anam',h:'Descripción de la anamnesis (botón abc para frases).',ok:p=>filled(p.d.anam)},
+ {t:'A Vía Aérea',go:'va',h:'«Normal» o los hallazgos.',ok:p=>(p.o.va||[]).length>0},
+ {t:'B Respiración',go:'vb',h:'Patrón, ruido respiratorio y manejo.',ok:p=>(p.o.vb||[]).length>0},
+ {t:'C Circulación: pulso, hemorragia y piel',go:'vc',h:'Marca pulso palpable, hemorragia severa (localización) y piel.',ok:p=>{const v=p.o.vc||[];return v.includes('PCR')||v.filter(x=>!NEG.includes(x)).length>=2}},
+ {t:'C ECG',go:'vecg',h:'Ritmo o «Ritmo sinusal».',ok:p=>(p.o.vecg||[]).length>0},
+ {t:'D Neurológica: AVDN y GCS',go:'vd',h:'Estado de consciencia + GCS (botón ?GCS).',ok:p=>filled(p.d.vd_avdn)&&!!gcs(p)},
+ {t:'D Actitud/Comportamiento',go:'vact',h:'«Normal» o la alteración.',ok:p=>(p.o.vact||[]).length>0},
+ {t:'Constantes vitales',go:'vit',h:'Al menos una toma con hora («Intro Datos de Tabla»).',ok:p=>p.vitals.length>0},
+ {t:'Mecanismo de lesión: razón y hora del evento',go:'mec',h:'Botón 🚑 → Razón, y reloj de Evento.',ok:p=>(p.o.mec||[]).length>0&&filled(p.d.mecEv)},
+ {t:'Infecciones/Aislamientos',go:'infec',h:'«Ninguno» o el aislamiento.',ok:p=>(p.o.infec||[]).length>0},
+ {t:'Diagnóstico CIE9 principal (p. ej. A81 Politraumatismo)',go:'diag',h:'Diagnóstico → CIE9 → buscar «Politr» → Tipo «Diagnóstico principal (Asegurado)» → Añadir.',ok:p=>(p.dxs||[]).some(x=>/principal/.test(x.tipo))},
+ {t:'Lesiones en el mapa corporal',go:'diag',h:'Diagnóstico → Trauma → Lesiones (con gravedad).',ok:p=>(p.les||[]).length>0},
+ {t:'Intervenciones A Vía Aérea',go:'ia',h:'«Ninguno», manejo inicial o ✚ Intubación.',ok:p=>(p.o.ia||[]).length>0||(p.logs.intub||[]).length>0},
+ {t:'Intervenciones B Respiración',go:'ib',h:'«Ninguna», ✚ Oxigenoterapia o ventilación.',ok:p=>(p.o.ib||[]).length>0||(p.logs.o2||[]).length>0||(p.logs.vent||[]).length>0},
+ {t:'Intervenciones C: IV Acceso / Hemostática',go:'ic',h:'Registra el acceso venoso o intraóseo y la hemostasia (torniquete, cinturón...).',ok:p=>(p.logs.iv||[]).length>0||(p.logs.hemost||[]).length>0||(p.o.ic||[]).length>0},
+ {t:'Inmovilización y posición de traslado',go:'iinm',h:'Marca los dispositivos y la posición. Lo que no esté en la lista (p. ej. cinturón pélvico) va en el comentario ✎.',ok:p=>{const v=p.o.iinm||[];return v.some(x=>!POS.includes(x)&&!NEG.includes(x))&&v.some(x=>POS.includes(x))}},
+ {t:'Medicación (dosis, caudal, aplicado por, hora)',go:'im',h:'«Ninguna» o 💊✚ → medicamento → dosis → aplicado por → Guardar.',ok:p=>(p.o.im||[]).length>0||(p.logs.med||[]).length>0},
+ {t:'Reevaluación A, B, C y ECG',go:'ra',h:'«Copiar Evaluación Inicial» y modifica lo que haya cambiado.',ok:p=>['ra','rb','rc','recg'].every(k=>(p.o[k]||[]).length>0)},
+ {t:'Reevaluación D Neurológica (GCS)',go:'rd',h:'Repite la GCS a la llegada.',ok:p=>!!gcs(p,'rd')},
+ {t:'Destino paciente',go:'dest',h:'Sentado/camilla + centro de destino (o EXITUS / Rechazar transporte).',ok:p=>done(p,{id:'dest'})},
+ {t:'Transferencia: evolución, función y hora de entrega',go:'transf',h:'Flecha ↗ = ↘, a quién se entrega (Función) y hora.',ok:p=>done(p,{id:'transf'})},
+ {t:'Cerrar registro (firma + contraseña)',go:null,h:'Botón «Cerrar registro».',ok:p=>p.closed}
+];
+function evaluate(p){if(p.proto!=='SVA EXTENDIDO')return evaluate0(p);
+ const r=GUIDE.slice(0,-1).map(g=>[g.t,g.ok(p),g.h]);
+ if(PRENOTIF_CIE[p.d.dx1]||has(p,'vecg','SCACEST'))r.push(['Prenotificación enviada',!!p.prenotif,'Ante SCACEST o ictus, prenotifica.']);
+ r.push(['Cerrado sin apartados justificados',!Object.keys(p.just).length,Object.keys(p.just).length+' apartado(s) justificado(s).']);return r}
+function rPCR(){rPCR0();const p=P();if(p.proto==='SVA EXTENDIDO'){const b=document.querySelector('#bar .in');if(b)b.insertAdjacentHTML('beforeend',`<button data-act="mod" data-m="guia"><b>🎓</b>Guía<br>politrauma</button>`)}}
+
+/* ---- acciones ---- */
+const _mOk=A.mOk;
+Object.assign(A,{
+ mOk(){if(M&&M.type==='logf')return A.logSave();if(M&&M.type==='medf'&&M.step==='admin')return A.medSave();closeM()},
+ razon(e){const p=P(),v=e.dataset.v;let a=p.o.mec||[];a=a.includes(v)?a.filter(x=>x!==v):[...a,v];p.o.mec=a;drawM();save()},
+ openLog(e){const l=e.dataset.log;if(P().closed)return;if(l==='med'){openM({type:'medf',step:'pick',f:{h:hm()}});return}openM({type:'logf',log:l,f:{h:hm()}})},
+ lfSet(e){M.f[e.dataset.k]=M.f[e.dataset.k]===e.dataset.v?undefined:e.dataset.v;drawM()},
+ lfPor(e){M.f.por=e.dataset.v;drawM()},
+ mNow(e){M.f[e.dataset.k]=hm();drawM()},
+ logSave(){const p=P(),L=LOGS[M.log],f=M.f;const parts=[];L.cols.forEach(c=>{if(c.o){if(f[c.k])parts.push(f[c.k])}else c.nums.forEach(([l,k])=>{if(filled(f[k]))parts.push(l+' '+f[k])})});(L.txt||[]).forEach(([l,k])=>{if(filled(f[k]))parts.push(l+': '+f[k])});if(f.por)parts.push('realizado por: '+f.por);
+  if(!parts.length){toast('Selecciona al menos una opción');return}
+  const h=f.h||hm(),[hh,mm]=h.split(':').map(Number),t=new Date();t.setHours(hh,mm,new Date().getSeconds(),0);
+  (p.logs[M.log]=p.logs[M.log]||[]).push({h,ts:t.getTime(),txt:parts.join(' · ')});
+  const sec={intub:'ia',o2:'ib',vent:'ib',iv:'ic',hemost:'ic',triage:'triage'}[M.log];if(sec&&p.o[sec])p.o[sec]=p.o[sec].filter(x=>!NEG.includes(x));
+  log(p,L.t+': '+parts.join(' · '));if(!S.online)S.queue++;toast(L.t+' registrada '+h);S.open=sec||S.open;closeM()},
+ medPick(e){M.med=e.dataset.v;M.step='admin';M.doses=[];drawM()},
+ medU(e){M.f.u=e.dataset.v;drawM()},
+ medPor(e){M.f.por=e.dataset.v;drawM()},
+ medCia(){M.f.cia=!M.f.cia;drawM()},
+ medDose(){const f=M.f;if(!filled(f.dosis)){toast('Introduce la dosis');return}(M.doses=M.doses||[]).push({d:f.dosis,c:f.caudal,u:f.u||'/min'});f.dosis='';f.caudal='';drawM()},
+ medDoseDel(e){M.doses.splice(+e.dataset.i,1);drawM()},
+ medSave(){const p=P(),f=M.f;let D=M.doses||[];if(!D.length&&filled(f.dosis))D=[{d:f.dosis,c:f.caudal,u:f.u||'/min'}];if(!D.length){toast('Añade al menos una dosis');return}if(!f.por){toast('Indica quién la ha aplicado');return}
+  const h=f.h||hm(),[hh,mm]=h.split(':').map(Number),t=new Date();t.setHours(hh,mm,new Date().getSeconds(),0);
+  D.forEach(x=>(p.logs.med=p.logs.med||[]).push({h,ts:t.getTime(),txt:`${M.med} dosis: ${x.d}mg${x.c?' caudal: '+x.c+'ml'+x.u:''} realizado por: ${f.por}${f.cia?' · Compañía de emergencia':''}`}));
+  p.o.im=(p.o.im||[]).filter(x=>!NEG.includes(x));log(p,'Medicación: '+M.med);if(!S.online)S.queue++;toast('Medicación registrada '+h);S.open='im';closeM()},
+ cieSel(e){S.cieSel=e.dataset.v;rerender()},
+ cieTipo(e){S.cieTipo=e.dataset.v;rerender()},
+ cieAdd(){const p=P(),c=CIE.find(x=>x[0]===S.cieSel);if(!c)return;(p.dxs=p.dxs||[]).push({c:c[0],t:c[1],tipo:S.cieTipo});if(/principal|sospecha/.test(S.cieTipo)&&!p.d.dx1){p.d.dx1=c[0];if(PRENOTIF_CIE[c[0]]&&!p.prenotif)toast('⚠ Patología tiempo-dependiente: envía la prenotificación',3500)}log(p,'Diagnóstico: '+c[0]+' '+S.cieTipo);S.cieSel=null;S.cieTipo=null;rerender()},
+ dxDelI(e){const p=P();const x=p.dxs.splice(+e.dataset.i,1)[0];if(x&&p.d.dx1===x.c){const n=p.dxs.find(y=>/principal|sospecha/.test(y.tipo));p.d.dx1=n?n.c:undefined}rerender()},
+ exitusOk(){const p=P();p.sp.exitus={hora:p.d.exHora};p.d.destNoTras=p.d.destNoTras||'Exitus';log(p,'Exitus');closeM()},
+ macro(e){const p=P(),k=(M&&M.id)||'anam';p.d[k]=(p.d[k]||'')+e.dataset.v;closeM()},
+ goSec(e){M=null;$('#mod').classList.remove('show');S.open=e.dataset.id;render();setTimeout(()=>document.getElementById('row_'+e.dataset.id)?.scrollIntoView({block:'start'}),30)}
+});
+document.addEventListener('input',e=>{const t=e.target;if(!M)return;
+ if(t.dataset.mf){M.f[t.dataset.mf]=t.value;return}
+ if(t.dataset.ms){M.q=t.value;const pos=t.selectionStart;drawM();const n=document.querySelector('[data-ms]');if(n){n.focus();n.setSelectionRange(pos,pos)}}
+});
+
+/* ============ eventos ============ */
+document.addEventListener('click',e=>{
+ const o=e.target.closest('[data-opt]');
+ if(o&&!o.disabled){e.stopPropagation();const p=P(),sec=o.dataset.sec,v=o.dataset.v,k=o.dataset.k,key=k?sec+'.'+k:sec;let a=p.o[key]||[];
+  if(o.dataset.single)a=a.includes(v)?[]:[v];
+  else if(a.includes(v))a=a.filter(x=>x!==v);
+  else{const Q=QUICK[sec]||{};if(o.dataset.q&&Q.x)a=a.filter(x=>!(Q.q||[]).includes(x));if(!o.dataset.q)a=a.filter(x=>!NEG.includes(x));if(o.dataset.q&&NEG.includes(v)&&!Q.x)a=a.filter(x=>(Q.q||[]).includes(x));a=[...a,v]}
+  p.o[key]=a;if(sec==='vecg'&&v==='SCACEST'&&a.includes(v))toast('⚠ SCACEST: indica la activación de Hemodinámica y envía la prenotificación',3500);
+  banner();rerender();return}
+ const t=e.target.closest('[data-act]');if(!t||t.disabled)return;
+ if(t.classList.contains('r')&&e.target.closest('input,select,textarea'))return;
+ e.stopPropagation();A[t.dataset.act]?.(t);
+},true);
+document.addEventListener('input',e=>{const t=e.target,p=P();
+ if(t.id==='dxq'){S.dxq=t.value;const pos=t.selectionStart;render();const n=$('#dxq');if(n){n.focus();n.setSelectionRange(pos,pos)}return}
+ if(t.dataset.k&&p){p.d[t.dataset.k]=t.value;save();if(/^f_(tas|tad)$/.test(t.dataset.k)){}return}
+ if(t.dataset.sh){S.shift[t.dataset.sh]=t.value;save();if(t.dataset.sh==='proto')render();return}
+ if(t.dataset.chknote){S.shift.check[t.dataset.chknote].n=t.value;save();return}
+ if(t.dataset.sp){const[o,k]=t.dataset.sp.split('.');p.sp[o]=p.sp[o]||{};p.sp[o][k]=t.value;save();return}
+ if(t.dataset.pn){M.f[t.dataset.pn]=t.value;return}
+ if(t.dataset.pf){M.f[t.dataset.pf]=t.value;return}
+ if(t.dataset.burnpct!==undefined){const b=(p.burns||[]).find(x=>x.r===t.dataset.burnpct);if(b)b.pct=+t.value;save();return}
+ if(t.dataset.phc!==undefined){p.photos[+t.dataset.phc].c=t.value;save()}
+});
+document.addEventListener('change',e=>{const t=e.target;
+ if(t.id==='phIn'&&t.files[0]){const rd=new FileReader();rd.onload=()=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,640/img.width);c.width=img.width*s;c.height=img.height*s;c.getContext('2d').drawImage(img,0,0,c.width,c.height);const p=P();p.photos.push({src:c.toDataURL('image/jpeg',.7),h:hm(),ts:Date.now(),c:''});log(p,'Foto');drawM();save()};img.src=rd.result};rd.readAsDataURL(t.files[0])}
+ if(t.dataset.k&&(t.type==='time'||t.tagName==='SELECT'||['edad','f_tas','f_tad','peso','altura'].includes(t.dataset.k)))rerender();
+});
+setInterval(()=>{document.querySelectorAll('.clock').forEach(c=>c.textContent=hms());const ch=$('#chrono');if(ch&&P())ch.textContent=chrono(P())},1000);
+if(['pcr','report'].includes(S.screen)&&!P())S.screen=S.shift.started?'home':'shift';
+render();
+</script>
+</body>
+</html>

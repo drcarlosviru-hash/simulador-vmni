@@ -24,7 +24,25 @@ const CAPITULOS = [
     insignia: { id: "torniquete", nombre: "Mano firme", icono: "🩸", txt: "Examen PHTLS superado" }
   },
   {
-    id: "atls", n: 2, titulo: "Box de trauma", sub: "Trauma hospitalario · ATLS",
+    id: "apad", n: 2, titulo: "El parte", sub: "Registro asistencial digital · AmbulancePad",
+    color: "#fbbf24", icono: "📋",
+    historia: "El herido ya va en la ambulancia. Mientras el enfermero canaliza, tú abres la tablet: tripulación autenticada, desfibrilador conectado, ABCDE, intervenciones con su hora y protocolo SVA EXTENDIDO para el estudio de politrauma. Lo que no queda registrado no existe.",
+    modulos: [
+      { id: "apad_libro", nombre: "AmbulancePad SUC · Libro interactivo", url: "modulos/ambulancepad-libro.html", desc: "Del inicio de turno al cierre del parte, con capturas y autoevaluación." },
+      { id: "apad_sim", nombre: "Simulador de parte asistencial", url: "modulos/ambulancepad-simulador.html", desc: "Rellena un parte completo como en la tablet de la ambulancia." }
+    ],
+    misiones: [
+      { id: "apad_m1", txt: "Abre el libro interactivo", xp: 50, auto: s => s.visit("apad_libro") },
+      { id: "apad_m2", txt: "Completa 5 capítulos del libro", xp: 100, auto: s => s.list("apad_done").length >= 5 },
+      { id: "apad_m3", txt: "Abre el simulador de parte asistencial", xp: 50, auto: s => s.visit("apad_sim") },
+      { id: "apad_m4", txt: "Cierra un parte en el simulador", xp: 100, auto: s => (s.obj("apadSim2").pcrs || []).some(p => p.closed) },
+      { id: "apad_m5", txt: "Cierra un parte con protocolo SVA EXTENDIDO", xp: 150, auto: s => (s.obj("apadSim2").pcrs || []).some(p => p.closed && p.proto === "SVA EXTENDIDO") },
+      { id: "apad_exam", txt: "Supera el examen del capítulo", xp: 0, auto: s => s.stars("apad") >= 1 }
+    ],
+    insignia: { id: "parte", nombre: "Parte impecable", icono: "📋", txt: "Examen de AmbulancePad superado" }
+  },
+  {
+    id: "atls", n: 3, titulo: "Box de trauma", sub: "Trauma hospitalario · ATLS",
     color: "#ff4d6d", icono: "🏥",
     historia: "El herido llega al box vital: taquicárdico, frío, Glasgow 11. El equipo te mira. Revisión primaria, control de la hemorragia, FAST y decisión: ¿quirófano, radiología o TAC?",
     modulos: [
@@ -40,7 +58,7 @@ const CAPITULOS = [
     insignia: { id: "golden", nombre: "Hora de oro", icono: "⏱️", txt: "Examen ATLS superado" }
   },
   {
-    id: "rcp", n: 3, titulo: "Parada", sub: "Soporte vital avanzado · ERC 2025",
+    id: "rcp", n: 4, titulo: "Parada", sub: "Soporte vital avanzado · ERC 2025",
     color: "#38bdf8", icono: "⚡",
     historia: "Mientras lo trasladas a TAC, el monitor cambia: fibrilación ventricular. Compresiones, descarga, adrenalina, causas reversibles. Cada segundo sin compresiones cuenta.",
     modulos: [
@@ -56,7 +74,7 @@ const CAPITULOS = [
     insignia: { id: "rosc", nombre: "RCE", icono: "💓", txt: "Examen de SVA superado" }
   },
   {
-    id: "vmni", n: 4, titulo: "Respira", sub: "Ventilación mecánica no invasiva",
+    id: "vmni", n: 5, titulo: "Respira", sub: "Ventilación mecánica no invasiva",
     color: "#34d399", icono: "🫁",
     historia: "Recuperado, pero ahora es otro paciente el que te necesita: EPOC agudizado, pH 7,26, tirando de accesorios. Ajusta la máscara, el EPAP, el soporte… y lee las curvas antes de que se agote.",
     modulos: [
@@ -75,7 +93,7 @@ const CAPITULOS = [
     insignia: { id: "sincronia", nombre: "Sincronía", icono: "〰️", txt: "Examen de VMNI superado" }
   },
   {
-    id: "turno", n: 5, titulo: "Fin de guardia", sub: "Sala de descanso · TurnoValor",
+    id: "turno", n: 6, titulo: "Fin de guardia", sub: "Sala de descanso · TurnoValor",
     color: "#a78bfa", icono: "☕",
     historia: "08:00 h. Relevo hecho. Antes de irte, mira qué ha supuesto esta guardia: horas, carga y valor de cada turno. Cuidar del equipo también es medicina de urgencias.",
     modulos: [
@@ -112,6 +130,16 @@ const PREGUNTAS = {
     { q: "¿Cuál es la «tríada letal» del paciente traumático?", o: ["Hipoxia, hipercapnia, hipotensión", "Hipotermia, acidosis y coagulopatía", "Taquicardia, taquipnea, fiebre", "Dolor, ansiedad, sangrado"], c: 1, e: "Cada una empeora las otras dos. Evita la hipotermia desde la escena: mantas, calor y control rápido del sangrado." },
     { q: "En un paciente con TCE grave, ¿qué dos agresiones secundarias debes evitar a toda costa?", o: ["Hiperglucemia e hipernatremia", "Hipoxia e hipotensión", "Fiebre y dolor", "Bradicardia e hipercapnia leve"], c: 1, e: "Un solo episodio de hipoxia (SpO2 < 90 %) o de hipotensión se asocia a un aumento importante de la mortalidad en el TCE." },
     { q: "Herida por arma blanca en el abdomen, consciente y sin déficit neurológico. ¿Inmovilización espinal completa?", o: ["Sí, siempre en todo trauma", "No está indicada de rutina en el trauma penetrante sin déficit neurológico", "Solo collarín, nunca tablero", "Sí, y retrasar el traslado si hace falta"], c: 1, e: "En el trauma penetrante sin déficit la inmovilización rutinaria no aporta beneficio y retrasa el traslado." }
+  ],
+  apad: [
+    { q: "¿Qué es AmbulancePad?", o: ["Un sistema de ayuda al diagnóstico", "Un sistema de documentación del parte asistencial digital", "Un monitor-desfibrilador", "Un navegador GPS"], c: 1, e: "Documenta la asistencia. No sustituye la exploración ni es una herramienta diagnóstica." },
+    { q: "Las constantes del desfibrilador llegan a la tablet…", o: ["En tiempo real, latido a latido", "Con al menos 30 s de retraso y de forma periódica: valora siempre en el monitor", "Solo al cerrar el parte", "Nunca llegan solas"], c: 1, e: "Las decisiones clínicas se toman con el monitor, nunca con la tablet." },
+    { q: "Vas a cerrar el parte y quedan campos obligatorios abiertos. ¿Qué pide el sistema?", o: ["Nada, se cierra igual", "Justificarlos: no posible, no relevante, no requerido o sin tiempo", "Borrar el parte", "Llamar a la sala"], c: 1, e: "Después se firma y, si está configurado, se introduce la contraseña." },
+    { q: "Con el parte ya cerrado, ¿cómo añades o corriges un dato clínico?", o: ["Reabriéndolo y editando", "Con una anotación al margen (Anexo)", "Creando un parte nuevo", "No se puede hacer nada"], c: 1, e: "Los datos médicos quedan bloqueados. Los administrativos (nombre, edad) sí pueden completarse después." },
+    { q: "Registras una sospecha de SCACEST o ictus. ¿Qué hace la app?", o: ["Nada", "Muestra un aviso parpadeante para enviar la prenotificación, que complementa la activación por los canales del CECOES", "Activa el código sola y no hace falta llamar", "Cierra el parte"], c: 1, e: "La prenotificación digital no sustituye a la activación del código por los canales operativos." },
+    { q: "La ambulancia se queda sin cobertura en mitad del servicio.", o: ["Se pierde el parte", "Se sigue trabajando off-line y se sincroniza al recuperar la cobertura", "Hay que pasar a papel", "La tablet se bloquea"], c: 1, e: "Todo el caso se guarda en la tablet." },
+    { q: "En la barra de estado, una sección en naranja significa:", o: ["Que está completa", "Que le faltan datos obligatorios", "Que tiene un error del sistema", "Que es opcional"], c: 1, e: "Naranja: faltan datos. Verde con ✓: completa. Antes de cerrar, todas en verde." },
+    { q: "Al iniciar el turno, ¿qué es imprescindible para que la tablet quede operativa?", o: ["Hacer una foto de la ambulancia", "Registrar unidad y tripulación, con al menos un miembro autenticado con contraseña", "Conectar la impresora", "Enviar un parte de prueba"], c: 1, e: "El sistema marca en gris los roles obligatorios que faltan." }
   ],
   atls: [
     { q: "En la revisión primaria ATLS, la «A» incluye:", o: ["Solo la vía aérea", "Vía aérea con restricción del movimiento de la columna cervical", "Analgesia", "Auscultación pulmonar"], c: 1, e: "Se asegura la vía aérea protegiendo la columna cervical hasta descartar lesión." },

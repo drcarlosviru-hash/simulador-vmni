@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AmbulancePad SUC · Libro interactivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#14202e; --muted:#5b6b7c; --line:#dfe5ec; --bg:#f6f8fa; --paper:#fff;
+  --navy:#0e2a47; --lblue:#7cc3ec; --dblue:#1f5fa8; --red:#d63a2f; --green:#2e9e5b; --orange:#f08c1e; --yellow:#f6d34a;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "IBM Plex Sans",system-ui,sans-serif}
+a{color:var(--dblue)}
+code,.mono{font-family:"IBM Plex Mono",monospace;font-size:.88em}
+/* layout */
+header.top{position:sticky;top:0;z-index:30;background:var(--navy);color:#fff;display:flex;align-items:center;gap:10px;padding:10px 14px}
+header.top .brand{font-weight:700;letter-spacing:.2px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header.top .brand small{font-weight:400;opacity:.7;margin-left:6px}
+.iconbtn{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:8px;padding:7px 11px;font:inherit;cursor:pointer}
+.prog{height:4px;background:rgba(255,255,255,.15);position:absolute;left:0;right:0;bottom:0}
+.prog i{display:block;height:100%;background:var(--green);width:0;transition:width .3s}
+.wrap{display:flex;max-width:1180px;margin:0 auto}
+nav.toc{width:290px;flex:none;position:sticky;top:52px;height:calc(100vh - 52px);overflow:auto;padding:16px 10px 40px;border-right:1px solid var(--line);background:var(--paper)}
+nav.toc input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font:inherit;margin-bottom:10px}
+nav.toc a{display:flex;gap:8px;align-items:flex-start;padding:7px 9px;border-radius:8px;text-decoration:none;color:var(--ink);font-size:14.5px;line-height:1.35}
+nav.toc a:hover{background:var(--bg)}
+nav.toc a.on{background:#e7f0fa;color:var(--dblue);font-weight:600}
+nav.toc a .n{font-family:"IBM Plex Mono";font-size:12px;color:var(--muted);min-width:22px;padding-top:2px}
+nav.toc a .ok{margin-left:auto;color:var(--green);font-size:13px;visibility:hidden}
+nav.toc a.done .ok{visibility:visible}
+nav.toc .grp{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:14px 9px 4px}
+main{flex:1;min-width:0;padding:22px 22px 80px}
+section.ch{display:none;max-width:780px;margin:0 auto}
+section.ch.show{display:block;animation:fade .25s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.kicker{font-family:"IBM Plex Mono";font-size:12.5px;color:var(--dblue);letter-spacing:.06em;text-transform:uppercase}
+h1{font-size:30px;line-height:1.2;margin:.2em 0 .5em}
+h2{font-size:21px;margin:1.6em 0 .5em}
+h3{font-size:17px;margin:1.3em 0 .4em}
+p{margin:.6em 0}
+.lead{font-size:18px;color:#2c3e50}
+figure{margin:18px 0;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+figure img{display:block;width:100%;height:auto;cursor:zoom-in;background:#eef2f6}
+figcaption{font-size:13.5px;color:var(--muted);padding:8px 12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid2 figure{margin:0}
+.call{border-left:4px solid var(--dblue);background:#eef5fc;padding:12px 14px;border-radius:0 var(--r) var(--r) 0;margin:16px 0}
+.call.warn{border-color:var(--red);background:#fdf0ef}
+.call.tip{border-color:var(--green);background:#eef8f2}
+.call.crit{border-color:var(--orange);background:#fff6ea}
+.call b:first-child{display:block;margin-bottom:2px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:14.5px;background:var(--paper);border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:#eef2f6;font-weight:600}
+.tw{overflow-x:auto;margin:12px 0}
+ul,ol{padding-left:22px}
+li{margin:.25em 0}
+.pill{display:inline-block;font-size:12.5px;padding:2px 9px;border-radius:99px;background:#eef2f6;margin:2px 3px 2px 0}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps li{counter-increment:s;position:relative;padding:10px 12px 10px 48px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);margin:8px 0}
+.steps li::before{content:counter(s);position:absolute;left:12px;top:10px;width:26px;height:26px;border-radius:50%;background:var(--navy);color:#fff;font:600 13px/26px "IBM Plex Mono";text-align:center}
+details{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);margin:8px 0;padding:0 14px}
+details summary{cursor:pointer;padding:11px 0;font-weight:600;list-style:none}
+details summary::before{content:"＋ ";color:var(--dblue)}
+details[open] summary::before{content:"－ "}
+details>div{padding:0 0 12px}
+/* pager */
+.pager{display:flex;justify-content:space-between;gap:10px;margin-top:34px;padding-top:18px;border-top:1px solid var(--line)}
+.btn{border:0;border-radius:8px;padding:10px 16px;font:600 15px "IBM Plex Sans";cursor:pointer;background:var(--navy);color:#fff}
+.btn.ghost{background:var(--paper);color:var(--navy);border:1px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:default}
+/* quiz */
+.quiz{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin:26px 0 0}
+.quiz h3{margin-top:0}
+.q{margin:14px 0 18px}
+.q p{font-weight:600;margin-bottom:6px}
+.opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fbfcfd;border-radius:8px;padding:9px 12px;margin:6px 0;font:inherit;cursor:pointer;color:var(--ink)}
+.opt:hover{border-color:var(--dblue)}
+.opt.right{background:#e6f6ec;border-color:var(--green)}
+.opt.wrong{background:#fdecea;border-color:var(--red)}
+.opt:disabled{cursor:default}
+.expl{font-size:14.5px;color:#2f4a3a;background:#f1f8f4;border-radius:8px;padding:8px 11px;display:none}
+.expl.show{display:block}
+.score{font-weight:600}
+/* interactive ui demo */
+.pad{background:#cfdcea;border-radius:12px;padding:10px;border:6px solid #1d2733;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+.pad .bar{display:flex;align-items:center;gap:8px;background:#3a4756;color:#fff;font:12px "IBM Plex Mono";padding:5px 8px;border-radius:6px 6px 0 0}
+.pad .rows{background:#e9eff6;padding:6px;border-radius:0 0 6px 6px}
+.prow{display:flex;align-items:stretch;gap:6px;margin:4px 0;background:#fff;border-radius:6px;overflow:hidden;cursor:pointer;user-select:none}
+.prow .st{width:10px;flex:none;background:var(--orange);transition:background .3s}
+.prow.ok .st{background:var(--green)}
+.prow .lb{flex:1;padding:7px 4px;font-size:14px}
+.prow .lb small{display:block;color:var(--muted);font-size:12px}
+.prow .ic{width:38px;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px}
+.prow .chk{padding:0 10px;display:grid;place-items:center;color:var(--green);font-weight:700;visibility:hidden}
+.prow.ok .chk{visibility:visible}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.legend span{display:flex;align-items:center;gap:6px;font-size:13.5px}
+.legend i{width:14px;height:14px;border-radius:3px;display:inline-block}
+/* sim */
+.sim{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.sim .scene{font-size:16px}
+.sim .meta{font:12.5px "IBM Plex Mono";color:var(--muted);margin-bottom:6px}
+.sim .fb{margin-top:10px}
+.simprog{display:flex;gap:4px;margin-bottom:12px}
+.simprog i{flex:1;height:6px;border-radius:3px;background:#e3e8ee}
+.simprog i.d{background:var(--green)}
+.simprog i.c{background:var(--dblue)}
+/* glossary */
+dl.gl dt{font-weight:700;margin-top:10px}
+dl.gl dd{margin:0 0 0 0;color:#34495e}
+/* lightbox */
+#lb{position:fixed;inset:0;background:rgba(10,18,28,.92);display:none;z-index:99;align-items:center;justify-content:center;padding:14px;flex-direction:column;gap:10px}
+#lb.show{display:flex}
+#lb img{max-width:100%;max-height:85vh;border-radius:6px;background:#fff}
+#lb p{color:#dbe4ee;font-size:14px;margin:0;text-align:center}
+.cover{background:linear-gradient(135deg,#0e2a47,#1f5fa8);color:#fff;border-radius:14px;padding:26px 22px;margin-bottom:18px;position:relative;overflow:hidden}
+.cover h1{color:#fff;font-size:32px;margin:.15em 0 .3em}
+.cover .kicker{color:#a9d4f5}
+.cover p{color:#e3eef9;max-width:560px}
+.cover .ecg{position:absolute;right:-10px;bottom:6px;opacity:.25;width:340px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.stat{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:12px;text-align:center}
+.stat b{display:block;font-size:24px;color:var(--navy)}
+.stat span{font-size:13px;color:var(--muted)}
+.hit{background:#fff3b0}
+.overlay{display:none}
+@media (max-width:860px){
+  nav.toc{position:fixed;left:0;top:52px;z-index:25;transform:translateX(-102%);transition:transform .25s;box-shadow:4px 0 20px rgba(0,0,0,.15);width:86vw;max-width:330px}
+  nav.toc.open{transform:none}
+  .overlay.show{display:block;position:fixed;inset:52px 0 0 0;background:rgba(0,0,0,.3);z-index:20}
+  main{padding:16px 14px 70px}
+  h1{font-size:25px}
+  .cover h1{font-size:26px}
+  .grid2{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr 1fr}
+  .stat b{font-size:19px}
+}
+@media (min-width:861px){#menuBtn{display:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="iconbtn" id="menuBtn" aria-label="Índice">☰</button>
+  <div class="brand">AmbulancePad · SUC<small>Libro interactivo</small></div>
+  <span class="mono" id="pct" style="font-size:12px;opacity:.85">0%</span>
+  <div class="prog"><i id="progBar"></i></div>
+</header>
+<div class="overlay" id="ov"></div>
+<div class="wrap">
+<nav class="toc" id="toc">
+  <input id="search" type="search" placeholder="Buscar en el libro…" aria-label="Buscar">
+  <div id="tocList"></div>
+</nav>
+<main id="main">
+
+<!-- ============ 0 PORTADA ============ -->
+<section class="ch" id="inicio" data-t="Portada y cómo usar el libro" data-g="Introducción">
+  <div class="cover">
+    <div class="kicker">Servicio de Urgencias Canario · Parte asistencial digital</div>
+    <h1>RescueNet AmbulancePad</h1>
+    <p>Guía interactiva del software de parte asistencial (PCR) de los recursos sanitarios del SUC: desde el inicio de turno hasta la entrega del paciente y el envío del informe.</p>
+    <svg class="ecg" viewBox="0 0 340 80" fill="none" stroke="#fff" stroke-width="3"><path d="M0 50h70l10-20 10 40 12-62 14 72 10-30h40l8-12 8 12h60l10-20 10 40 12-62 14 72 10-30h22"/></svg>
+  </div>
+  <figure><img src="img-ambulancepad/001-000.jpg" alt="Tablet con AmbulancePad en uso" data-cap="AmbulancePad en una tablet resistente durante la asistencia."><figcaption>AmbulancePad funciona en tablets Windows, en modo táctil, sin necesidad de teclado.</figcaption></figure>
+  <h2>Cómo usar este libro</h2>
+  <ul>
+    <li><b>Índice</b> (☰ en el móvil): 16 capítulos ordenados según el flujo real de una asistencia.</li>
+    <li><b>Capturas</b>: tócalas para ampliarlas.</li>
+    <li><b>Autoevaluación</b>: cada capítulo termina con preguntas. Al acertarlas todas, el capítulo queda marcado ✓.</li>
+    <li><b>Simulador</b> (cap. 15): una asistencia completa en la que eliges qué hacer en cada paso.</li>
+    <li><b>Examen final y glosario</b> al final del libro.</li>
+  </ul>
+  <div class="call crit"><b>Sobre la fuente</b>El documento original es la <i>oferta técnica</i> de Informédica/ZOLL (2021) para incorporar el parte asistencial digital al SUC, no un manual de usuario cerrado. Algunas capturas aparecen en alemán o inglés; según el documento, la aplicación cliente y el portal se instalan en español. La configuración concreta (campos obligatorios, protocolos, listas) la define el SUC-GSC, así que puede variar respecto a lo que se describe aquí.</div>
+  <div class="stats">
+    <div class="stat"><b>4</b><span>bloques del parte</span></div>
+    <div class="stat"><b>ABCDE</b><span>esquema de valoración</span></div>
+    <div class="stat"><b>≥30 s</b><span>retraso de las constantes</span></div>
+  </div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section class="ch" id="que-es" data-t="¿Qué es AmbulancePad?" data-g="Introducción">
+  <div class="kicker">Capítulo 1</div>
+  <h1>¿Qué es AmbulancePad?</h1>
+  <p class="lead">Es una solución de ZOLL para gestionar en formato digital el <b>parte asistencial del paciente (PCR)</b> durante el transporte sanitario: recoge datos, los documenta, los comunica y permite analizarlos.</p>
+  <p>Según la oferta, AmbulancePad estaba en uso en 34 instalaciones, con unos 500 clientes instalados en Europa. En Canarias lo implanta <b>Informédica</b> (Informática y Equipamiento Médico de Canarias, S.A.), socio de ZOLL desde 2015.</p>
+  <h2>Qué hace, en una frase por fase</h2>
+  <ol class="steps">
+    <li><b>Recibe</b> la llamada desde la sala (PGE del CECOES 1-1-2) con los datos iniciales del incidente.</li>
+    <li><b>Captura</b> datos clínicos por pulsación táctil, código de barras, código QR o de forma inalámbrica desde desfibriladores ZOLL y respiradores Weinmann.</li>
+    <li><b>Documenta</b> la valoración (ABCDE), el tratamiento y la entrega, con fotos, ECG y escalas.</li>
+    <li><b>Cierra</b> el parte: queda bloqueado, se genera un PDF y se envía un XML al PGE.</li>
+    <li><b>Comparte</b>: email, fax, impresión, PCR compartido con otros recursos y portal web de administración.</li>
+  </ol>
+  <h2>Qué incluye el contrato (alcance)</h2>
+  <div class="tw"><table>
+    <tr><th>Componente</th><th>Para qué sirve</th></tr>
+    <tr><td>Portal de administración</td><td>Configurar usuarios, listas, protocolos y revisar partes</td></tr>
+    <tr><td>CAD Interface</td><td>Integración con el PGE del SUC (recepción de llamadas)</td></tr>
+    <tr><td>Licencias cliente</td><td>La aplicación en cada tablet</td></tr>
+    <tr><td>Conexión de dispositivos</td><td>Todos los desfibriladores ZOLL y respiradores Weinmann, sin límite de equipos</td></tr>
+    <tr><td>Servicios</td><td>Parametrización, despliegue, formación y mantenimiento preventivo, correctivo y evolutivo</td></tr>
+  </table></div>
+  <div class="call warn"><b>Límite clínico</b>AmbulancePad <u>no sustituye</u> la exploración del personal sanitario cualificado ni es una herramienta de ayuda al diagnóstico. Es un sistema de documentación.</div>
+</section>
+
+<!-- ============ 2 ============ -->
+
+
+<!-- ============ 3 ============ -->
+<section class="ch" id="turno" data-t="Inicio de turno" data-g="Operativa">
+  <div class="kicker">Capítulo 3</div>
+  <h1>Inicio de turno: unidad, tripulación y equipos</h1>
+  <p class="lead">Antes de empezar el turno hay que registrar los recursos: vehículo, tripulación y equipos electromédicos. Sin ese paso, la tablet no queda lista para recibir llamadas.</p>
+  <p>AmbulancePad <b>arranca solo</b> al encender o reiniciar la tablet. Si la tablet se apaga en mitad de un incidente (por suspensión o batería agotada), conserva todo lo grabado hasta ese momento.</p>
+  <ol class="steps">
+    <li><b>Unidad asignada</b>: servicio, vehículo, base y <b>tipo de protocolo</b> (p. ej., ASVC Medicalizada).</li>
+    <li><b>Tripulación</b>: añade a cada miembro con el botón <b>(+)</b> (rol, n.º de personal o código de barras, cualificación y origen).</li>
+    <li><b>Autenticación</b>: al menos un miembro debe identificarse con contraseña. El sistema muestra en <span style="background:#e5e5e5;padding:0 4px">gris</span> los roles obligatorios que faltan, por ejemplo el piloto.</li>
+    <li><b>Dispositivos</b>: selecciona los equipos que se van a conectar (desfibrilador o respirador).</li>
+    <li><b>Lista de verificación</b> (opcional): hasta 4 grupos, por ejemplo estado de la ambulancia o de los equipos. Si marcas algo como no conforme, se abre un cuadro para anotarlo.</li>
+  </ol>
+  <div class="grid2">
+    <figure><img src="img-ambulancepad/016-060.jpg" alt="Unidad asignada" data-cap="Pantalla Unidad Asignada: vehículo, tipo de protocolo, jefe de personal, conductor y dispositivos."><figcaption>Unidad Asignada: vehículo, protocolo, personal y dispositivos.</figcaption></figure>
+    <figure><img src="img-ambulancepad/033-135.jpg" alt="Alta de personal con autenticación" data-cap="Alta de un miembro de la tripulación con su rol y su autenticación por contraseña."><figcaption>Alta de personal y autenticación.</figcaption></figure>
+  </div>
+  <figure><img src="img-ambulancepad/034-139.jpg" alt="Lista de verificación" data-cap="Lista de verificación de inicio de turno (estado del vehículo y de los equipos)."><figcaption>Lista de verificación opcional (hasta 4 grupos).</figcaption></figure>
+  <h2>Roles disponibles</h2>
+  <p><span class="pill">Médico</span><span class="pill">Enfermero</span><span class="pill">Piloto</span><span class="pill">Copiloto</span><span class="pill">TES conductor</span><span class="pill">TES ayudante</span><span class="pill">Aprendiz</span><span class="pill">Mecánico</span><span class="pill">Gestor de recursos</span></p>
+  <p>La composición obligatoria de cada tipo de recurso se define en el portal. Puedes cambiar rápido de usuario (médico o enfermero en SVA/SVS/AH/AS, TES en SVB) y modificar el protocolo o la tripulación desde la propia tablet, en <b>Unidad asignada</b>.</p>
+  <div class="call"><b>Seguridad</b>Si reinicias AmbulancePad durante el turno, un miembro de la tripulación tendrá que volver a autenticarse. Hasta entonces, la lista de PCR permanece oculta.</div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="ch" id="interfaz" data-t="La interfaz: 4 bloques y semáforo" data-g="Operativa">
+  <div class="kicker">Capítulo 4</div>
+  <h1>La interfaz: 4 bloques, colores y semáforo</h1>
+  <p class="lead">La pantalla está pensada para rellenar rápido: <b>dos niveles</b> de información, iconos por colores y una barra de estado que indica qué falta.</p>
+  <h2>Los 4 grandes bloques</h2>
+  <div class="tw"><table>
+    <tr><th></th><th>Bloque</th><th>Contenido</th></tr>
+    <tr><td><i style="display:inline-block;width:14px;height:14px;background:var(--lblue);border-radius:3px"></i></td><td><b>1. Datos de la llamada</b></td><td>Datos administrativos del incidente</td></tr>
+    <tr><td><i style="display:inline-block;width:14px;height:14px;background:var(--dblue);border-radius:3px"></i></td><td><b>2. Recepción</b></td><td>Estado del paciente al iniciar la asistencia (primera evaluación)</td></tr>
+    <tr><td><i style="display:inline-block;width:14px;height:14px;background:var(--red);border-radius:3px"></i></td><td><b>3. Tratamiento</b></td><td>Acciones realizadas al paciente</td></tr>
+    <tr><td><i style="display:inline-block;width:14px;height:14px;background:var(--green);border-radius:3px"></i></td><td><b>4. Entrega</b></td><td>Estado del paciente al entregarlo en el centro de destino</td></tr>
+  </table></div>
+  <h2>Pruébalo: la barra de estado</h2>
+  <p>A la izquierda, cada sección obligatoria lleva una barra <b style="color:var(--orange)">naranja</b> si le faltan datos y <b style="color:var(--green)">verde ✓</b> cuando está completa. <b>Toca las filas</b> para completarlas:</p>
+  <div class="pad" id="padDemo">
+    <div class="bar"><span>● 4G</span><span style="flex:1"></span><span id="padCount">0/6 completas</span></div>
+    <div class="rows" id="padRows"></div>
+  </div>
+  <div class="legend">
+    <span><i style="background:var(--lblue)"></i>Administración</span>
+    <span><i style="background:var(--dblue)"></i>Primera evaluación</span>
+    <span><i style="background:var(--red)"></i>Acciones</span>
+    <span><i style="background:var(--green)"></i>Entrega</span>
+  </div>
+  <figure><img src="img-ambulancepad/039-162.jpg" alt="Pantalla principal ABCDE" data-cap="Pantalla principal: barras de estado a la izquierda, resumen en el centro e iconos por colores a la derecha."><figcaption>La pantalla real: semáforo a la izquierda, resumen de lo registrado e iconos por colores a la derecha.</figcaption></figure>
+  <h2>Arquitectura de dos niveles</h2>
+  <p>El <b>primer nivel</b> muestra los campos que más se usan. El <b>segundo nivel</b> se despliega con un toque y contiene el detalle. Así no hay que navegar por menús y submenús y se gana tiempo.</p>
+  <div class="call tip"><b>Texto libre</b>Cuando las casillas no son suficientes, toca el icono de texto libre del bloque. El portal decide en qué bloques está disponible.</div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="ch" id="llamada" data-t="Recepción de la llamada" data-g="Operativa">
+  <div class="kicker">Capítulo 5</div>
+  <h1>Recepción de la llamada desde la sala</h1>
+  <p class="lead">La sala selecciona el recurso en el <b>PGE</b>, que envía la llamada mediante el <b>CAD Interface</b> como archivo XML. La tripulación la <b>acepta</b> en la tablet y los datos se cargan en el parte.</p>
+  <h2>Datos que llegan desde la sala</h2>
+  <p><span class="pill">Filiación del paciente</span><span class="pill">Fecha y hora de asignación</span><span class="pill">N.º de incidente</span><span class="pill">Dirección del suceso</span><span class="pill">Sospecha diagnóstica / anamnesis inicial</span><span class="pill">Palabra clave</span></p>
+  <figure><img src="img-ambulancepad/038-158.jpg" alt="Datos de la llamada" data-cap="Bloque de datos de la llamada: lugar del incidente, destino, tiempos y estados."><figcaption>Bloque de datos de la llamada: lugar, destino y tiempos.</figcaption></figure>
+  <h2>Situaciones habituales</h2>
+  <details><summary>Varios recursos en el mismo incidente</summary><div>Todos los vehículos asignados reciben los datos de la llamada.</div></details>
+  <details><summary>Empiezas una asistencia sin aviso previo de la sala</summary><div>Introduce los datos a mano. Después se pueden <b>fusionar</b> con los que envíe la central.</div></details>
+  <details><summary>Faltan datos o no hay cobertura</summary><div>Complétalos con pulsación táctil, código de barras o código QR.</div></details>
+  <details><summary>Varios pacientes a la vez</summary><div>El sistema permite registrar varios pacientes simultáneamente. Pulsa <b>Cambiar registro</b> para volver a la lista y elegir otro paciente.</div></details>
+  <h2>Palabras clave que actúan solas</h2>
+  <p>El portal puede asociar palabras clave a campos del parte. Por ejemplo, la palabra clave <code>PRIORIDAD 0</code> marca automáticamente <b>«Conducir con prioritarios»</b>, y <code>Emergencia</code> puede activar «conducir con la sirena encendida».</p>
+  <div class="call crit"><b>Responsabilidad del SUC-GSC</b>El envío del XML desde el PGE y la recepción y archivo del XML de cierre son responsabilidad del SUC-GSC, no del proveedor.</div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="ch" id="valoracion" data-t="Valoración inicial ABCDE" data-g="Operativa">
+  <div class="kicker">Capítulo 6</div>
+  <h1>Valoración inicial: esquema ABCDE</h1>
+  <p class="lead">Al llegar al lugar empieza la recogida estructurada de datos. Cada cuadro (vía aérea, respiración, circulación…) se despliega con un toque.</p>
+  <div class="tw"><table>
+    <tr><th>Letra</th><th>Sistema</th><th>Ejemplos en la app</th></tr>
+    <tr><td><b>A</b></td><td>Vía aérea</td><td>Libre o comprometida, intubado</td></tr>
+    <tr><td><b>B</b></td><td>Respiración</td><td>Frecuencia, oxígeno, ventilado</td></tr>
+    <tr><td><b>C</b></td><td>Circulación / ECG</td><td>Ritmo sinusal, STEMI, hemorragia</td></tr>
+    <tr><td><b>D</b></td><td>Discapacidad neurológica</td><td>Consciencia, GCS, pupilas, FAST</td></tr>
+    <tr><td><b>E</b></td><td>Exposición</td><td>Lesiones en el mapa corporal</td></tr>
+  </table></div>
+  <div class="grid2">
+    <figure><img src="img-ambulancepad/043-181.jpg" alt="Valoración neurológica" data-cap="D, Discapacidad: estado de consciencia, pupilas, alteraciones neurológicas y acceso a FAST."><figcaption>D: consciencia, pupilas y alteraciones neurológicas.</figcaption></figure>
+    <figure><img src="img-ambulancepad/041-171.jpg" alt="Mapa de lesiones" data-cap="Mapa corporal de lesiones: región, tipo, abierta o cerrada, gravedad y estado distal."><figcaption>E: mapa corporal de lesiones.</figcaption></figure>
+  </div>
+  <h2>Formas de introducir datos</h2>
+  <p><span class="pill">👆 Pulsación táctil</span><span class="pill">▮▯▮ Código de barras</span><span class="pill">▦ Código QR</span><span class="pill">📶 Inalámbrico (equipos médicos)</span></p>
+  <div class="call"><b>Configurable</b>Los bloques de valoración, su orden y su obligatoriedad se configuran por protocolo desde el portal. Lo que veas depende del protocolo seleccionado (SVA, SVB…).</div>
+  <div class="call tip"><b>Biblioteca de documentos</b>Durante la asistencia puedes consultar los documentos cargados en la tablet, como manuales de equipos o protocolos.</div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="ch" id="dispositivos" data-t="Equipos médicos, constantes, ECG y fotos" data-g="Operativa">
+  <div class="kicker">Capítulo 7</div>
+  <h1>Equipos médicos, constantes, ECG y fotos</h1>
+  <p class="lead">AmbulancePad recoge por <b>Bluetooth</b> los datos de los desfibriladores <b>ZOLL X Series</b> y de los respiradores <b>Weinmann</b>, y los muestra en una línea de tiempo.</p>
+  <h2>Conectar un equipo</h2>
+  <ol class="steps">
+    <li>Pulsa el botón <b>+</b> en Dispositivos.</li>
+    <li>Selecciona el equipo en la lista (ZOLL X/E/M Series, Corpuls, Lifepak…).</li>
+    <li>Comprueba el indicador de estado junto al nombre: conectado o sin conexión.</li>
+  </ol>
+  <div class="grid2">
+    <figure><img src="img-ambulancepad/018-069.jpg" alt="Añadir dispositivo" data-cap="Selección de un dispositivo para conectar."><figcaption>Selección del dispositivo.</figcaption></figure>
+    <figure><img src="img-ambulancepad/018-068.jpg" alt="Estado de conexión" data-cap="Indicadores de estado de conexión de cada dispositivo."><figcaption>Estado de conexión.</figcaption></figure>
+  </div>
+  <p>Al conectar el desfibrilador, se transfiere todo lo grabado hasta ese momento y, a partir de ahí, los datos llegan de forma continua hasta que se desconecta.</p>
+  <div class="call warn"><b>⚠ Seguridad del paciente</b>Las constantes llegan a AmbulancePad con un retraso de <b>al menos 30 segundos</b> y de forma periódica, no continua. <u>Valora siempre al paciente en el monitor</u>, nunca en la tablet.</div>
+  <div class="call crit"><b>Alcance del Bluetooth</b>El alcance es limitado y lo reducen los objetos metálicos. Para evitar desconexiones, mantén la tablet lo más cerca posible del equipo.</div>
+  <h2>Tendencias: gráfica o tabla</h2>
+  <p>Con un toque se pasa del modo gráfico al tabular.</p>
+  <div class="grid2">
+    <figure><img src="img-ambulancepad/012-040.jpg" alt="Gráfica de tendencias" data-cap="Gráfica de tendencias de las constantes vitales."><figcaption>Modo gráfico.</figcaption></figure>
+    <figure><img src="img-ambulancepad/012-041.jpg" alt="Tabla de tendencias" data-cap="Las mismas constantes en modo tabla."><figcaption>Modo tabla.</figcaption></figure>
+  </div>
+  <figure><img src="img-ambulancepad/013-046.jpg" alt="ECG" data-cap="Visualización del ECG transmitido desde el monitor."><figcaption>ECG: se abre con su icono, se puede pasar a PDF y enviar por email en cualquier momento.</figcaption></figure>
+  <h2>Fotografías</h2>
+  <p>La cámara de la tablet está a un toque. Las fotos se colocan en la <b>línea de tiempo</b> junto a los datos de los equipos, así queda registrado cuándo se tomaron. Se pueden <b>comentar</b> y <b>eliminar</b>, y se incluyen en un apartado del informe.</p>
+  <div class="grid2">
+    <figure><img src="img-ambulancepad/040-167.jpg" alt="Foto en la app" data-cap="Captura de una foto (mecanismo lesional) desde la app."><figcaption>Foto del mecanismo lesional.</figcaption></figure>
+    <figure><img src="img-ambulancepad/014-050.jpg" alt="Línea de tiempo con fotos" data-cap="Línea de tiempo con constantes y la marca de la foto."><figcaption>La foto aparece en la línea de tiempo.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="ch" id="tratamiento" data-t="Tratamiento, acciones y protocolos" data-g="Operativa">
+  <div class="kicker">Capítulo 8</div>
+  <h1>Tratamiento, acciones y tipos de protocolo</h1>
+  <p class="lead">En el bloque rojo se documentan la evolución y las intervenciones: vía aérea, oxígeno, accesos, gasometría, medicación, inmovilización…</p>
+  <figure><img src="img-ambulancepad/040-166.jpg" alt="Intervenciones" data-cap="Bloque de intervenciones: vía aérea, oxígeno, accesos venosos, gasometría, inmovilización y medicación."><figcaption>Intervenciones por sistemas, con la hora de cada una.</figcaption></figure>
+  <h2>Cambio de protocolo durante el caso</h2>
+  <p>Si el paciente cambia de situación, puedes <b>ampliar el protocolo</b> desde el propio caso, por ejemplo de SVB a SVA. <b>Se conservan</b> todos los datos registrados hasta ese momento.</p>
+  <h2>Técnicas específicas por protocolo</h2>
+  <p>El SUC decide qué técnicas aparecen en cada protocolo. Por ejemplo, una técnica avanzada puede figurar en SVA y no aparecer en SVB.</p>
+  <div class="call tip"><b>Registrar la hora</b>El sistema ofrece varias ayudas para registrar rápido la hora de cada cambio o actualización. Las acciones quedan en la línea de tiempo junto a las constantes.</div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section class="ch" id="escalas" data-t="Escalas y situaciones especiales" data-g="Operativa">
+  <div class="kicker">Capítulo 9</div>
+  <h1>Escalas y situaciones especiales</h1>
+  <h2>Escalas disponibles</h2>
+  <div class="tw"><table>
+    <tr><th>Escala</th><th>Uso</th></tr>
+    <tr><td><b>Glasgow (GCS)</b></td><td>Nivel de consciencia: ocular, verbal y motora</td></tr>
+    <tr><td><b>Cincinnati (FAST/PRISA)</b></td><td>Sospecha de ictus: cara, brazos, habla y hora de inicio</td></tr>
+    <tr><td><b>START</b></td><td>Triaje en incidentes con múltiples víctimas</td></tr>
+    <tr><td><b>APGAR</b></td><td>Valoración del recién nacido</td></tr>
+    <tr><td><b>NACA</b></td><td>Gravedad del paciente (aparece en las capturas)</td></tr>
+  </table></div>
+  <div class="grid2">
+    <figure><img src="img-ambulancepad/050-212.jpg" alt="GCS" data-cap="Escala de Glasgow: puntuación automática por componentes."><figcaption>GCS con puntuación automática.</figcaption></figure>
+    <figure><img src="img-ambulancepad/036-148.jpg" alt="FAST" data-cap="Escala FAST: hora de inicio, rostro, brazos y habla."><figcaption>FAST con hora de inicio de los síntomas.</figcaption></figure>
+  </div>
+  <h2>Situaciones especiales documentables</h2>
+  <ul>
+    <li>El paciente se niega a dar datos</li>
+    <li>El paciente se niega a recibir asistencia</li>
+    <li>El paciente se niega al traslado (documento de rechazo con firmas, en varios idiomas)</li>
+    <li>Éxitus (certificado con causa, lugar, hora y firma del médico)</li>
+    <li>Autorización del tratamiento por tutor legal (menores o personas incapaces)</li>
+    <li>Pacientes menores de edad</li>
+    <li>Uso de la fuerza o violencia contra el personal</li>
+  </ul>
+  <div class="grid2">
+    <figure><img src="img-ambulancepad/049-208.jpg" alt="Rechazo de transporte" data-cap="Rechazo de transporte: texto legal, selector de idioma y firmas."><figcaption>Rechazo de traslado: idioma y firmas.</figcaption></figure>
+    <figure><img src="img-ambulancepad/047-198.jpg" alt="Autorización tutor" data-cap="Autorización del tutor legal: guardián presente o no presente, con firmas."><figcaption>Autorización de tutor legal.</figcaption></figure>
+  </div>
+  <div class="grid2">
+    <figure><img src="img-ambulancepad/048-202.jpg" alt="Éxitus" data-cap="Registro de éxitus: datos del fallecido, lugar y hora, tipo de muerte y firma."><figcaption>Éxitus.</figcaption></figure>
+    <figure><img src="img-ambulancepad/048-204.jpg" alt="Violencia contra personal" data-cap="Registro de violencia contra el personal: agresor, tipo, resultado y víctima."><figcaption>Violencia contra el personal.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section class="ch" id="prenotificacion" data-t="Prenotificación: SCACEST e ictus" data-g="Operativa">
+  <div class="kicker">Capítulo 10</div>
+  <h1>Prenotificación: patologías tiempo-dependientes</h1>
+  <p class="lead">Si registras un diagnóstico de sospecha de <b>SCACEST</b> o <b>ACV</b>, el sistema muestra un <b>mensaje parpadeante</b> para que envíes de inmediato la prenotificación a la sala y al hospital receptor.</p>
+  <figure><img src="img-ambulancepad/052-224.jpg" alt="Prenotificación" data-cap="Formulario de prenotificación: hora estimada de llegada, hospital, prioridad, constantes y hallazgos ABCD."><figcaption>Formulario de prenotificación.</figcaption></figure>
+  <ol class="steps">
+    <li>Introduce la <b>hora estimada de llegada</b>.</li>
+    <li>Selecciona el <b>hospital de destino</b> y comprueba el fax o el email, o elige una lista de distribución.</li>
+    <li>Marca la <b>prioridad</b>: Inmediata, Urgente o Normal.</li>
+    <li>Revisa el estado y las medidas. Las <b>últimas constantes</b> se insertan solas y puedes editarlas.</li>
+    <li>El <b>diagnóstico</b> aparece en solo lectura. Envía.</li>
+  </ol>
+  <div class="call crit"><b>Vía de comunicación</b>La prenotificación digital complementa la activación del código por los canales operativos del CECOES. No da a entender que la sustituya.</div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section class="ch" id="entrega" data-t="Entrega, cierre y PCR compartido" data-g="Operativa">
+  <div class="kicker">Capítulo 11</div>
+  <h1>Entrega del paciente y cierre del parte</h1>
+  <p class="lead">El bloque verde recoge el estado del paciente al entregarlo. Con <b>«Copiar del registro»</b>, los últimos datos (de los equipos o introducidos a mano) se copian en los campos de entrega.</p>
+  <figure><img src="img-ambulancepad/042-175.jpg" alt="Entrega" data-cap="Bloque de entrega: destino y objetivos ABCDE con el botón «Copiar del registro»."><figcaption>Entrega con «Copiar del registro».</figcaption></figure>
+  <h2>Cierre del PCR</h2>
+  <ol class="steps">
+    <li>Comprueba que todas las barras están en <b style="color:var(--green)">verde</b>. Si quedan campos obligatorios abiertos, el sistema te pide justificarlo («no posible», «no relevante», «no requerido», «sin tiempo»).</li>
+    <li>Firma y, si está configurado, introduce la <b>contraseña</b> como autenticación adicional.</li>
+    <li>El parte queda <b>cerrado y bloqueado</b>: se genera el PDF en el servidor y se envía el XML al PGE.</li>
+  </ol>
+  <figure><img src="img-ambulancepad/015-056.jpg" alt="Cerrar PCR" data-cap="Cierre del PCR: justificación de campos obligatorios abiertos y contraseña."><figcaption>Cerrar PCR con contraseña y justificación de campos pendientes.</figcaption></figure>
+  <div class="call warn"><b>Autenticidad del documento</b>Cerrado el parte, <u>los datos médicos no se pueden modificar</u>. Para añadir o corregir información, usa <b>anotaciones al margen (Anexo)</b>. Los datos administrativos (nombre, apellidos, edad) sí pueden completarse después y se sincronizan por CAD.</div>
+  <h2>Compartir información con otras tripulaciones</h2>
+  <p>Si se envían varios recursos al mismo paciente, AmbulancePad usa una <b>clave común</b> para que solo los recursos enviados puedan compartir los datos. Esto evita duplicar el registro y solo funciona mediante la interfaz de despacho.</p>
+  <div class="card"><b>Ejemplo práctico</b><br>Los recursos A y B atienden al mismo paciente y cada uno crea su PCR. A traslada al paciente y necesita imprimir los dos.<br>① A cierra su PCR → Imprimir → <b>Compartir</b>.<br>② B toca la <b>lupa</b> y ve la lista de PCR relacionados disponibles para imprimir.</div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section class="ch" id="informe" data-t="Informe y envío" data-g="Operativa">
+  <div class="kicker">Capítulo 12</div>
+  <h1>Informe, impresión y envío</h1>
+  <p class="lead">El informe en PDF lleva el formato corporativo del GSC-SUC e <b>incluye solo los campos rellenados</b>. Durante la asistencia puedes enviar en cualquier momento un informe preliminar, con ECG si quieres.</p>
+  <figure><img src="img-ambulancepad/053-228.jpg" alt="Imprimir registro" data-cap="Pantalla Imprimir registro: hospital predefinido, destino manual, qué exportar, compartir, impresión local y vista previa."><figcaption>Pantalla «Imprimir registro».</figcaption></figure>
+  <div class="tw"><table>
+    <tr><th>Opción</th><th>Qué hace</th></tr>
+    <tr><td>Hospital predefinido</td><td>Usa el fax o email configurado para el destino. Al elegir la vía se activa OK.</td></tr>
+    <tr><td>Definir destino</td><td>Fax o email introducido a mano</td></tr>
+    <tr><td>Exportar</td><td>Elige qué incluir: Registro, ECG, Fotos, Rechazo de transporte, Autorización…</td></tr>
+    <tr><td>Compartir</td><td>Comparte el PCR con otros recursos autorizados</td></tr>
+    <tr><td>Impresión local</td><td>Impresora del vehículo</td></tr>
+    <tr><td>Vista previa</td><td>Muestra el documento en pantalla</td></tr>
+  </table></div>
+  <figure><img src="img-ambulancepad/011-036.jpg" alt="Informe preliminar" data-cap="Encabezado de un informe preliminar en PDF con logotipo personalizable."><figcaption>Informe en PDF con logotipo personalizable (SUC/GSC).</figcaption></figure>
+  <ul>
+    <li><b>Email</b>: integrable con Office 365. Se puede enviar al paciente (o a sus padres o tutor) y a las Fuerzas y Cuerpos de Seguridad cuando sea necesario.</li>
+    <li><b>XML</b>: la exportación se hace desde el <b>portal de administración</b>, no desde la tablet.</li>
+    <li><b>Archivo</b>: el parte cerrado está disponible enseguida en el portal en formato tabla, PDF y XML.</li>
+  </ul>
+  <div class="call crit"><b>Protección de datos</b>Antes de enviar un informe por email, comprueba el destinatario. Se trata de datos de salud (categoría especial según el RGPD).</div>
+</section>
+
+<!-- ============ 13 ============ -->
+<section class="ch" id="portal" data-t="Portal de administración" data-g="Gestión">
+  <div class="kicker">Capítulo 13</div>
+  <h1>Portal de administración</h1>
+  <p class="lead">Es un portal web <b>«zero footprint»</b>: no hay que instalar nada. Los responsables del SUC-GSC tienen permisos de administración y conceden o retiran accesos.</p>
+  <h2>Qué se configura</h2>
+  <div class="grid2">
+    <div class="card"><b>Usuarios y seguridad</b><ul><li>Cuentas, roles y permisos</li><li>Política de contraseñas: longitud, mayúsculas, números, caracteres especiales y caducidad</li><li>Auditoría de accesos</li></ul></div>
+    <div class="card"><b>Recursos</b><ul><li>Tipo, identificación y ubicación</li><li>Roles requeridos por tipo de recurso</li><li>Dispositivos médicos que se pueden conectar</li></ul></div>
+    <div class="card"><b>Protocolos</b><ul><li>Tipos de protocolo</li><li>Bloques, orden y campos obligatorios</li><li>Técnicas por protocolo</li><li>Palabras clave que activan campos</li></ul></div>
+    <div class="card"><b>Listas</b><ul><li>Medicamentos y alergias</li><li>Bases, vehículos y organizaciones</li><li>Motivos de anulación y tipos de llamada</li><li>Hasta 5 preguntas personalizadas en la entrega</li></ul></div>
+  </div>
+  <div class="grid2">
+    <figure><img src="img-ambulancepad/021-079.jpg" alt="Política de contraseñas" data-cap="Portal: configuración de la política de contraseñas."><figcaption>Política de contraseñas.</figcaption></figure>
+    <figure><img src="img-ambulancepad/023-088.jpg" alt="Alta de usuario" data-cap="Portal: ficha de usuario con funciones disponibles y seleccionadas."><figcaption>Ficha de usuario y funciones.</figcaption></figure>
+  </div>
+  <p>También permite revisar los partes cerrados, <b>devolverlos al usuario</b> para corregirlos y generar <b>informes estadísticos</b>.</p>
+  <p class="mono" style="font-size:13px;color:var(--muted)">Navegadores admitidos en la oferta: Chrome 59, Firefox 53, IE 11, Edge.</p>
+</section>
+
+<!-- ============ 14 ============ -->
+<section class="ch" id="soporte" data-t="Soporte, mantenimiento e implantación" data-g="Gestión">
+  <div class="kicker">Capítulo 14</div>
+  <h1>Soporte, mantenimiento e implantación</h1>
+  <h2>Soporte</h2>
+  <ul>
+    <li>Teléfono de <b>lunes a viernes, de 8:00 a 17:00</b>, además de email y sistema de tickets.</li>
+    <li>Los tickets se priorizan por gravedad y urgencia, con un <b>escalado de 3 niveles</b>.</li>
+  </ul>
+  <h2>Tipos de mantenimiento</h2>
+  <div class="tw"><table>
+    <tr><th>Tipo</th><th>Incluye</th></tr>
+    <tr><td>Preventivo</td><td>Todas las actualizaciones de versión del periodo</td></tr>
+    <tr><td>Correctivo</td><td>Solución de fallos de funcionamiento</td></tr>
+    <tr><td>Evolutivo</td><td>Pequeños cambios de código o de la API para integrarse con las salas del CECOES 1-1-2, sin coste adicional</td></tr>
+  </table></div>
+  <h2>Plan de implantación</h2>
+  <ol class="steps">
+    <li><b>Semana 1</b>: entrega de licencias y preparación de la infraestructura</li>
+    <li><b>Semana 2</b>: taller y configuración</li>
+    <li><b>Semana 3</b>: configuración</li>
+    <li><b>Semana 4</b>: formación de superusuarios</li>
+  </ol>
+  <p>La formación sigue un modelo de <b>formador de formadores</b>: se forma a superusuarios de cada empresa prestadora, que después forman a su plantilla. También hay formación continuada.</p>
+  <div class="call crit"><b>Fuera del contrato</b>Las licencias de VMware, el antivirus y las copias de seguridad corren a cargo del GSC, igual que la configuración y el mantenimiento del entorno virtual.</div>
+</section>
+
+<!-- ============ 15 SIM ============ -->
+<section class="ch" id="simulador" data-t="Simulador de asistencia" data-g="Práctica">
+  <div class="kicker">Capítulo 15 · Práctica</div>
+  <h1>Simulador: una asistencia completa</h1>
+  <p class="lead">Caso: varón de 62 años con dolor torácico. Recurso: SVA medicalizada. Elige la mejor acción en cada paso.</p>
+  <div class="sim" id="sim"></div>
+</section>
+
+<!-- ============ 16 EXAM ============ -->
+<section class="ch" id="examen" data-t="Examen final" data-g="Práctica">
+  <div class="kicker">Capítulo 16 · Evaluación</div>
+  <h1>Examen final</h1>
+  <p>15 preguntas sobre todo el libro. Tu resultado aparece al final.</p>
+  <div id="examBox"></div>
+</section>
+
+<!-- ============ ANEXOS ============ -->
+
+
+<section class="ch" id="glosario" data-t="Glosario" data-g="Anexos">
+  <div class="kicker">Anexo B</div>
+  <h1>Glosario</h1>
+  <dl class="gl">
+    <dt>PCR</dt><dd>Patient Care Record: el parte asistencial digital. No confundir con «parada cardiorrespiratoria».</dd>
+    <dt>PGE</dt><dd>Sistema de gestión de la sala operativa del CECOES 1-1-2 que envía las llamadas a los recursos.</dd>
+    <dt>CAD / CAD Interface</dt><dd>Computer-Aided Dispatch. Interfaz estándar de ZOLL que recibe por XML las llamadas del PGE.</dd>
+    <dt>CECOES 1-1-2</dt><dd>Centro Coordinador de Emergencias y Seguridad de Canarias.</dd>
+    <dt>SUC / GSC</dt><dd>Servicio de Urgencias Canario / Gestión de Servicios para la Salud y Seguridad en Canarias.</dd>
+    <dt>SVA · SVB · SVS · AH · AS</dt><dd>Soporte Vital Avanzado, Básico, Sanitarizado, Ambulancia Helitransportada y Ambulancia Sanitarizada (recursos del SUC).</dd>
+    <dt>TES</dt><dd>Técnico en Emergencias Sanitarias.</dd>
+    <dt>ABCDE</dt><dd>Esquema de valoración: vía aérea, respiración (Breathing), circulación, discapacidad y exposición.</dd>
+    <dt>GCS · FAST · START · APGAR · NACA</dt><dd>Escalas de Glasgow, ictus (Cincinnati), triaje de múltiples víctimas, recién nacido y gravedad.</dd>
+    <dt>SCACEST</dt><dd>Síndrome coronario agudo con elevación del ST.</dd>
+    <dt>LDAP</dt><dd>Protocolo de directorio para autenticación centralizada de usuarios.</dd>
+    <dt>Zero footprint</dt><dd>Aplicación web que no requiere instalar nada en el equipo.</dd>
+    <dt>Anexo (anotación al margen)</dt><dd>Única forma de añadir información a un parte ya cerrado.</dd>
+  </dl>
+</section>
+
+</main>
+</div>
+<div id="lb"><img alt=""><p></p></div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const chapters=$$('section.ch');
+let done=new Set(store.get('apad_done',[]));
+
+/* ---------- TOC ---------- */
+function buildToc(){
+  let html='',g='';
+  chapters.forEach((s,i)=>{
+    if(s.dataset.g!==g){g=s.dataset.g;html+=`<div class="grp">${g}</div>`}
+    html+=`<a href="#${s.id}" data-id="${s.id}" class="${done.has(s.id)?'done':''}"><span class="n">${String(i).padStart(2,'0')}</span><span>${s.dataset.t}</span><span class="ok">✓</span></a>`;
+  });
+  $('#tocList').innerHTML=html;
+}
+function updateProg(){
+  const countable=chapters.filter(s=>QUIZ[s.id]||s.id==='simulador'||s.id==='examen').map(s=>s.id);
+  const n=countable.filter(id=>done.has(id)).length;
+  const p=Math.round(n/countable.length*100);
+  $('#progBar').style.width=p+'%';$('#pct').textContent=p+'%';
+  $$('#tocList a').forEach(a=>a.classList.toggle('done',done.has(a.dataset.id)));
+}
+function markDone(id){done.add(id);store.set('apad_done',[...done]);updateProg()}
+
+/* ---------- Routing ---------- */
+function show(id){
+  const s=document.getElementById(id)||chapters[0];
+  chapters.forEach(c=>c.classList.toggle('show',c===s));
+  $$('#tocList a').forEach(a=>a.classList.toggle('on',a.dataset.id===s.id));
+  window.scrollTo(0,0);closeMenu();
+}
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+
+/* ---------- Menu ---------- */
+function closeMenu(){$('#toc').classList.remove('open');$('#ov').classList.remove('show')}
+$('#menuBtn').onclick=()=>{$('#toc').classList.toggle('open');$('#ov').classList.toggle('show')};
+$('#ov').onclick=closeMenu;
+
+/* ---------- Search ---------- */
+$('#search').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  $$('#tocList a').forEach(a=>{
+    const s=document.getElementById(a.dataset.id);
+    a.style.display=!q||s.textContent.toLowerCase().includes(q)?'':'none';
+  });
+  $$('#tocList .grp').forEach(g=>g.style.display=q?'none':'');
+});
+
+/* ---------- Lightbox ---------- */
+document.addEventListener('click',e=>{
+  if(e.target.matches('figure img')){const lb=$('#lb');lb.querySelector('img').src=e.target.src;lb.querySelector('p').textContent=e.target.dataset.cap||e.target.alt;lb.classList.add('show')}
+  else if(e.target.closest('#lb'))$('#lb').classList.remove('show');
+});
+
+/* ---------- Pager ---------- */
+chapters.forEach((s,i)=>{
+  const d=document.createElement('div');d.className='pager';
+  const prev=chapters[i-1],next=chapters[i+1];
+  d.innerHTML=`<button class="btn ghost" ${prev?'':'disabled'} onclick="location.hash='${prev?prev.id:''}'">← Anterior</button><button class="btn" ${next?'':'disabled'} onclick="location.hash='${next?next.id:''}'">${next?'Siguiente →':'Fin'}</button>`;
+  s.appendChild(d);
+});
+
+/* ---------- Quizzes ---------- */
+const QUIZ={
+ 'que-es':[
+  ['¿Qué es, en esencia, AmbulancePad?',['Un monitor desfibrilador','Un sistema de parte asistencial digital (PCR)','Un sistema de ayuda al diagnóstico','Un GPS de navegación'],1,'Es un sistema de documentación. No sustituye la exploración ni ayuda a diagnosticar.'],
+  ['¿Con qué equipos se conecta según el contrato, sin límite de unidades?',['Desfibriladores ZOLL y respiradores Weinmann','Bombas de infusión','Ecógrafos portátiles','Pulsioxímetros de cualquier marca'],0,'La oferta incluye licencias ilimitadas para ZOLL y Weinmann.']],
+ 'arquitectura':[
+  ['¿Qué pasa si la ambulancia se queda sin cobertura?',['La app se bloquea','Se pierde el parte','Se sigue trabajando off-line y se sincroniza al recuperar la cobertura','Hay que pasar a papel'],2,'Los datos se guardan en la tablet y se sincronizan solos con el PGE.'],
+  ['¿Cuándo se borran los datos de los incidentes de la tablet?',['Nunca','A los 30 días','Al sincronizar con el servidor y cerrar la sesión','Al apagar la tablet'],2,'Hacen falta las dos condiciones: sincronización y cierre de sesión.']],
+ 'turno':[
+  ['¿Cuántos miembros de la tripulación tienen que autenticarse como mínimo?',['Todos','Al menos uno','El médico siempre','Ninguno'],1,'Basta con uno. Los roles obligatorios que faltan aparecen en gris.'],
+  ['¿Qué ocurre si se reinicia AmbulancePad durante el turno?',['Se pierde el turno','Hay que reautenticarse y, mientras tanto, la lista de PCR permanece oculta','Nada','Se cierran todos los partes'],1,'Es una medida de seguridad: la lista de PCR se oculta hasta que alguien se autentica.']],
+ 'interfaz':[
+  ['¿Qué indica una barra de estado naranja?',['Sección completa','Faltan datos obligatorios en esa sección','Error de conexión','Paciente grave'],1,'Naranja significa incompleto. Verde con ✓, completo.'],
+  ['¿De qué color es el bloque de Tratamiento/Acciones?',['Verde','Azul claro','Rojo','Azul oscuro'],2,'Azul claro: administración. Azul oscuro: primera evaluación. Rojo: acciones. Verde: entrega.']],
+ 'llamada':[
+  ['Empiezas una asistencia sin aviso previo de la sala. ¿Qué haces?',['Esperar a que llegue la llamada','Introducir los datos a mano y fusionarlos después con los de la central','Hacer el parte en papel','Crear un incidente nuevo en el portal'],1,'Los datos manuales se pueden fusionar después con los del PGE.'],
+  ['¿Qué activa automáticamente la palabra clave «PRIORIDAD 0»?',['El cierre del parte','«Conducir con prioritarios»','La prenotificación','La llamada al hospital'],1,'Las palabras clave pueden rellenar campos del parte de forma automática.']],
+ 'valoracion':[
+  ['¿Cuál de estas NO es una forma de introducir datos?',['Código QR','Código de barras','Dictado por voz','Pulsación táctil'],2,'Las vías son táctil, código de barras, QR e inalámbrica (equipos médicos).']],
+ 'dispositivos':[
+  ['¿Con qué retraso mínimo llegan las constantes a la tablet?',['Tiempo real','5 segundos','30 segundos','5 minutos'],2,'Al menos 30 s y de forma periódica. Valora siempre al paciente en el monitor.'],
+  ['El equipo se desconecta a menudo. ¿Cuál es la causa más probable?',['La tablet está lejos o hay objetos metálicos en medio','La batería del paciente','El protocolo SVB','La contraseña ha caducado'],0,'El Bluetooth tiene poco alcance y el metal lo reduce.'],
+  ['¿Qué permite la línea de tiempo?',['Ver las constantes, acciones y fotos con su hora','Solo ver el ECG','Editar partes cerrados','Ver la ubicación GPS'],0,'Las fotos se sitúan en la línea de tiempo junto a los datos de los equipos.']],
+ 'tratamiento':[
+  ['Un paciente empeora y pasas de SVB a SVA. ¿Qué pasa con los datos ya registrados?',['Se pierden','Se conservan','Se duplican','Hay que reintroducirlos'],1,'Al ampliar el protocolo se conservan todos los datos.']],
+ 'escalas':[
+  ['¿Qué escala se usa en un incidente con múltiples víctimas?',['APGAR','START','GCS','FAST'],1,'START es la escala de triaje para múltiples víctimas.'],
+  ['¿Cuál de estas situaciones especiales se puede documentar?',['Rechazo del traslado','Violencia contra el personal','Éxitus','Todas las anteriores'],3,'Las tres están contempladas, con firmas cuando procede.']],
+ 'prenotificacion':[
+  ['¿Qué diagnósticos de sospecha disparan el aviso parpadeante de prenotificación?',['Fractura de cadera','SCACEST o ACV','Hipoglucemia','Crisis de ansiedad'],1,'Patologías tiempo-dependientes: SCACEST e ictus.']],
+ 'entrega':[
+  ['Una vez cerrado el parte, detectas un error en un dato médico. ¿Qué haces?',['Lo editas directamente','Pides al administrador que lo borre','Añades una anotación al margen (Anexo)','Abres un parte nuevo'],2,'Los datos médicos quedan bloqueados para garantizar la autenticidad del documento.'],
+  ['¿Para qué sirve «Copiar del registro»?',['Para duplicar el parte','Para copiar los últimos datos en los campos de entrega','Para enviarlo por email','Para cambiar de paciente'],1,'Ahorra tiempo en la entrega.']],
+ 'informe':[
+  ['¿Desde dónde se exporta el XML?',['Desde la tablet','Desde el portal de administración','Por fax','Desde el monitor'],1,'La tablet envía PDF por email o fax. El XML se exporta desde el portal (además del envío automático al PGE al cierre).'],
+  ['¿Qué campos aparecen en el PDF?',['Todos, incluidos los vacíos','Solo los rellenados','Solo los obligatorios','Solo las constantes'],1,'Solo se imprimen los campos rellenados.']],
+ 'portal':[
+  ['El portal de administración es «zero footprint». Esto significa que…',['No guarda datos','Se usa desde el navegador sin instalar nada','Solo funciona sin conexión','No tiene usuarios'],1,'Se accede por web, sin instalar software.']],
+ 'soporte':[
+  ['¿Cuál es el horario del soporte telefónico según la oferta?',['24/7','L-V de 8 a 17 h','L-S de 9 a 21 h','Solo por email'],1,'Por eso, en un servicio 24/7, conviene negociar un SLA para incidencias críticas.']]
+};
+function renderQuiz(id,qs,box,final){
+  const wrap=document.createElement('div');wrap.className='quiz';
+  wrap.innerHTML=`<h3>${final?'':'✎ Autoevaluación'}</h3>`+qs.map((q,i)=>`<div class="q" data-i="${i}"><p>${i+1}. ${q[0]}</p>${q[1].map((o,j)=>`<button class="opt" data-j="${j}">${o}</button>`).join('')}<div class="expl">${q[3]}</div></div>`).join('')+`<p class="score"></p>`;
+  let answered=0,right=0;
+  wrap.querySelectorAll('.q').forEach(qd=>{
+    const q=qs[+qd.dataset.i];
+    qd.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const j=+b.dataset.j;
+      qd.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(+x.dataset.j===q[2])x.classList.add('right')});
+      if(j!==q[2])b.classList.add('wrong');else right++;
+      qd.querySelector('.expl').classList.add('show');answered++;
+      if(answered===qs.length){
+        const sc=wrap.querySelector('.score');
+        const pct=Math.round(right/qs.length*100);
+        sc.innerHTML=`Resultado: ${right}/${qs.length} (${pct}%) ${right===qs.length?'✓ Capítulo superado':(final&&pct>=80?'✓ Aprobado':'· <a href="#" class="retry">Repetir</a>')}`;
+        if(right===qs.length||(final&&pct>=80))markDone(id);
+        const r=sc.querySelector('.retry');if(r)r.onclick=e=>{e.preventDefault();wrap.remove();renderQuiz(id,qs,box,final)};
+      }
+    });
+  });
+  box.insertBefore(wrap,box.querySelector('.pager'));
+}
+Object.entries(QUIZ).forEach(([id,qs])=>{const s=document.getElementById(id);if(s)renderQuiz(id,qs,s)});
+/* final exam: one or two from each chapter */
+const EXAM=[];Object.values(QUIZ).forEach(qs=>EXAM.push(qs[0]));
+EXAM.push(QUIZ['dispositivos'][1]);
+const examSec=document.getElementById('examen');
+renderQuiz('examen',EXAM,examSec,true);
+
+/* ---------- Pad demo ---------- */
+const PADROWS=[['Datos de la llamada','Incidente, dirección','var(--lblue)','A'],['A · Vía aérea','Libre / comprometida','var(--dblue)','A'],['B · Respiración','FR, SpO₂, O₂','var(--dblue)','B'],['C · Circulación / ECG','TA, FC, ritmo','var(--dblue)','C'],['Intervenciones','Accesos, medicación','var(--red)','Tx'],['Entrega','Destino, estado final','var(--green)','E']];
+$('#padRows').innerHTML=PADROWS.map(r=>`<div class="prow"><span class="st"></span><span class="lb">${r[0]}<small>${r[1]}</small></span><span class="chk">✓</span><span class="ic" style="background:${r[2]}">${r[3]}</span></div>`).join('');
+$$('.prow').forEach(r=>r.onclick=()=>{r.classList.toggle('ok');const n=$$('.prow.ok').length;$('#padCount').textContent=n===6?'✓ Listo para cerrar':`${n}/6 completas`});
+
+/* ---------- Simulator ---------- */
+const SIM=[
+ {m:'07:58 · Base',s:'Empieza tu turno en la SVA. AmbulancePad ya está abierto en la tablet. ¿Qué haces primero?',o:[
+  ['Esperar a que llegue una llamada',0,'Antes de recibir llamadas hay que registrar el vehículo, la tripulación y los dispositivos.'],
+  ['Registrar la unidad, la tripulación (con al menos una autenticación) y los dispositivos, y hacer la lista de verificación',1,'Correcto. Así la tablet queda lista y los equipos vinculados.'],
+  ['Conectar el desfibrilador al paciente anterior',0,'No hay paciente todavía. Primero, el inicio de turno.']]},
+ {m:'09:12 · Llamada',s:'La sala te asigna un incidente: «varón de 62 años, dolor torácico, PRIORIDAD 0». Aparece en la tablet.',o:[
+  ['Aceptar la llamada: los datos del PGE se cargan solos y se marca «conducir con prioritarios»',1,'Correcto. La palabra clave activa ese campo automáticamente.'],
+  ['Escribir a mano todos los datos del incidente',0,'No hace falta: el CAD Interface ya los envía desde el PGE.'],
+  ['Rechazar y llamar por radio para pedir los datos',0,'Los datos ya llegan por la integración PGE-CAD.']]},
+ {m:'09:24 · En el lugar',s:'Llegas. El paciente está sudoroso. Conectas el ZOLL X Series. ¿Cómo valoras la situación hemodinámica?',o:[
+  ['Mirando la gráfica de tendencias en la tablet',0,'¡Cuidado! Los datos llegan a la tablet con ≥30 s de retraso y de forma periódica.'],
+  ['En el monitor ZOLL. La tablet solo documenta',1,'Correcto. La valoración se hace en el equipo médico.'],
+  ['Preguntando a la sala',0,'La valoración es tuya, en el monitor.']]},
+ {m:'09:27 · ECG',s:'El ECG de 12 derivaciones muestra elevación del ST en cara inferior. Registras «sospecha de SCACEST» y la pantalla muestra un aviso parpadeante.',o:[
+  ['Ignorarlo y seguir con la valoración',0,'Es una patología tiempo-dependiente: hay que prenotificar.'],
+  ['Abrir la prenotificación: hora estimada de llegada, hospital, prioridad Inmediata, revisar las constantes autoinsertadas y enviar con el ECG',1,'Correcto. La sala y el hospital reciben el aviso precoz.'],
+  ['Esperar a llegar al hospital para avisar',0,'Se pierde tiempo de reperfusión.']]},
+ {m:'09:35 · Traslado',s:'Durante el traslado hay una pérdida de cobertura 4G en una zona de montaña.',o:[
+  ['Pasar a parte en papel',0,'No hace falta.'],
+  ['Seguir documentando: AmbulancePad funciona off-line y sincroniza al recuperar cobertura',1,'Correcto.'],
+  ['Reiniciar la tablet',0,'Además, te obligaría a reautenticarte.']]},
+ {m:'09:58 · Hospital',s:'Llegas a urgencias. Tienes que rellenar el bloque de entrega.',o:[
+  ['Usar «Copiar del registro» para trasladar las últimas constantes y revisarlas',1,'Correcto: más rápido y sin errores de transcripción.'],
+  ['Dejar la entrega en blanco',0,'La barra quedaría en naranja y tendrías que justificarlo al cerrar.'],
+  ['Copiar los datos de memoria',0,'Es más lento y propenso a errores.']]},
+ {m:'10:05 · Cierre',s:'Cierras el PCR con firma y contraseña. Después te das cuenta de que la hora de un fármaco era errónea.',o:[
+  ['Editar el campo directamente',0,'Los datos médicos quedan bloqueados al cerrar.'],
+  ['Añadir una anotación al margen (Anexo) con la corrección',1,'Correcto: así se mantiene la trazabilidad y la autenticidad del documento.'],
+  ['Pedir que borren el parte',0,'No es posible ni deseable.']]}
+];
+let si=0,ss=0;
+function renderSim(){
+  const el=$('#sim');
+  const bars=SIM.map((_,i)=>`<i class="${i<si?'d':i===si?'c':''}"></i>`).join('');
+  if(si>=SIM.length){
+    el.innerHTML=`<div class="simprog">${bars}</div><h3>Asistencia completada</h3><p class="score">Decisiones correctas: ${ss}/${SIM.length}</p><p>${ss===SIM.length?'Excelente: has seguido el flujo completo de AmbulancePad.':'Repasa los pasos en los que fallaste y vuelve a intentarlo.'}</p><button class="btn" id="simR">Repetir caso</button>`;
+    if(ss===SIM.length)markDone('simulador');
+    $('#simR').onclick=()=>{si=0;ss=0;renderSim()};return;
+  }
+  const st=SIM[si];
+  el.innerHTML=`<div class="simprog">${bars}</div><div class="meta">${st.m}</div><div class="scene">${st.s}</div>${st.o.map((o,j)=>`<button class="opt" data-j="${j}">${o[0]}</button>`).join('')}<div class="fb"></div>`;
+  el.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    const o=st.o[+b.dataset.j];
+    el.querySelectorAll('.opt').forEach((x,k)=>{x.disabled=true;if(st.o[k][1])x.classList.add('right')});
+    if(!o[1])b.classList.add('wrong');else ss++;
+    el.querySelector('.fb').innerHTML=`<div class="call ${o[1]?'tip':'warn'}"><b>${o[1]?'✓ Bien':'✗ Revisa'}</b>${o[2]}</div><button class="btn" id="simN">Continuar →</button>`;
+    $('#simN').onclick=()=>{si++;renderSim()};
+  });
+}
+renderSim();
+
+buildToc();updateProg();show(location.hash.slice(1)||'inicio');
+</script>
+</body>
+</html>

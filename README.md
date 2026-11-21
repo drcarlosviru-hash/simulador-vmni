@@ -5,10 +5,13 @@
 Mundo virtual de la emergencia por capítulos, con misiones, XP, rangos, insignias, exámenes con estrellas y un modo arcade (*Turno de noche*):
 
 1. **La calle** · PHTLS (trauma prehospitalario)
-2. **Box de trauma** · ATLS
-3. **Parada** · Simulador PCR, algoritmo SVA ERC 2025
-4. **Respira** · VMNI (repaso, guía visual, ventiladores y simulador)
-5. **Fin de guardia** · TurnoValor (demo con datos ficticios)
+2. **El parte** · AmbulancePad SUC (libro interactivo y simulador de parte asistencial)
+3. **Box de trauma** · ATLS
+4. **Parada** · Simulador PCR, algoritmo SVA ERC 2025
+5. **Respira** · VMNI (repaso, guía visual, ventiladores y simulador)
+6. **Fin de guardia** · TurnoValor (demo con datos ficticios)
+
+El mapa cambia de cielo según la hora real (noche, amanecer, día, atardecer); se puede fijar tocando el reloj.
 
 Las misiones se marcan solas leyendo el progreso que guarda cada módulo en el navegador. Preguntas y capítulos editables en `mundo/datos.js`.
 
