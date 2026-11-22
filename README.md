@@ -13,6 +13,8 @@ Mundo virtual de la emergencia por capítulos, con misiones, XP, rangos, insigni
 7. **Box de agudos** · CAD/EHH (taller interactivo + simulador hora a hora de 0 a 24 h)
 8. **Fin de guardia** · TurnoValor (demo con datos ficticios)
 
+**🩺 Paciente virtual (fase 1):** motor común de escenarios (`mundo/motor/`) con paciente 2,5D que respira y cambia según tus decisiones, monitor multiparamétrico (ECG, pletismografía, capnografía, PANI), auscultación sintetizada, ventilador de VMNI ajustable, modo tutor/examen y debriefing por competencias con línea temporal y repetición. Primer escenario: insuficiencia respiratoria aguda (EAP hipertensivo o EPOC hipercápnico). Formato de escenario documentado en `mundo/motor/FORMATO.md`.
+
 El mapa cambia de cielo según la hora real (noche, amanecer, día, atardecer); se puede fijar tocando el reloj.
 
 Las misiones se marcan solas leyendo el progreso que guarda cada módulo en el navegador. Preguntas y capítulos editables en `mundo/datos.js`.

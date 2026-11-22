@@ -215,6 +215,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--mut);font-
     </div>
     <div class="modes">
       <button class="btn pri" id="bContinue">▶ Continuar</button>
+      <button class="btn" id="bPV">🩺 Paciente virtual</button>
       <button class="btn" id="bNight">🌙 Turno de noche</button>
     </div>
   </section>
@@ -617,7 +618,7 @@ function openSettings(){
     </div>`);
   $("#swLibre").onclick = () => { S.libre = !S.libre; save(); render(); openSettings(); };
   $("#bExp").onclick = () => {
-    const extra = {}; ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist","hktaller","hiperk_hist"].forEach(k => { const v = localStorage.getItem(k); if (v != null) extra[k] = v; });
+    const extra = {}; ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist","hktaller","hiperk_hist","motor_hist"].forEach(k => { const v = localStorage.getItem(k); if (v != null) extra[k] = v; });
     const blob = new Blob([JSON.stringify({ mundo: S, modulos: extra, fecha: new Date().toISOString() }, null, 1)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "mundo-emergencia-progreso.json"; a.click();
   };
@@ -628,7 +629,7 @@ function openSettings(){
         const d = JSON.parse(t);
         if (!d.mundo) throw 0;
         S = Object.assign(S, d.mundo); save();
-        Object.entries(d.modulos || {}).forEach(([k, v]) => { if (/^(phtls_|atls_|pcr_hist|apad_done|apadSim2|cadtaller|cadehh_hist|hktaller|hiperk_hist)/.test(k)) localStorage.setItem(k, v); });
+        Object.entries(d.modulos || {}).forEach(([k, v]) => { if (/^(phtls_|atls_|pcr_hist|apad_done|apadSim2|cadtaller|cadehh_hist|hktaller|hiperk_hist|motor_hist)/.test(k)) localStorage.setItem(k, v); });
         closeModal(); render(true); toast("✅ Progreso importado");
       }catch(err){ toast("❌ El archivo no es un progreso válido"); }
     });
@@ -638,7 +639,7 @@ function openSettings(){
       <div class="mb row"><button class="btn" id="rNo">Cancelar</button><button class="btn pri" id="rYes">Sí, reiniciar</button></div>`);
     $("#rNo").onclick = openSettings;
     $("#rYes").onclick = () => {
-      ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist","hktaller","hiperk_hist",KEY].forEach(k => localStorage.removeItem(k));
+      ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist","hktaller","hiperk_hist","motor_hist",KEY].forEach(k => localStorage.removeItem(k));
       S = { nombre:"", rol:"", visitas:{}, estrellas:{}, mejorNota:{}, manual:{}, noche:0, libre:false, cielo:"", vistos:[], insVistas:[] };
       save(); closeModal(); render(true); openProfile(true);
     };
@@ -657,6 +658,7 @@ $("#bBadges").onclick = openBadges;
 $("#bStars").onclick = openStars;
 $("#bSet").onclick = openSettings;
 $("#bNight").onclick = startNight;
+$("#bPV").onclick = () => { const c = CAPITULOS.find(x => x.id === "vmni"); openPlay(c, c.modulos.find(m => m.id === "vmni_pv")); };
 $("#bContinue").onclick = () => openCap(nextCap().id);
 
 render(true);

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Paciente virtual · Mundo Emergencia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070b16;--card:#0f1729;--card2:#152039;--line:#22304f;--tx:#e8eefc;--mut:#8b9ac0;--acc:#38bdf8;--ok:#34d399;--warn:#fbbf24;--bad:#fb5c74;--mono:"JetBrains Mono",ui-monospace,monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--tx);font:14px/1.45 Inter,system-ui,sans-serif;min-height:100%}
+h1,h2,h3,.sora{font-family:Sora,Inter,sans-serif;letter-spacing:-.015em}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:disabled{opacity:.45;cursor:not-allowed}
+.top{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:8px 14px;background:#070b16ee;backdrop-filter:blur(8px);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.top h1{font-size:16px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid var(--line);background:var(--card)}
+.chip.tutor{color:#7dd3fc;border-color:#1e4a66}.chip.examen{color:#fca5a5;border-color:#5b2230}
+.clock{font-family:var(--mono);font-size:18px;font-weight:700;padding:2px 10px;border-radius:8px;background:#000;border:1px solid #1d2a44;color:#7dffb0}
+.spd{display:flex;gap:3px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px}
+.spd button{padding:4px 9px;border-radius:7px;font-size:12px;font-weight:700;color:var(--mut)}
+.spd button.on{background:#1e3a5f;color:#fff}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-weight:600;font-size:13px;transition:.12s}
+.btn:hover:not(:disabled){border-color:#3a4d7a}
+.btn.pri{background:linear-gradient(135deg,#0ea5e9,#6366f1);border:0;color:#fff}
+.btn.red{background:#3a1220;border-color:#6b2232;color:#fecdd3}
+.grow{flex:1}
+.layout{display:grid;grid-template-columns:320px 1fr 360px;gap:12px;padding:12px;max-width:1500px;margin:0 auto}
+@media(max-width:1180px){.layout{grid-template-columns:1fr 1fr}.col-mon{grid-column:1 / -1;order:-1}}
+@media(max-width:760px){.layout{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
+.card h3{font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-family:Inter;font-weight:700}
+/* paciente */
+#pt{width:100%;height:auto;display:block;border-radius:12px;background:radial-gradient(400px 260px at 50% 30%,#1b2a4a,#0b1222)}
+.bubble{position:relative;margin-top:8px;padding:10px 12px;border-radius:12px;background:#f8fafc;color:#0f172a;font-size:13.5px;min-height:40px;transition:.2s}
+.bubble::before{content:"";position:absolute;top:-7px;left:40px;border:7px solid transparent;border-top:0;border-bottom-color:#f8fafc}
+.bubble b{color:#0369a1}
+.qs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.q{text-align:left;padding:7px 9px;border-radius:9px;background:var(--card2);border:1px solid var(--line);font-size:12.5px}
+.q:hover{border-color:#3a4d7a}.q.done{opacity:.6}
+.mist1{animation:mist 2.4s ease-out infinite}.mist2{animation:mist 2.4s ease-out infinite .8s}
+@keyframes mist{0%{transform:translateY(8px);opacity:.1}50%{opacity:.6}100%{transform:translateY(-14px);opacity:0}}
+/* monitor */
+.monitor{background:#000;border-radius:14px;border:2px solid #1b2333;overflow:hidden;position:relative}
+#mon{width:100%;height:auto;display:block}
+.mute{position:absolute;right:8px;top:6px;font-size:12px;color:#9ca3af;background:#111827;border:1px solid #1f2937;border-radius:8px;padding:3px 8px}
+.devs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.dev{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-size:12.5px}
+.dev b{font-family:var(--mono)}
+.dev .x{color:var(--mut);font-weight:700;margin-left:4px}
+.hint{display:flex;gap:10px;align-items:flex-start;margin-top:10px;padding:10px 12px;border-radius:12px;background:#0b2537;border:1px solid #1e4a66;color:#bae6fd;font-size:13.5px;animation:pop .3s}
+.hint.warn{background:#2b1d06;border-color:#6b4a12;color:#fde68a}
+.hint.bad{background:#2d0f18;border-color:#6b2232;color:#fecdd3}
+@keyframes pop{from{transform:translateY(6px);opacity:0}}
+/* acciones */
+.tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.tab{flex:1;padding:8px 6px;border-radius:9px;background:var(--card2);border:1px solid var(--line);font-weight:700;font-size:12.5px}
+.tab.on{background:#12324a;border-color:#2a6a96;color:#fff}
+.acts{display:grid;gap:6px;max-height:430px;overflow:auto;padding-right:2px}
+.act{display:flex;align-items:center;gap:10px;text-align:left;padding:9px 10px;border-radius:10px;background:var(--card2);border:1px solid var(--line);transition:.12s}
+.act:hover:not(:disabled){border-color:#3a6a96;transform:translateX(2px)}
+.act b{display:block;font-size:13px}
+.act small{color:var(--mut);font-size:11.5px}
+.act .i{font-size:17px;width:22px;text-align:center}
+.act .tag{margin-left:auto;font-size:11px;color:var(--mut);white-space:nowrap}
+.grp{font-size:11px;font-weight:800;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin:8px 0 2px}
+.res{display:grid;gap:6px;max-height:260px;overflow:auto}
+.r{padding:8px 10px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-size:12.5px}
+.r .h{display:flex;justify-content:space-between;color:var(--mut);font-size:11px;margin-bottom:2px}
+.r.alert{border-color:#7f1d1d}
+.r.pend{opacity:.7;border-style:dashed}
+.r .tip{margin-top:4px;color:#7dd3fc;font-size:12px}
+.log{font-family:var(--mono);font-size:11.5px;color:var(--mut);max-height:150px;overflow:auto;display:grid;gap:2px}
+.log span{color:#7dffb0}
+/* modales */
+.ov{position:fixed;inset:0;z-index:50;background:#020409cc;backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;padding:14px}
+.ov.on{display:flex}
+.modal{width:min(760px,100%);max-height:calc(100vh - 28px);overflow:auto;background:#0b1222;border:1px solid var(--line);border-radius:20px;padding:20px;animation:pop .25s}
+.modal.wide{width:min(1100px,100%)}
+.modal h2{font-size:22px;margin-bottom:4px}
+.sl{margin:10px 0}
+.sl .tt{display:flex;justify-content:space-between;font-size:13px}
+.sl .tt b{font-family:var(--mono)}
+input[type=range]{width:100%;accent-color:#38bdf8}
+.seg{display:flex;gap:6px;margin:8px 0}
+.seg button{flex:1;padding:10px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-weight:700}
+.seg button.on{background:#12324a;border-color:#38bdf8}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.pick button{text-align:left;padding:14px;border-radius:14px;background:var(--card2);border:1px solid var(--line)}
+.pick button.on{border-color:#38bdf8;background:#0f2a40}
+.pick b{display:block;font-size:15px;margin-bottom:2px}
+.pick small{color:var(--mut)}
+/* debriefing */
+.dgrid{display:grid;grid-template-columns:240px 1fr;gap:16px;margin-top:12px}
+@media(max-width:760px){.dgrid{grid-template-columns:1fr}}
+.ring{position:relative;width:200px;height:200px;margin:0 auto}
+.ring .v{position:absolute;inset:0;display:grid;place-items:center;font-family:Sora,Inter,sans-serif;font-size:44px;font-weight:800}
+.comp{display:grid;grid-template-columns:1fr 46px;gap:4px 10px;align-items:center;font-size:13px;margin-bottom:8px}
+.bar{grid-column:1 / -1;height:8px;border-radius:9px;background:#1b2741;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:9px}
+.lst{list-style:none;display:grid;gap:5px;font-size:13px}
+.lst li{display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border-radius:10px;background:var(--card2)}
+.lst .c{font-size:10.5px;font-weight:800;color:#fecdd3;background:#5b1d2a;padding:1px 6px;border-radius:6px;margin-left:auto;white-space:nowrap}
+.sec{font-family:Sora,Inter,sans-serif;font-size:15px;margin:16px 0 8px}
+#chart{width:100%;height:auto;display:block;background:#050a14;border:1px solid var(--line);border-radius:12px}
+.replay{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin-top:8px}
+.snap{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:8px}
+.snap div{background:#000;border:1px solid #1d2a44;border-radius:8px;padding:6px 8px;font-family:var(--mono)}
+.snap small{display:block;font-family:Inter;color:#6b7da8;font-size:10.5px}
+.reco{padding:12px 14px;border-radius:12px;background:#0b2537;border:1px solid #1e4a66;color:#bae6fd;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1 id="tit">Paciente virtual</h1>
+  <span class="chip" id="modo">—</span>
+  <span class="chip" id="casoChip">Paciente desconocido</span>
+  <span class="grow"></span>
+  <span class="clock" id="clk">00:00</span>
+  <div class="spd" id="spd"><button data-s="0" title="Pausa">⏸</button><button data-s="1">×1</button><button data-s="5">×5</button><button data-s="10" class="on">×10</button><button data-s="30">×30</button></div>
+  <button class="btn" id="skip">+5 min</button>
+  <button class="btn red" id="fin">Finalizar y evaluar</button>
+</div>
+
+<div class="layout">
+  <section class="col-pt">
+    <div class="card">
+      <h3>Paciente</h3>
+      <svg id="pt" viewBox="0 0 360 300" role="img" aria-label="Paciente virtual"></svg>
+      <div class="bubble" id="bub"></div>
+      <div class="qs" id="qs"></div>
+    </div>
+  </section>
+
+  <section class="col-mon">
+    <div class="monitor"><canvas id="mon" width="980" height="420"></canvas><button class="mute" id="mute">🔇 Alarmas</button></div>
+    <div class="devs" id="devs"></div>
+    <div id="hints"></div>
+  </section>
+
+  <section class="col-act">
+    <div class="card">
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-t="exp">Explorar</button><button class="tab" data-t="pru">Pruebas</button><button class="tab" data-t="tra">Tratar</button><button class="tab" data-t="dec">Decisión</button>
+      </div>
+      <div class="acts" id="acts"></div>
+    </div>
+    <div class="card" style="margin-top:12px"><h3>Resultados</h3><div class="res" id="res"><div class="r" style="color:var(--mut)">Sin resultados todavía.</div></div></div>
+    <div class="card" style="margin-top:12px"><h3>Registro</h3><div class="log" id="log"></div></div>
+  </section>
+</div>
+
+<div class="ov" id="ov"><div class="modal" id="modal"></div></div>
+
+<script>
+(function(){
+  const esc = (new URLSearchParams(location.search).get("esc") || "ira").replace(/[^a-z0-9_-]/gi, "");
+  const s = document.createElement("script");
+  s.src = "escenarios/" + esc + ".js";
+  s.onload = () => { const m = document.createElement("script"); m.src = "motor.js"; document.body.appendChild(m); };
+  s.onerror = () => document.body.innerHTML = "<p style='padding:30px'>Escenario no encontrado.</p>";
+  document.body.appendChild(s);
+})();
+</script>
+</body>
+</html>

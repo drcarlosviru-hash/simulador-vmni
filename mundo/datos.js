@@ -78,6 +78,7 @@ const CAPITULOS = [
     color: "#34d399", icono: "🫁",
     historia: "Recuperado, pero ahora es otro paciente el que te necesita: EPOC agudizado, pH 7,26, tirando de accesorios. Ajusta la máscara, el EPAP, el soporte… y lee las curvas antes de que se agote.",
     modulos: [
+      { id: "vmni_pv", nombre: "🩺 Paciente virtual · Insuficiencia respiratoria aguda", url: "motor/paciente.html?esc=ira", desc: "Paciente dinámico con monitor real, auscultación, VMNI ajustable, modo tutor/examen y debriefing por competencias." },
       { id: "vmni_repaso", nombre: "Repaso de VMNI y fisiología", url: VMNI + "repaso.html", desc: "10 lecciones para empezar." },
       { id: "vmni_guia", nombre: "Guía visual de VMNI", url: VMNI + "guia.html", desc: "Flujogramas, casos y glosario." },
       { id: "vmni_vent", nombre: "Ventiladores en VMNI", url: VMNI + "ventiladores.html", desc: "La pantalla de cada equipo." },
@@ -88,6 +89,8 @@ const CAPITULOS = [
       { id: "vmni_m2", txt: "Recorre la guía visual", xp: 75, auto: s => s.visit("vmni_guia") },
       { id: "vmni_m3", txt: "Conoce las pantallas de los ventiladores", xp: 75, auto: s => s.visit("vmni_vent") },
       { id: "vmni_m4", txt: "Ventila a un paciente en el simulador", xp: 100, auto: s => s.visit("vmni_sim") },
+      { id: "vmni_pv1", txt: "Paciente virtual: ≥ 75 % en modo examen sin parada", xp: 200, auto: s => s.list("motor_hist").some(h => h.esc === "ira" && h.modo === "examen" && h.pct >= 75 && !h.arrest) },
+      { id: "vmni_pv2", txt: "Paciente virtual: resuelve el EAP y el EPOC sin fallos críticos", xp: 250, auto: s => ["eap", "epoc"].every(c => s.list("motor_hist").some(h => h.esc === "ira" && h.caso === c && h.crit === 0)) },
       { id: "vmni_exam", txt: "Supera el examen del capítulo", xp: 0, auto: s => s.stars("vmni") >= 1 }
     ],
     insignia: { id: "sincronia", nombre: "Sincronía", icono: "〰️", txt: "Examen de VMNI superado" }
