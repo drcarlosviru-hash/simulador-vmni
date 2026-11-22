@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador CAD / EHH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: clínico, sobrio, de guardia — instrucciones claras y feedback inmediato
+   IDEA: la gráfica de constantes de UCI (hoja de enfermería) que se rellena hora a hora
+   PICTURE: tres trazos (glucosa, K+, pH) sobre la línea 0–24 h con fases del algoritmo
+   COLOUR and TYPE: papel blanco, tinta azul-noche, rojo bolígrafo (glucosa), azul (K+), verde clínico (objetivo); Public Sans + Plex Mono para cifras
+   LAYOUT: caso arriba; monitor + gráfica; órdenes de la hora; registro de feedback; referencia */
+:root{color-scheme:light dark;
+--bg:light-dark(#f6f7f4,#0f1619);--paper:light-dark(#ffffff,#162127);--ink:light-dark(#14202b,#e4ecef);--mute:light-dark(#5a6874,#93a5ae);
+--line:light-dark(#dfe4e6,#26353d);--grid:light-dark(#eef1f2,#1c2a31);
+--red:light-dark(#c8102e,#ff6b7d);--blue:light-dark(#1f4fbf,#7aa2ff);--green:light-dark(#0b7a52,#4fd39c);--amber:light-dark(#b25e00,#ffb347);--violet:light-dark(#6a3fb5,#b99bff);
+--redbg:light-dark(#fdecee,#3a1a20);--ambbg:light-dark(#fff4e5,#3a2a14);--grnbg:light-dark(#e8f6ef,#123026);--bluebg:light-dark(#eaf0fd,#18264a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Public Sans",system-ui,sans-serif;overflow-x:clip}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.band{padding:clamp(16px,2.6vw,32px) max(4vw,14px)}
+.wrap{max-width:1280px;margin:0 auto}
+h1{font-size:clamp(28px,4vw,42px);line-height:1.05;margin:0;font-weight:800;text-wrap:balance}
+h2{font-size:20px;margin:0 0 10px;font-weight:800}
+h3{font-size:16px;margin:0 0 6px}
+.sub{color:var(--mute);margin:6px 0 0}
+header{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:end;justify-content:space-between}
+.cases{display:flex;flex-wrap:wrap;gap:8px}
+button,select{font:inherit;font-size:15px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;min-height:44px;padding:8px 14px;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible+span{outline:3px solid var(--blue);outline-offset:2px}
+button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button.go{background:var(--red);color:#fff;border-color:var(--red);font-weight:800;font-size:17px;padding:10px 22px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px}
+.casebox{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;margin-top:16px}
+.tag{display:inline-block;font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;background:var(--bluebg);color:var(--blue)}
+.main{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:16px;margin-top:16px}
+.vitals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.v{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.v b{display:block;font-size:13px;color:var(--mute);font-weight:600}
+.v .num{font-size:22px;font-weight:600;white-space:nowrap}
+.v small{display:block;font-size:13px;color:var(--mute)}
+.v.big{grid-column:span 2}.v.big .num{font-size:34px;color:var(--red)}
+.v.bad{border-color:var(--red);background:var(--redbg)}.v.warn{border-color:var(--amber);background:var(--ambbg)}.v.ok{border-color:var(--green);background:var(--grnbg)}
+.clock{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;margin-bottom:10px}.clock .num{white-space:nowrap}
+.clock .num{font-size:30px;font-weight:600}
+.phase{font-weight:800}
+.fig{position:relative;min-height:400px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.objs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.obj{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--mute)}
+.obj.cur{border-color:var(--ink);color:var(--ink);background:var(--grid)}
+.obj strong{display:block;font-size:14px}
+.orders{margin-top:16px}
+.ogrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 18px}
+.grp label.t{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-height:40px;padding:6px 11px;font-size:14px}
+.chk{display:flex;flex-wrap:wrap;gap:8px}
+.chk label{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:44px;cursor:pointer;font-size:14px}
+.chk input{width:18px;height:18px;accent-color:var(--red)}
+.runbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.runbar .hint{color:var(--mute);font-size:14px;flex:1 1 280px}
+.lower{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-top:16px}
+.log{max-height:520px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.msg{border-radius:10px;padding:8px 12px;font-size:14px;border-left:4px solid}
+.msg.r{background:var(--redbg);border-color:var(--red)}.msg.a{background:var(--ambbg);border-color:var(--amber)}.msg.g{background:var(--grnbg);border-color:var(--green)}.msg.i{background:var(--grid);border-color:var(--mute)}
+.msg .hh{font-weight:800;margin-right:6px}
+.empty{color:var(--mute);font-size:14px}
+.ref table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:12px}
+.ref td,.ref th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left;vertical-align:top}
+.ref th{font-size:13px;color:var(--mute)}
+.ref p{font-size:14px;margin:6px 0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--mute);margin-top:6px}
+.legend i{display:inline-block;width:18px;height:3px;vertical-align:middle;margin-right:6px}
+.scorebar{display:flex;gap:10px;align-items:center;font-size:14px}
+.scorebar .num{font-size:22px;font-weight:600}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);color:var(--ink);max-width:640px;width:calc(100% - 28px);padding:22px}
+dialog::backdrop{background:rgba(10,20,25,.55)}
+.disc{font-size:13px;color:var(--mute);margin-top:18px}
+@media(max-width:900px){.main,.lower,.casebox{grid-template-columns:minmax(0,1fr)}.ogrid{grid-template-columns:repeat(2,minmax(0,1fr))}.objs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.ogrid{grid-template-columns:minmax(0,1fr)}.fig{min-height:340px}.vitals{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:no-preference){.v{transition:background .4s,border-color .4s}}
+</style>
+</head>
+<body>
+<div class="band"><div class="wrap">
+<header>
+ <div>
+  <h1>Simulador de CAD / EHH: decide cada hora y mira cómo responde el paciente</h1>
+  <p class="sub">Basado en el algoritmo de guardia de 0 a 24 h · Urgencias / UCI</p>
+ </div>
+ <div class="scorebar"><span>Puntuación</span><span class="num" id="score">100</span></div>
+</header>
+
+<div class="casebox">
+ <div class="card">
+  <h2>1. Elige el caso</h2>
+  <div class="cases" id="cases"></div>
+  <p id="caseText" style="margin:12px 0 0"></p>
+ </div>
+ <div class="card">
+  <h2>Diagnóstico de entrada</h2>
+  <div id="dx" style="font-size:14px"></div>
+  <details style="margin-top:8px;font-size:14px"><summary style="cursor:pointer;min-height:32px">Ver clasificación y nivel asistencial</summary><div id="sev" style="padding-top:6px"></div></details>
+ </div>
+</div>
+
+<div class="main">
+ <div class="card">
+  <div class="clock"><span class="num" id="hour">Hora 0</span><span class="phase" id="phase"></span></div>
+  <div class="vitals" id="vitals"></div>
+  <p style="font-size:13px;color:var(--mute);margin:10px 0 0">La glucemia capilar se mide cada hora. pH, HCO₃⁻, iones y β-OHB solo se actualizan cuando pides gasometría.</p>
+ </div>
+ <div class="card">
+  <h2>Gráfica de 0 a 24 h</h2>
+  <div class="fig"><svg id="chart" role="img" aria-label="Evolución de glucosa, potasio y pH"></svg></div>
+  <div class="legend"><span><i style="background:var(--red)"></i>Glucosa capilar</span><span><i style="background:var(--blue)"></i>K⁺ (banda 4–5)</span><span><i style="background:var(--violet)"></i>pH venoso (línea 7,30)</span><span><i style="background:var(--green)"></i>Insulina IV (U/kg/h)</span></div>
+  <div class="objs" id="objs"></div>
+ </div>
+</div>
+
+<div class="card orders">
+ <h2 id="ordTitle">2. Órdenes para la hora 0 → 1</h2>
+ <div class="ogrid">
+  <div class="grp"><label class="t">Fluidos (volumen esta hora)</label><div class="seg" data-k="flu" id="o_flu"></div></div>
+  <div class="grp"><label class="t">Tipo de cristaloide</label><div class="seg" data-k="fty" id="o_fty"></div></div>
+  <div class="grp"><label class="t">Dextrosa (2.ª bolsa, 150 mL/h)</label><div class="seg" data-k="dex" id="o_dex"></div></div>
+  <div class="grp"><label class="t">Insulina regular IV (U/kg/h)</label><div class="seg" data-k="ins" id="o_ins"></div></div>
+  <div class="grp"><label class="t">Potasio en fluidos (mEq/h)</label><div class="seg" data-k="kin" id="o_kin"></div></div>
+  <div class="grp"><label class="t">Bicarbonato sódico</label><div class="seg" data-k="bic" id="o_bic"></div></div>
+ </div>
+ <div class="grp" style="margin-top:14px"><label class="t">Acciones puntuales</label>
+  <div class="chk">
+   <label><input type="checkbox" id="c_gas"><span>Gasometría venosa + iones + β-OHB</span></label>
+   <label><input type="checkbox" id="c_bolus"><span>Bolo de insulina 0,1 U/kg</span></label>
+   <label><input type="checkbox" id="c_basal"><span>Glargina SC 0,25 U/kg</span></label>
+   <label><input type="checkbox" id="c_diet"><span>Iniciar dieta oral</span></label>
+   <label><input type="checkbox" id="c_work"><span>ECG + Rx tórax + cultivos</span></label>
+   <label><input type="checkbox" id="c_abx"><span>Antibiótico empírico</span></label>
+   <label><input type="checkbox" id="c_hbpm"><span>HBPM profiláctica</span></label>
+   <label><input type="checkbox" id="c_mg"><span>Sulfato de magnesio 1,5 g</span></label>
+  </div>
+ </div>
+ <div class="runbar">
+  <span class="hint" id="hint">Ajusta las órdenes y ejecuta la hora. Las órdenes continuas se mantienen para la hora siguiente.</span>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+   <button id="undo">Deshacer hora</button>
+   <button id="finish">Finalizar caso</button>
+   <button class="go" id="run">Ejecutar hora →</button>
+  </div>
+ </div>
+</div>
+
+<div class="lower">
+ <div class="card"><h2>3. Feedback del tutor</h2><div class="log" id="log"><p class="empty">Aquí aparecerán los aciertos, avisos y errores de cada hora.</p></div></div>
+ <div class="card ref">
+  <h2>Referencia rápida del algoritmo</h2>
+  <h3>Regla de oro del potasio</h3>
+  <table><tr><th>K⁺ (mEq/L)</th><th>Acción</th></tr>
+   <tr><td class="num">&lt; 3,5</td><td><strong style="color:var(--red)">Parar / no iniciar insulina.</strong> Reponer 10–20 mEq/h</td></tr>
+   <tr><td class="num">3,5 – 5,0</td><td>Dar 10–20 mEq/h en fluidos</td></tr>
+   <tr><td class="num">&gt; 5,0</td><td>No dar K⁺. Control cada 2 h</td></tr></table>
+  <h3>Criterios y metas</h3>
+  <p>CAD: glucosa &gt; 200 mg/dL, pH &lt; 7,30, HCO₃⁻ &lt; 18, β-OHB ≥ 3,0 mmol/L. Meta: descenso de glucosa 50–70 mg/dL/h (máx. 75), K⁺ 4–5, caída de osmolaridad ≤ 3 mOsm/kg/h.</p>
+  <p>Con glucemia ≤ 200–250: añadir dextrosa 5–10 % y bajar insulina a 0,02–0,05 U/kg/h. Objetivo 150–200 (CAD) o 200–250 (EHH) hasta limpiar cetonemia.</p>
+  <h3>Bicarbonato (uso restringido)</h3>
+  <p>Solo si pH &lt; 6,9 (100 mmol en 400 mL en 2 h) o K⁺ &gt; 6,4. Valorar 50 mmol si pH 6,9–7,0.</p>
+  <h3>Resolución</h3>
+  <p>pH &gt; 7,30, HCO₃⁻ ≥ 18, β-OHB &lt; 0,6, brecha normal. Mantener insulina IV 1–2 h después de la primera dosis de basal SC.</p>
+ </div>
+</div>
+<div class="card ref" style="margin-top:16px">
+ <h2>Dónde discrepan las fuentes</h2>
+ <p>El simulador sigue tu algoritmo. Cuando una decisión coincide con Murillo o Harrison pero no con el algoritmo, el tutor la marca como información, no como error.</p>
+ <div class="scroll"><table class="stack">
+  <thead><tr><th>Punto</th><th>Algoritmo de guardia</th><th>Murillo 6.ª ed. (2018)</th><th>Harrison Manual 16.ª ed.</th><th>Consenso ADA/EASD/JBDS 2024</th></tr></thead>
+  <tbody>
+  <tr><td>Fluido inicial</td><td>Balanceado 15–20 mL/kg</td><td>SSN 1000 mL/h × 2 h. EHH: 0,45 % si Na⁺ &gt; 150 y normotenso</td><td>SSN 2–3 L en 1–3 h, luego 0,45 %</td><td>Balanceado o SSN</td></tr>
+  <tr><td>Bolo de insulina</td><td>No</td><td>0,15 U/kg</td><td>0,1 U/kg IV (EHH 5–10 U)</td><td>No necesario</td></tr>
+  <tr><td>Infusión inicial</td><td>0,1 U/kg/h</td><td>0,1 U/kg/h (también EHH)</td><td>0,1 U/kg/h; subir si no responde en 2–4 h</td><td>CAD 0,1 · EHH 0,05 U/kg/h</td></tr>
+  <tr><td>No iniciar insulina si K⁺</td><td>&lt; 3,5</td><td>&lt; 3,3</td><td>&lt; 3,3</td><td>&lt; 3,5</td></tr>
+  <tr><td>No dar K⁺ si</td><td>&gt; 5,0</td><td>≥ 5,5, desconocido o anuria</td><td>Dar solo con K⁺ &lt; 5,5, ECG y diuresis normales</td><td>&gt; 5,0</td></tr>
+  <tr><td>Añadir dextrosa</td><td>≤ 200–250</td><td>CAD &lt; 200 · EHH &lt; 300</td><td>250</td><td>250</td></tr>
+  <tr><td>Bicarbonato</td><td>pH &lt; 6,9</td><td>pH ≤ 7,0, o &lt; 7,20 con hipotensión o coma</td><td>No detallado</td><td>pH &lt; 7,0</td></tr>
+  <tr><td>Paso a SC</td><td>Solape 1–2 h</td><td>Retirar IV 2 h tras SC; 0,5–0,8 U/kg/día</td><td>Solapar IV y SC</td><td>Basal ≥ 1–2 h antes de parar IV</td></tr>
+  <tr><td>Otros</td><td>—</td><td>Mg²⁺ &lt; 1,8: MgSO₄ 1,5 g/h × 2 h. HBPM en EHH. Buscar desencadenante</td><td>Buscar desencadenante (cultivos, Rx, ECG)</td><td>β-OHB cuantitativo para diagnóstico y gravedad</td></tr>
+  </tbody></table></div>
+</div>
+<p class="disc">Herramienta docente. El modelo fisiológico es simplificado y sus respuestas son aproximadas; no sirve para decidir el tratamiento de pacientes reales.</p>
+</div></div>
+
+<dialog id="end"><h2 id="endT">Resumen del caso</h2><div id="endB"></div><div style="display:flex;gap:8px;justify-content:end;margin-top:14px"><button id="endClose">Revisar gráfica</button><button class="go" id="endNew">Nuevo caso</button></div></dialog>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const CASES=[
+ {id:'mod',name:'CAD moderada',tipo:'CAD',txt:'Mujer de 24 años, DM1. 3 días de vómitos y dolor abdominal. Respiración de Kussmaul, mucosas secas.',w:70,age:24,glu:480,hco3:11,bohb:5.5,k:5.2,na:138,def:4.5,gcs:15,sens:1,mg:1.9,ren:1,prec:'Gastroenteritis y omisión de insulina',abx:false},
+ {id:'hipok',name:'CAD grave + K⁺ bajo',tipo:'CAD',txt:'Varón de 45 años, DM1 con mala adherencia. Estuporoso, taquicárdico. Lleva días sin insulina.',w:62,age:45,glu:610,hco3:5,bohb:7.5,k:3.1,na:140,def:5.5,gcs:12,sens:.9,mg:1.4,ren:1,prec:'Abandono de la insulina; hipomagnesemia asociada',abx:false},
+ {id:'ehh',name:'EHH',tipo:'EHH',txt:'Mujer de 74 años, DM2, traída de residencia por desorientación de 4 días. Muy deshidratada.',w:80,age:74,glu:980,hco3:21,bohb:.8,k:4.6,na:152,def:9,gcs:11,sens:1.1,mg:2.0,ren:.6,prec:'Infección urinaria (urosepsis)',abx:true},
+ {id:'eu',name:'CAD euglucémica (iSGLT2)',tipo:'CAD',txt:'Varón de 52 años, DM2 en tratamiento con empagliflozina, día 2 de postoperatorio, en ayunas. Náuseas y taquipnea.',w:85,age:52,glu:215,hco3:9,bohb:6,k:4.4,na:137,def:3.5,gcs:15,sens:1,mg:1.9,ren:1,prec:'iSGLT2 + ayuno postoperatorio',abx:false},
+ {id:'mix',name:'Mixta CAD / EHH',tipo:'Mixta',txt:'Varón de 66 años, DM2 insulinizado, con neumonía. Somnoliento, hipotenso.',w:75,age:66,glu:820,hco3:11,bohb:3.8,k:5.6,na:152,def:7.5,gcs:13,sens:1,mg:1.8,ren:.5,prec:'Neumonía adquirida en la comunidad',abx:true},
+ {id:'rnd',name:'Aleatorio',tipo:'?'}
+];
+const OPT={
+ flu:[['0','Nada'],['bolo','Bolo 15–20 mL/kg'],['500','500 mL'],['250','250 mL'],['150','150 mL']],
+ fty:[['RL','Ringer / Plasmalyte'],['SSN','SSN 0,9 %'],['S45','Salino 0,45 %']],
+ dex:[['0','No'],['D5','Dextrosa 5 %'],['D10','Dextrosa 10 %']],
+ ins:[['0','0'],['0.02','0,02'],['0.05','0,05'],['0.1','0,1'],['0.14','0,14']],
+ kin:[['0','0'],['10','10'],['20','20'],['40','40']],
+ bic:[['0','No'],['50','50 mmol'],['100','100 mmol']]
+};
+const PH=[{a:0,b:1,n:'Resucitación',o:'Estabilidad hemodinámica, expansión de volumen. Comprobar K⁺ antes de insulina.'},
+ {a:1,b:4,n:'Control metabólico',o:'Insulina 0,1 U/kg/h + basal SC temprana. Glucosa −50–70/h. Cerrar brecha.'},
+ {a:4,b:12,n:'Transición de sueros',o:'Dextrosa con glucemia ≤ 250, insulina 0,02–0,05. Cuidado neurológico.'},
+ {a:12,b:24,n:'Resolución y dieta',o:'Criterios de resolución, dieta oral, solape IV/SC 1–2 h.'}];
+const phaseOf=h=>PH.find(p=>h>=p.a&&h<p.b)||PH[3];
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const f1=x=>x.toFixed(1).replace('.',','),f2=x=>x.toFixed(2).replace('.',',');
+
+let S=null,O=null,hist=[],caseId='mod';
+
+const pco2=h=>Math.min(40,1.5*h+8);
+const phOf=h=>6.1+Math.log10(h/(0.03*pco2(h)));
+const naMeas=s=>s.na-1.6*(s.glu-100)/100;
+const osmOf=s=>2*naMeas(s)+s.glu/18;
+const agOf=s=>12+2*s.bohb;
+const mapOf=s=>clamp(92-4.2*s.def,42,95);
+const hrOf=s=>Math.round(clamp(72+8*s.def,60,150));
+
+function newCase(id){
+ caseId=id;let c=CASES.find(x=>x.id===id);
+ if(id==='rnd'){const base=CASES[Math.floor(Math.random()*5)];const j=v=>v*(0.88+Math.random()*0.24);c={...base,name:'Aleatorio',w:Math.round(j(base.w)),glu:Math.round(j(base.glu)),hco3:clamp(j(base.hco3),3,23),bohb:j(base.bohb),k:clamp(+(j(base.k)).toFixed(1),2.8,6.4),def:j(base.def),sens:j(base.sens)};c.tipoReal=base.tipo}
+ S={c,h:0,w:c.w,glu:c.glu,hco3:c.hco3,bohb:c.bohb,k:c.k,na:c.na,def:c.def,def0:c.def,gcs:c.gcs,sens:c.sens,
+   score:100,edema:0,basalH:null,insEver:false,lastIns:0,resolvedH:null,dead:false,events:[],rebound:0,diet:false,fluidL:0,ssnL:0,mg:c.mg,insStartH:null,slow:0,workH:null,abxH:null,hbpmH:null,sepsis:false,uo:0,
+   lab:null,trace:[],log:[]};
+ S.uo=uoOf(S);S.lab=snapLab(S);S.lastGasH=0;
+ S.trace.push({h:0,glu:S.glu,k:S.k,ph:phOf(S.hco3),ins:0,lab:true});
+ O={flu:'bolo',fty:'RL',dex:'0',ins:'0',kin:'0',bic:'0'};
+ hist=[];render();
+}
+function uoOf(s){return Math.max(5,(95*(1-s.def/(s.def0*1.15))+(s.glu>300?45:0))*s.c.ren)}
+function snapLab(s){return{h:s.h,mg:s.mg,ph:phOf(s.hco3),hco3:s.hco3,k:s.k,na:naMeas(s),nac:s.na,bohb:s.bohb,ag:agOf(s),osm:osmOf(s)}}
+
+function feedback(s,o,ck){
+ const m=[],add=(t,x,p=0)=>{m.push([t,x]);const key=x.slice(0,22);s.pen=s.pen||{};if((t==='r'||t==='a')&&s.pen[key]!==undefined&&s.h-s.pen[key]<3)return;if(t==='r'||t==='a')s.pen[key]=s.h;if(t==='r')s.score-=p||10;if(t==='a')s.score-=p||4};
+ const ins=+o.ins,kin=+o.kin,bic=+o.bic,h=s.h,kNow=s.k,ph=phOf(s.hco3),since=h-s.lastGasH;
+ const vol=o.flu==='bolo'?1:+o.flu;
+ if(h===0&&vol===0)add('r','Hora 0 sin fluidos: la prioridad es la resucitación con cristaloides 15–20 mL/kg.');
+ if(h===0&&o.flu==='bolo'&&o.fty==='RL')add('g','Bien: bolo de cristaloide balanceado en la primera hora.');
+ if(h===0&&ins>0)add('a','El algoritmo indica no iniciar insulina en la 1.ª hora: primero volumen y K⁺ confirmado.');
+ if(ck.bolus)add('r','Bolo de insulina: el algoritmo lo desaconseja (riesgo de hipoglucemia, hipopotasemia y edema cerebral).');
+ if(ins>0&&kNow<3.5)add('r',`Insulina con K⁺ ${f1(kNow)} mEq/L. Regla de oro: con K⁺ < 3,5 se para la insulina y se repone potasio.`,15);
+ if(ins>0&&kNow>=3.5&&kNow<=5&&kin===0)add('a',`K⁺ ${f1(kNow)} con insulina en marcha y sin reposición: añade 10–20 mEq/h.`);
+ if(kNow<3.5&&kin<10)add('r','K⁺ < 3,5 sin reposición adecuada: reponer 10–20 mEq/h (40 si grave, con monitorización ECG).');
+ if(kNow>5&&kin>0)add('a',`K⁺ ${f1(kNow)} > 5,0: no dar potasio, control en 2 h.`);
+ if(kin>20)add('a','40 mEq/h supera la pauta del algoritmo (10–20): solo por vía central y con monitor.',2);
+ if(kNow>=3.5&&kNow<=5&&kin>=10&&kin<=20&&ins>0)add('g','Reposición de K⁺ ajustada a la regla de oro.');
+ if(ins>=0.05&&s.glu<=250&&o.dex==='0')add('a',`Glucemia ${Math.round(s.glu)} ≤ 250 sin dextrosa: añade glucosado 5–10 % para seguir limpiando cetonas sin hipoglucemia.`);
+ if(ins>=0.1&&s.glu<=250&&o.dex!=='0'&&S.c.tipo!=='EHH')add('a','Con glucemia ≤ 250 el algoritmo baja la insulina a 0,02–0,05 U/kg/h.',2);
+ if(o.dex!=='0'&&s.glu<=250&&ins>=0.02&&ins<=0.05)add('g','Transición correcta: dextrosa + insulina reducida (método de 2 bolsas).');
+ if(o.dex!=='0'&&s.glu>300)add('a','Dextrosa con glucemia > 300: aún no toca (salvo CAD euglucémica).',2);
+ if(bic>0){if(ph<6.9&&bic===100)add('g','Bicarbonato indicado: pH < 6,9.');else if(ph>=6.9&&ph<7.0&&bic===50)add('i','pH 6,9–7,0: bicarbonato 50 mmol es una opción a valorar.');else if(ph<=7.0||(ph<7.2&&(mapOf(s)<60||s.gcs<=8)))add('i',`pH ${f2(ph)}: fuera de la indicación del algoritmo (pH < 6,9), pero aceptado por Murillo (pH ≤ 7,0, o < 7,20 con hipotensión o coma). Reevalúa gasometría 60 min después.`,0);else if(kNow>6.4)add('i','Bicarbonato por hiperpotasemia grave (> 6,4).');else add('r',`Bicarbonato con pH ${f2(ph)}: no indicado. Empeora la acidosis del LCR, baja el K⁺ y aumenta el riesgo de edema cerebral.`)}
+ if(o.fty==='SSN'&&vol>=0.5&&h>0)add('a','Grandes volúmenes de SSN 0,9 %: acidosis hiperclorémica. El algoritmo prefiere Ringer o Plasmalyte.',2);
+ if(ck.basal&&s.basalH===null&&h<=3&&ins>0)add('g','Glargina SC temprana (primeras 3 h): acorta la transición y evita rebote.');
+ if(ins>0&&since>=4&&!ck.gas)add('a',`Llevas ${since} h sin gasometría ni iones: el algoritmo pide controles cada 2–4 h.`);
+ if(s.lastIns>0&&ins===0&&kNow>=3.5){if(s.basalH===null||h-s.basalH<1)add('r','Insulina IV suspendida sin basal SC previa (solape de 1–2 h): riesgo de rebote cetósico.',12);else add('g','Retirada de insulina IV con solape correcto tras la basal.')}
+ if(ck.diet&&s.resolvedH===null)add('a','Dieta oral antes de cumplir criterios de resolución.',2);
+ if(ck.diet&&s.resolvedH!==null)add('g','Dieta oral precoz tras la resolución: reduce estancia.');
+ if(o.fty==='S45'&&(s.na<150||mapOf(s)<65))add('a',mapOf(s)<65?'Salino 0,45 % con hipotensión: Murillo indica SSN 0,9 % hasta estabilizar.':'Salino 0,45 % con Na⁺ corregido < 150: riesgo de caída brusca de osmolaridad (Murillo lo reserva para Na⁺ > 150 y normotensión).',3);
+ else if(o.fty==='S45'&&h<2)add('i','Na⁺ corregido > 150 y normotenso: Murillo acepta salino 0,45 % las 2 primeras horas. El algoritmo prefiere balanceado. Vigila la caída de osmolaridad.');
+ if(S.c.tipo==='EHH'&&ins>0.05)add('a','En EHH el consenso ADA 2024 inicia insulina a 0,05 U/kg/h (Murillo usa 0,1): la hidratación sola ya baja mucho la glucemia.',2);
+ if(kin>0&&s.uo<0.5*s.w)add('a',`Diuresis ${Math.round(s.uo)} mL/h (< 0,5 mL/kg/h): Murillo y Harrison exigen diuresis documentada antes de reponer K⁺.`,3);
+ if(s.mg<1.8&&!ck.mg)add('a',`Mg²⁺ ${f1(s.mg)} mg/dL: con hipomagnesemia el K⁺ no se corrige. Murillo: MgSO₄ 1,5 g/h durante 2 h.`,2);
+ if(ck.mg&&s.mg<1.8)add('g','Reposición de magnesio: facilita la corrección del potasio.');
+ if(s.insStartH!==null&&h===s.insStartH+2&&s.lastGasH<=s.insStartH&&!ck.gas)add('a','Han pasado 2 h desde el inicio de la insulina sin control de K⁺ (consenso 2024: K⁺ basal, a las 2 h y luego cada 4 h).');
+ if(h===2&&s.workH===null&&!ck.work)add('a','Hora 2 sin buscar el desencadenante: pide ECG, Rx de tórax y cultivos (Murillo, Harrison).');
+ if(ck.work&&s.workH===null)add('i',`Estudio del desencadenante: ${S.c.prec}.`+(S.c.abx?' Hay foco infeccioso: indica antibiótico.':''));
+ if(ck.abx&&s.abxH===null)add(S.c.abx?'g':'a',S.c.abx?'Antibiótico empírico ante foco infeccioso.':'Antibiótico sin foco infeccioso: la CAD no lo requiere de forma sistemática (Murillo).',2);
+ if(ck.hbpm&&s.hbpmH===null)add(S.c.tipo==='CAD'?'i':'g',S.c.tipo==='CAD'?'HBPM en CAD: valorar según movilidad y riesgo.':'HBPM profiláctica: el riesgo tromboembólico es alto en EHH (Murillo).');
+ return m;
+}
+
+function step(){
+ if(S.dead||S.h>=24)return;
+ const ck={gas:$('c_gas').checked,bolus:$('c_bolus').checked,basal:$('c_basal').checked&&S.basalH===null,diet:$('c_diet').checked,work:$('c_work').checked&&S.workH===null,abx:$('c_abx').checked&&S.abxH===null,hbpm:$('c_hbpm').checked&&S.hbpmH===null,mg:$('c_mg').checked};
+ hist.push(JSON.stringify({S,O}));
+ const s=S,msgs=feedback(s,O,ck);
+ const ins=+O.ins,rF=ins/0.1,kin=+O.kin,bic=+O.bic;
+ const volCr=O.flu==='bolo'?s.w*0.0175:(+O.flu)/1000,volDex=O.dex==='0'?0:0.15,vol=volCr+volDex;
+ const g0=s.glu,o0=osmOf(s),na0=s.na;
+ // volumen
+ s.def=Math.max(0,s.def-vol*0.75+(s.glu>300?0.15:0));
+ s.fluidL+=vol;if(O.fty==='SSN')s.ssnL+=volCr;
+ // glucosa
+ const ph0=phOf(s.hco3);
+ let dG=-rF*55*s.sens*(ph0<7?0.8:1)*(s.glu<150?0.7:1);
+ if(ck.bolus)dG-=40;
+ dG-=Math.min(volCr,1.5)*30*(s.glu>250?1:0.3);
+ dG+=O.dex==='D5'?18:O.dex==='D10'?35:0;
+ if(ins===0)dG+=15;
+ if(ck.diet)dG+=30;
+ s.glu=Math.max(25,s.glu+dG);
+ // cetonas
+ let clr=ins>=0.1?0.65:ins>=0.05?0.42:ins>=0.02?0.17:(S.c.tipo==='EHH'?-0.03:-0.25);
+ if(ins>0&&s.def>4)clr*=0.75;
+ if(ins>0&&s.glu<120&&O.dex==='0')clr*=0.6;
+ if(s.lastIns>0&&ins===0&&(s.basalH===null||s.h-s.basalH<1))s.rebound=3;
+ if(s.rebound>0&&ins===0){clr-=0.35;s.rebound--}
+ if(s.basalH!==null&&ins===0&&s.rebound===0)clr=Math.max(clr,0.1);
+ const b0=s.bohb;s.bohb=clamp(s.bohb-clr,0.1,10);const real=b0-s.bohb;
+ // bicarbonato
+ let dH=real>0?real*1.15:real*1.0;
+ dH+=bic/(0.5*s.w)*1.2;
+ if(O.fty==='SSN')dH-=0.4*volCr;else if(O.fty==='RL')dH+=0.1*volCr;
+ s.hco3=clamp(s.hco3+dH,3,26);
+ // potasio
+ if(ck.mg)s.mg=Math.min(2.4,s.mg+0.45);
+ let dK=-rF*(s.hco3<15?0.33:0.22)-(ck.bolus?0.3:0)-(bic?0.3*bic/100:0)+0.012*kin*(s.mg<1.8?0.7:1)*(s.uo<0.5*s.w?1.4:1)-(s.def<s.def0*0.6?0.06:0.02);
+ if(ins===0&&ph0<7.2)dK+=0.03;
+ s.k=clamp(s.k+dK,1.8,8);
+ s.mg=Math.max(1.1,s.mg-(s.glu>300?0.012:0.005));
+ // sodio corregido
+ const NaF={RL:132,SSN:154,S45:77}[O.fty];
+ s.na+=volCr*(NaF-s.na)/(0.6*s.w)+volDex*(0-s.na)/(0.6*s.w)+(s.glu>300?0.3:0);
+ // seguridad neurológica
+ const dGlu=g0-s.glu,dOsm=o0-osmOf(s);
+ let ep=0;if(dGlu>75)ep+=1;if(dOsm>3)ep+=1.5;if(bic&&ph0>=6.9)ep+=1;if(ck.bolus)ep+=1;if(na0-s.na>0.5&&O.fty==='S45')ep+=0.5;
+ if(s.c.age<25)ep*=1.5;s.edema+=ep;
+ if(ins>=0.1&&s.h>=2&&g0>250&&dGlu<50)s.slow++;else s.slow=0;
+ if(s.slow===2)msgs.push(['a',`Glucemia baja menos de 50 mg/dL/h durante 2 h con insulina a ${String(ins).replace('.',',')} U/kg/h. Harrison: sin respuesta en 2–4 h, aumentar la infusión. Revisa también bomba, vía y volumen.`]);
+ if(dGlu>75)msgs.push(['a',`Glucemia ha bajado ${Math.round(dGlu)} mg/dL en 1 h (máximo seguro 75): reduce insulina o fluidos.`]),s.score-=3;
+ else if(dGlu>=40&&dGlu<=75&&g0>250)msgs.push(['g',`Descenso de glucemia ${Math.round(dGlu)} mg/dL/h, dentro del objetivo.`]);
+ if(dOsm>3)msgs.push(['r',`La osmolaridad efectiva ha caído ${f1(dOsm)} mOsm/kg en 1 h (límite 3): riesgo de edema cerebral.`]),s.score-=6;
+ // GCS
+ const phN=phOf(s.hco3),osN=osmOf(s);
+ let gT=Math.round(clamp(15-Math.max(0,(osN-315)/7)-Math.max(0,(7.15-phN)*12),3,15));
+ if(s.edema>=4&&!s.events.includes('edema')){s.events.push('edema');gT-=5;s.gcs-=4;s.score-=20;msgs.push(['r','EVENTO: cefalea, bradicardia y descenso de consciencia. Sospecha de edema cerebral: manitol o salino hipertónico, TC craneal y valorar UCI/IOT.'])}
+ if(s.events.includes('edema'))gT=Math.min(gT,11);
+ s.gcs=clamp(s.gcs+Math.sign(gT-s.gcs),3,15);
+ // eventos
+ if(s.glu<70){s.score-=8;msgs.push(['r',`HIPOGLUCEMIA ${Math.round(s.glu)} mg/dL: glucosado hipertónico, aumentar dextrosa y reducir insulina.`]);if(s.glu<45&&!s.events.includes('conv')){s.events.push('conv');msgs.push(['r','EVENTO: crisis convulsiva por hipoglucemia grave.']);s.score-=10}}
+ if(s.k<3&&s.k>=2.5){s.score-=8;msgs.push(['r',`HIPOPOTASEMIA ${f1(s.k)}: ondas U y extrasistolia en el monitor.`])}
+ if(s.k<2.5){s.dead=true;msgs.push(['r',`PARADA CARDIORRESPIRATORIA: FV por hipopotasemia (K⁺ ${f1(s.k)}). Caso terminado.`])}
+ if(s.k>6.5){s.score-=8;msgs.push(['r',`HIPERPOTASEMIA ${f1(s.k)}: T picudas. Gluconato cálcico y revisar aportes.`])}
+ if(mapOf(s)<60&&s.h>=1){msgs.push(['a',`TAM ${Math.round(mapOf(s))} mmHg: sigue con déficit de volumen. Aumenta fluidos.`]);if(s.h%3===0)s.score-=2}
+ if(s.h>=3&&s.glu>350&&ins===0)msgs.push(['a','3 h o más sin insulina con hiperglucemia persistente: la cetogénesis continúa.']),s.score-=3;
+ if(ck.basal)s.basalH=s.h;
+ if(ck.work)s.workH=s.h;if(ck.abx)s.abxH=s.h;if(ck.hbpm)s.hbpmH=s.h;
+ if(ins>0&&s.insStartH===null)s.insStartH=s.h;
+ if(S.c.abx&&s.abxH===null&&s.h>=6&&!s.sepsis){s.sepsis=true;s.events.push('sepsis');s.def+=2;s.sens*=0.8;s.score-=12;msgs.push(['r',`EVENTO: progresa la infección (${S.c.prec}). Hipotensión y más resistencia a la insulina. Falta el antibiótico.`])}
+ s.uo=uoOf(s);
+ if(ck.diet)s.diet=true;
+ if(ins>0)s.insEver=true;
+ s.lastIns=ins;
+ s.h++;
+ if(ck.gas){s.lab=snapLab(s);s.lastGasH=s.h}
+ const res=s.c.tipo==='EHH'?(osmOf(s)<300&&s.gcs>=14&&s.glu<300):(phOf(s.hco3)>7.3&&s.hco3>=18&&s.bohb<0.6);
+ if(res&&s.resolvedH===null){s.resolvedH=s.h;msgs.push(['g',`CRITERIOS DE RESOLUCIÓN cumplidos a las ${s.h} h${ck.gas?'':' (confírmalo con gasometría)'}. Planifica basal SC, solape y dieta.`])}
+ s.trace.push({h:s.h,glu:s.glu,k:s.k,ph:phOf(s.hco3),ins,lab:ck.gas});
+ if(!msgs.length)msgs.push(['i','Sin incidencias esta hora.']);
+ s.log.unshift({h:s.h,msgs});
+ s.score=clamp(Math.round(s.score),0,100);
+ ['c_bolus','c_basal','c_gas','c_diet','c_work','c_abx','c_hbpm','c_mg'].forEach(i=>$(i).checked=false);O.bic='0';
+ if(O.flu==='bolo')O.flu='250';
+ render();
+ if(s.dead||s.h>=24)finish();
+}
+
+function finish(){
+ const s=S,res=s.resolvedH;
+ let sc=s.score;if(s.workH===null)sc-=5;if(s.c.tipo!=='CAD'&&s.hbpmH===null)sc-=4;sc=Math.max(0,sc);if(s.dead)sc=0;else if(res&&res<=12)sc=Math.min(100,sc+10);else if(!res)sc=Math.max(0,sc-15);
+ try{const H=JSON.parse(localStorage.getItem('cadehh_hist')||'[]');H.push({c:s.c.id,tipo:s.c.tipo,sc,res:res||null,dead:!!s.dead,ev:s.events.length,h:s.h,t:Date.now()});localStorage.setItem('cadehh_hist',JSON.stringify(H.slice(-50)))}catch(e){}
+ const ev=s.events.length?s.events.map(e=>({edema:'edema cerebral',conv:'convulsión por hipoglucemia',sepsis:'progresión de la infección'}[e])).join(', '):'ninguno';
+ $('endT').textContent=s.dead?'El paciente ha fallecido':res?`Resuelto a las ${res} h`:'Sin resolución';
+ $('endB').innerHTML=`<p class="num" style="font-size:34px;margin:4px 0">${sc}/100</p>
+ <p>Caso: <strong>${s.c.name}</strong> · ${s.h} h simuladas · Fluidos totales ${f1(s.fluidL)} L (SSN ${f1(s.ssnL)} L)</p>
+ <p>Eventos graves: ${ev}. Basal SC: ${s.basalH===null?'no administrada':'hora '+s.basalH}. Desencadenante: ${s.workH===null?'no estudiado':s.c.prec}.${s.c.tipo!=='CAD'&&s.hbpmH===null?' Faltó la HBPM profiláctica.':''}</p>
+ <p>Pauta SC orientativa (Murillo, paciente no insulinizado): 0,5–0,8 U/kg/día = <strong class="num">${Math.round(s.w*0.5)}–${Math.round(s.w*0.8)} U/día</strong> en basal-bolo-corrección. Si ya usaba insulina, 80 % de lo requerido en 24 h.</p>
+ <p>${s.dead?'Revisa la regla de oro del potasio: la insulina mete K⁺ en la célula y desenmascara el déficit corporal total.':res?'Revisa en el registro los avisos ámbar: son los puntos de mejora.':'El paciente sigue en cetoacidosis o hiperosmolar. Revisa dosis de insulina, volumen y la transición con dextrosa.'}</p>`;
+ try{$('end').showModal()}catch(e){$('end').setAttribute('open','')}
+}
+
+function seg(k){$('o_'+k).innerHTML=OPT[k].map(([v,l])=>`<button type="button" data-v="${v}" class="${O[k]===v?'on':''}" aria-pressed="${O[k]===v}">${l}</button>`).join('')}
+
+function vital(lbl,val,unit,cls='',sm=''){return`<div class="v ${cls}"><b>${lbl}</b><span class="num">${val}</span> <small>${unit}${sm?' · '+sm:''}</small></div>`}
+function sevHTML(c){const ph=phOf(c.hco3),s0={...c,glu:c.glu,na:c.na},os=osmOf(s0);
+ const cad=c.glu>200&&ph<7.3&&c.hco3<18&&c.bohb>=3,ehh=c.glu>600&&os>320&&ph>=7.3&&c.hco3>15;
+ let g='';if(cad){g=ph<7||c.hco3<10||c.gcs<=12?'grave':ph<7.25||c.hco3<15?'moderada':'leve'}
+ const mixto=cad&&c.glu>600&&os>320;const nivel=mixto?'UCI o semicríticos (cuadro mixto: mayor mortalidad)':(cad&&g==='grave')||c.gcs<=12?'UCI (Murillo: CAD grave; Harrison: pH < 7,00 o inconsciente)':cad&&g==='leve'?'Observación / planta (consenso 2024: CAD leve, β-OHB ≤ 6)':'Área de observación de urgencias con monitorización estrecha';
+ const lines=[`<strong>CAD:</strong> ${cad?'sí, '+g+' (tabla 73.1 de Murillo)':c.glu<=200?'no por glucosa (> 200 mg/dL), aunque pH, HCO₃⁻ y cetonas sí la sugieren: piensa en CAD euglucémica':'no cumple todos los criterios'}`,
+ `<strong>EHH:</strong> ${ehh?'sí':'no'} (glucosa > 600, osm. efectiva > 320, pH ≥ 7,30, HCO₃⁻ > 15). Osm. efectiva <span class="num">${Math.round(os)}</span>.`,
+ mixto?'<strong>Cuadro mixto:</strong> criterios de ambas; mayor mortalidad.':'',
+ `<strong>Nivel asistencial:</strong> ${nivel}.`];
+ return lines.filter(Boolean).map(l=>`<p style="margin:4px 0">${l}</p>`).join('')}
+function render(){
+ const s=S,L=s.lab,ago=s.h-L.h,ph=phaseOf(s.h);
+ $('cases').innerHTML=CASES.map(c=>`<button type="button" data-c="${c.id}" class="${c.id===caseId?'on':''}">${c.name}</button>`).join('');
+ $('caseText').innerHTML=`<span class="tag">${s.c.tipo==='?'?'':s.c.tipo}</span> ${s.c.txt} <strong class="num">${s.w} kg</strong>.`;
+ $('dx').innerHTML=`<table style="width:100%;font-size:14px"><tr><td>Glucosa</td><td class="num">${Math.round(s.c.glu)}</td><td>pH</td><td class="num">${f2(phOf(s.c.hco3))}</td></tr><tr><td>HCO₃⁻</td><td class="num">${f1(s.c.hco3)}</td><td>β-OHB</td><td class="num">${f1(s.c.bohb)}</td></tr><tr><td>K⁺</td><td class="num">${f1(s.c.k)}</td><td>Na⁺ corr.</td><td class="num">${Math.round(s.c.na)}</td></tr></table><p style="margin:8px 0 0;color:var(--mute)">¿Cumple criterios de CAD, EHH o ambos? Decide antes de la primera orden.</p>`;
+ $('hour').textContent='Hora '+s.h;$('phase').textContent='· '+ph.n;
+ const g=s.glu,k=L.k,p=L.ph,os=L.osm,map=mapOf(s);
+ const lab=ago===0?'actual':`hace ${ago} h`;
+ const gPrev=s.trace.length>1?s.trace[s.trace.length-2].glu:null,dG=gPrev?Math.round(g-gPrev):null;
+ $('vitals').innerHTML=
+  vital('Glucemia capilar',Math.round(g),'mg/dL',g<70?'bad big':'big',dG!==null?(dG>0?'+':'')+dG+'/h':'')+
+  vital('pH venoso',f2(p),'',p<7.0?'bad':p<7.3?'warn':'ok',lab)+
+  vital('HCO₃⁻',f1(L.hco3),'mEq/L',L.hco3<10?'bad':L.hco3<18?'warn':'ok',lab)+
+  vital('K⁺',f1(k),'mEq/L',k<3.5||k>6?'bad':k>5||k<4?'warn':'ok',lab)+
+  vital('β-OHB',f1(L.bohb),'mmol/L',L.bohb>=3?'bad':L.bohb>=0.6?'warn':'ok',lab)+
+  vital('Brecha aniónica',Math.round(L.ag),'mEq/L',L.ag>16?'warn':'ok',lab)+
+  vital('Na⁺ medido / corr.',`${Math.round(L.na)}/${Math.round(L.nac)}`,'mEq/L',L.nac>150?'warn':'',lab)+
+  vital('Osm. efectiva',Math.round(os),'mOsm/kg',os>320?'bad':os>300?'warn':'ok',lab)+
+  vital('TAM / FC',`${Math.round(map)}/${hrOf(s)}`,'mmHg / lpm',map<60?'bad':map<70?'warn':'ok')+
+  vital('Glasgow',s.gcs,'',s.gcs<=8?'bad':s.gcs<14?'warn':'ok')+
+  vital('Diuresis',Math.round(s.uo),'mL/h',s.uo<0.5*s.w?'bad':'ok',f1(s.uo/s.w)+' mL/kg/h')+
+  vital('Mg²⁺',f1(L.mg),'mg/dL',L.mg<1.8?'warn':'ok',lab);
+ $('sev').innerHTML=sevHTML(s.c);
+ $('objs').innerHTML=PH.map(p=>`<div class="obj ${p===ph?'cur':''}"><strong>${p.a}–${p.b} h · ${p.n}</strong>${p.o}</div>`).join('');
+ ['flu','fty','dex','ins','kin','bic'].forEach(seg);
+ $('ordTitle').textContent=s.h>=24||s.dead?'Caso terminado':`2. Órdenes para la hora ${s.h} → ${s.h+1}`;
+ $('run').disabled=s.h>=24||s.dead;$('undo').disabled=!hist.length;
+ $('c_basal').disabled=s.basalH!==null;
+ if(s.h===0)$('c_gas').checked=false;
+ $('score').textContent=s.score;
+ $('log').innerHTML=s.log.length?s.log.map(e=>e.msgs.map(([t,x])=>`<div class="msg ${t}"><span class="hh">h${e.h-1}→${e.h}</span>${x}</div>`).join('')).join(''):'<p class="empty">Aquí aparecerán los aciertos, avisos y errores de cada hora.</p>';
+ $('hint').textContent=s.basalH!==null?`Glargina administrada en la hora ${s.basalH}. Ya puedes plantear el solape y la retirada de la insulina IV.`:'Ajusta las órdenes y ejecuta la hora. Las órdenes continuas se mantienen para la hora siguiente.';
+ draw();
+}
+
+const svg=$('chart');
+function draw(){
+ if(!S)return;
+ const W=svg.clientWidth,H=svg.clientHeight;if(!W||!H)return;
+ const css=getComputedStyle(document.documentElement),c=n=>css.getPropertyValue(n).trim()||'#888';
+ const narrow=W<520,l=narrow?34:46,r=10,t=24,b=22,gap=12,ih=(H-t-b-gap*3)/4;
+ const x=h=>l+(W-l-r)*h/24;
+ const gMax=Math.max(300,...S.trace.map(p=>p.glu))*1.08;
+ const strips=[
+  {n:'Glucosa',y0:t,lo:0,hi:gMax,key:'glu',col:c('--red'),band:[150,250],ticks:[Math.round(gMax/2/100)*100]},
+  {n:'K⁺',y0:t+ih+gap,lo:2,hi:7,key:'k',col:c('--blue'),band:[4,5],ticks:[3.5,5],labOnly:true},
+  {n:'pH',y0:t+2*(ih+gap),lo:6.8,hi:7.5,key:'ph',col:c('--violet'),line:7.3,ticks:[7.0,7.3],labOnly:true},
+  {n:'Insulina',y0:t+3*(ih+gap),lo:0,hi:0.16,key:'ins',col:c('--green'),ticks:[0.1],step:true}];
+ let o='';
+ PH.forEach((p,i)=>{o+=`<rect x="${x(p.a)}" y="${t-18}" width="${x(p.b)-x(p.a)}" height="${H-t-b+18}" fill="${i%2?c('--grid'):'transparent'}"/>`;if(i>0)o+=`<text x="${x(p.a)+4}" y="${t-6}" font-size="12" fill="${c('--mute')}">${narrow?p.n.split(' ')[0]:p.n}</text>`});
+ o+=`<line x1="${x(S.h)}" x2="${x(S.h)}" y1="${t-18}" y2="${H-b}" stroke="${c('--ink')}" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+ strips.forEach(st=>{
+  const y=v=>st.y0+ih-(clamp(v,st.lo,st.hi)-st.lo)/(st.hi-st.lo)*ih;
+  o+=`<rect x="${l}" y="${st.y0}" width="${W-l-r}" height="${ih}" fill="none" stroke="${c('--line')}"/>`;
+  if(st.band)o+=`<rect x="${l}" y="${y(st.band[1])}" width="${W-l-r}" height="${y(st.band[0])-y(st.band[1])}" fill="${c('--grnbg')}"/>`;
+  if(st.line)o+=`<line x1="${l}" x2="${W-r}" y1="${y(st.line)}" y2="${y(st.line)}" stroke="${c('--green')}" stroke-dasharray="4 3"/>`;
+  st.ticks.forEach(v=>o+=`<text x="${l-4}" y="${y(v)+4}" font-size="11" text-anchor="end" fill="${c('--mute')}">${String(v).replace('.',',')}</text>`);
+  o+=`<text x="${l+6}" y="${st.y0+14}" font-size="12" font-weight="600" fill="${st.col}">${st.n}</text>`;
+  const pts=S.trace.filter(p=>!st.labOnly||p.lab);
+  if(st.step){let d='';S.trace.forEach((p,i)=>{if(i===0)return;const pr=S.trace[i-1];d+=`M${x(pr.h)},${y(p.ins)}H${x(p.h)}`});o+=`<path d="${d}" stroke="${st.col}" stroke-width="3" fill="none"/>`}
+  else if(pts.length){o+=`<polyline points="${pts.map(p=>x(p.h)+','+y(p[st.key])).join(' ')}" fill="none" stroke="${st.col}" stroke-width="2.2"${st.labOnly?' stroke-dasharray="5 3"':''}/>`;
+   pts.forEach(p=>o+=`<circle cx="${x(p.h)}" cy="${y(p[st.key])}" r="${narrow?2.5:3.5}" fill="${st.col}"/>`)}
+ });
+ [0,4,8,12,16,20,24].forEach(h=>o+=`<text x="${x(h)}" y="${H-6}" font-size="11" text-anchor="middle" fill="${c('--mute')}">${h}${h===24?' h':''}</text>`);
+ svg.innerHTML=o;
+}
+const ro=new ResizeObserver(draw);ro.observe(svg);
+const mo=new MutationObserver(draw);mo.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+document.addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ const sg=b.closest('.seg');
+ if(sg&&b.dataset.v!==undefined){O[sg.dataset.k]=b.dataset.v;seg(sg.dataset.k);return}
+ if(b.dataset.c){newCase(b.dataset.c);return}
+});
+$('run').addEventListener('click',step);
+$('undo').addEventListener('click',()=>{if(!hist.length)return;const p=JSON.parse(hist.pop());S=p.S;O=p.O;render()});
+$('finish').addEventListener('click',finish);
+$('endClose').addEventListener('click',()=>$('end').close?$('end').close():$('end').removeAttribute('open'));
+$('endNew').addEventListener('click',()=>{$('end').close?$('end').close():$('end').removeAttribute('open');newCase(caseId)});
+newCase('mod');
+}
+</script>
+</body>
+</html>

@@ -9,7 +9,8 @@ Mundo virtual de la emergencia por capítulos, con misiones, XP, rangos, insigni
 3. **Box de trauma** · ATLS
 4. **Parada** · Simulador PCR, algoritmo SVA ERC 2025
 5. **Respira** · VMNI (repaso, guía visual, ventiladores y simulador)
-6. **Fin de guardia** · TurnoValor (demo con datos ficticios)
+6. **Box de agudos** · CAD/EHH (taller interactivo + simulador hora a hora de 0 a 24 h)
+7. **Fin de guardia** · TurnoValor (demo con datos ficticios)
 
 El mapa cambia de cielo según la hora real (noche, amanecer, día, atardecer); se puede fijar tocando el reloj.
 

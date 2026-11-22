@@ -211,7 +211,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--mut);font-
   <section class="intro">
     <div>
       <h1>Tu guardia empieza <span>ahora</span>.</h1>
-      <p>Recorre el mundo de la emergencia capítulo a capítulo: de la calle al parte de la ambulancia, del box de trauma a la parada y la ventilación. Completa misiones, aprueba los exámenes y sube de rango.</p>
+      <p>Recorre el mundo de la emergencia capítulo a capítulo: de la calle al parte de la ambulancia, del box de trauma a la parada, la ventilación y el box de agudos. Completa misiones, aprueba los exámenes y sube de rango.</p>
     </div>
     <div class="modes">
       <button class="btn pri" id="bContinue">▶ Continuar</button>
@@ -324,7 +324,7 @@ function checkNews(silent){
 /* ============ RENDER ============ */
 function starStr(n){ return `<span class="stars">${"★".repeat(n)}<span class="off">${"★".repeat(3 - n)}</span></span>`; }
 /* posición de cada insignia [x, y] y del punto del suelo al que apunta [gx, gy] */
-const POS = { phtls:[185,452,185,548], apad:[385,338,385,420], atls:[640,330,640,432], rcp:[600,128,610,250], vmni:[878,252,870,350], turno:[1072,332,1072,404] };
+const POS = { phtls:[185,452,185,548], apad:[385,338,385,420], atls:[640,330,640,432], rcp:[600,128,610,250], vmni:[860,252,860,350], cad:[985,178,930,318], turno:[1072,332,1072,404] };
 let escenaLista = null;
 const CIELO_ORDEN = ["", "noche", "amanecer", "dia", "atardecer"];
 function pintarReloj(){
@@ -617,7 +617,7 @@ function openSettings(){
     </div>`);
   $("#swLibre").onclick = () => { S.libre = !S.libre; save(); render(); openSettings(); };
   $("#bExp").onclick = () => {
-    const extra = {}; ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2"].forEach(k => { const v = localStorage.getItem(k); if (v != null) extra[k] = v; });
+    const extra = {}; ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist"].forEach(k => { const v = localStorage.getItem(k); if (v != null) extra[k] = v; });
     const blob = new Blob([JSON.stringify({ mundo: S, modulos: extra, fecha: new Date().toISOString() }, null, 1)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "mundo-emergencia-progreso.json"; a.click();
   };
@@ -628,7 +628,7 @@ function openSettings(){
         const d = JSON.parse(t);
         if (!d.mundo) throw 0;
         S = Object.assign(S, d.mundo); save();
-        Object.entries(d.modulos || {}).forEach(([k, v]) => { if (/^(phtls_|atls_|pcr_hist|apad_done|apadSim2)/.test(k)) localStorage.setItem(k, v); });
+        Object.entries(d.modulos || {}).forEach(([k, v]) => { if (/^(phtls_|atls_|pcr_hist|apad_done|apadSim2|cadtaller|cadehh_hist)/.test(k)) localStorage.setItem(k, v); });
         closeModal(); render(true); toast("✅ Progreso importado");
       }catch(err){ toast("❌ El archivo no es un progreso válido"); }
     });
@@ -638,7 +638,7 @@ function openSettings(){
       <div class="mb row"><button class="btn" id="rNo">Cancelar</button><button class="btn pri" id="rYes">Sí, reiniciar</button></div>`);
     $("#rNo").onclick = openSettings;
     $("#rYes").onclick = () => {
-      ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2",KEY].forEach(k => localStorage.removeItem(k));
+      ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist",KEY].forEach(k => localStorage.removeItem(k));
       S = { nombre:"", rol:"", visitas:{}, estrellas:{}, mejorNota:{}, manual:{}, noche:0, libre:false, cielo:"", vistos:[], insVistas:[] };
       save(); closeModal(); render(true); openProfile(true);
     };

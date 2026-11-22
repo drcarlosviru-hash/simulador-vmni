@@ -93,7 +93,27 @@ const CAPITULOS = [
     insignia: { id: "sincronia", nombre: "Sincronía", icono: "〰️", txt: "Examen de VMNI superado" }
   },
   {
-    id: "turno", n: 6, titulo: "Fin de guardia", sub: "Sala de descanso · TurnoValor",
+    id: "cad", n: 6, titulo: "Box de agudos", sub: "Cetoacidosis y estado hiperosmolar · CAD/EHH",
+    color: "#f472b6", icono: "🩸",
+    historia: "04:30 h. Mujer de 24 años, DM1, tres días vomitando. Respira hondo y rápido, huele a manzana y tiene la boca seca. Glucemia capilar: «HI». Antes de tocar la insulina necesitas un dato que todavía no tienes: el potasio.",
+    modulos: [
+      { id: "cad_taller", nombre: "Taller interactivo CAD/EHH", url: "modulos/cad-taller.html", desc: "Laboratorio en vivo, regla del potasio, curva de glucosa, clasificación y guardia paso a paso." },
+      { id: "cad_sim", nombre: "Simulador CAD/EHH hora a hora", url: "modulos/cad-simulador.html", desc: "Pauta fluidos, insulina, K⁺ y dextrosa cada hora y mira cómo responde el paciente de 0 a 24 h." }
+    ],
+    misiones: [
+      { id: "cad_m1", txt: "Juega con el laboratorio en vivo (criterios, brecha, osmolaridad)", xp: 75, auto: s => !!s.obj("cadtaller").lab },
+      { id: "cad_m2", txt: "Supera el reto de la regla del potasio (4/5)", xp: 100, auto: s => !!s.obj("cadtaller").k },
+      { id: "cad_m3", txt: "Clasifica bien el 80 % de los pacientes", xp: 100, auto: s => (s.obj("cadtaller").cls || 0) >= 80 },
+      { id: "cad_m4", txt: "Completa la guardia paso a paso", xp: 100, auto: s => (s.obj("cadtaller").alg || 0) >= 1 },
+      { id: "cad_m5", txt: "Termina un caso en el simulador hora a hora", xp: 100, auto: s => s.list("cadehh_hist").length >= 1 },
+      { id: "cad_m6", txt: "Resuelve un caso en ≤ 12 h sin eventos graves", xp: 150, auto: s => s.list("cadehh_hist").some(h => h.res && h.res <= 12 && !h.dead && !h.ev) },
+      { id: "cad_m7", txt: "Reto: 80 puntos en la CAD grave con K⁺ bajo", xp: 200, auto: s => s.list("cadehh_hist").some(h => h.c === "hipok" && h.sc >= 80) },
+      { id: "cad_exam", txt: "Supera el examen del capítulo", xp: 0, auto: s => s.stars("cad") >= 1 }
+    ],
+    insignia: { id: "dulce", nombre: "Brecha cerrada", icono: "🩸", txt: "Examen de CAD/EHH superado" }
+  },
+  {
+    id: "turno", n: 7, titulo: "Fin de guardia", sub: "Sala de descanso · TurnoValor",
     color: "#a78bfa", icono: "☕",
     historia: "08:00 h. Relevo hecho. Antes de irte, mira qué ha supuesto esta guardia: horas, carga y valor de cada turno. Cuidar del equipo también es medicina de urgencias.",
     modulos: [
@@ -140,6 +160,17 @@ const PREGUNTAS = {
     { q: "La ambulancia se queda sin cobertura en mitad del servicio.", o: ["Se pierde el parte", "Se sigue trabajando off-line y se sincroniza al recuperar la cobertura", "Hay que pasar a papel", "La tablet se bloquea"], c: 1, e: "Todo el caso se guarda en la tablet." },
     { q: "En la barra de estado, una sección en naranja significa:", o: ["Que está completa", "Que le faltan datos obligatorios", "Que tiene un error del sistema", "Que es opcional"], c: 1, e: "Naranja: faltan datos. Verde con ✓: completa. Antes de cerrar, todas en verde." },
     { q: "Al iniciar el turno, ¿qué es imprescindible para que la tablet quede operativa?", o: ["Hacer una foto de la ambulancia", "Registrar unidad y tripulación, con al menos un miembro autenticado con contraseña", "Conectar la impresora", "Enviar un parte de prueba"], c: 1, e: "El sistema marca en gris los roles obligatorios que faltan." }
+  ],
+  cad: [
+    { q: "Criterios diagnósticos de CAD (consenso ADA/EASD/JBDS 2024):", o: ["Glucosa > 600 y osmolaridad > 320", "Glucosa ≥ 200 (o diabetes conocida), β-OHB ≥ 3,0 mmol/L y pH < 7,30 y/o HCO₃⁻ < 18", "pH < 7,0 aislado", "Cetonuria con cualquier glucemia"], c: 1, e: "La glucosa puede ser < 200 en la CAD euglucémica (iSGLT2, embarazo, ayuno)." },
+    { q: "¿Qué define el estado hiperosmolar (EHH)?", o: ["Glucosa ≥ 600, osmolaridad efectiva > 300, β-OHB < 3, pH ≥ 7,30 y HCO₃⁻ ≥ 15", "Glucosa > 250 con pH < 7,30", "Na⁺ > 145 en un diabético", "Cetonemia > 3 sin acidosis"], c: 0, e: "Sin cetoacidosis importante. Si cumple ambos cuadros, es una forma mixta." },
+    { q: "CAD con K⁺ 3,1 mEq/L. ¿Qué haces con la insulina?", o: ["Iniciarla a 0,1 U/kg/h", "No iniciarla: reponer K⁺ 10–20 mEq/h hasta K⁺ ≥ 3,5", "Bolo de 0,1 U/kg", "Iniciarla y dar bicarbonato"], c: 1, e: "La insulina mete K⁺ en la célula: con K⁺ bajo provoca hipopotasemia grave y arritmias." },
+    { q: "CAD con glucemia ya en 230 mg/dL y pH 7,22. ¿Siguiente paso?", o: ["Suspender la insulina", "Añadir dextrosa 5–10 % y bajar la insulina a 0,02–0,05 U/kg/h", "Bicarbonato", "Pasar ya a insulina SC"], c: 1, e: "La glucosa se mantiene en 150–200 mientras la insulina limpia la cetonemia. Suspenderla reactiva la cetogénesis." },
+    { q: "¿Cuándo está indicado el bicarbonato según el algoritmo?", o: ["Siempre que el pH sea < 7,30", "Solo si pH < 6,9 (o K⁺ > 6,4)", "Con HCO₃⁻ < 18", "En toda CAD grave"], c: 1, e: "100 mmol en 400 mL en 2 h. Valorar 50 mmol con pH 6,9–7,0." },
+    { q: "Criterios de resolución de la CAD:", o: ["Glucosa < 200", "pH > 7,30, HCO₃⁻ ≥ 18 y β-OHB < 0,6 mmol/L", "Desaparición de la cetonuria", "Diuresis > 1 mL/kg/h"], c: 1, e: "La cetonuria tarda más en negativizarse: no sirve para guiar la resolución." },
+    { q: "¿Cómo se pasa de insulina IV a subcutánea?", o: ["Parar la IV y poner la basal a la vez", "Basal SC y mantener la perfusión IV 1–2 h más", "Esperar 24 h de perfusión", "Solo insulina rápida SC"], c: 1, e: "Sin solape quedan horas sin insulina eficaz y la CAD rebota." },
+    { q: "Ritmo de descenso recomendado para evitar el edema cerebral:", o: ["Glucosa −150 mg/dL/h", "Glucosa −50 a −70 mg/dL/h y osmolaridad ≤ 3 mOsm/kg/h", "Lo más rápido posible", "Glucosa −10 mg/dL/h"], c: 1, e: "El descenso brusco de la osmolaridad desplaza agua hacia la neurona, sobre todo en jóvenes y en el EHH." },
+    { q: "Na⁺ 138, Cl⁻ 100, HCO₃⁻ 10. ¿Brecha aniónica?", o: ["18", "28", "38", "8"], c: 1, e: "138 − (100 + 10) = 28 mEq/L: muy elevada, por la acumulación de cetoácidos." }
   ],
   atls: [
     { q: "En la revisión primaria ATLS, la «A» incluye:", o: ["Solo la vía aérea", "Vía aérea con restricción del movimiento de la columna cervical", "Analgesia", "Auscultación pulmonar"], c: 1, e: "Se asegura la vía aérea protegiendo la columna cervical hasta descartar lesión." },
