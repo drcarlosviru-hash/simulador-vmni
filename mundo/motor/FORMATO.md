@@ -22,7 +22,7 @@ El motor pone la interfaz (paciente 2,5D, monitor, dispositivos, auscultación, 
 | `COMPETENCIAS`, `recursos` | objetos | Nombres de las competencias y recomendación de refuerzo |
 | `rubrica(S, L)` | → `[{comp, txt, ok, critico}]` | Evaluación objetiva. Las críticas pesan el doble; una parada limita la nota al 40 % |
 
-## Campos opcionales (escenarios en tiempo real, p. ej. `pcr.js`)
+## Campos opcionales (escenarios en tiempo real)
 | Campo | Para qué |
 |---|---|
 | `velocidad` | Velocidad inicial (1 = tiempo real; la PCR usa ×1) |

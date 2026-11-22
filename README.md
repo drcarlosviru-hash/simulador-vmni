@@ -13,7 +13,7 @@ Mundo virtual de la emergencia por capítulos, con misiones, XP, rangos, insigni
 7. **Box de agudos** · CAD/EHH (taller interactivo + simulador hora a hora de 0 a 24 h)
 8. **Fin de guardia** · TurnoValor (demo con datos ficticios)
 
-**🩺 Paciente virtual (fase 1):** motor común de escenarios (`mundo/motor/`) con paciente 2,5D que respira y cambia según tus decisiones, monitor multiparamétrico (ECG, pletismografía, capnografía, PANI), auscultación sintetizada, ventilador de VMNI ajustable, modo tutor/examen y debriefing por competencias con línea temporal y repetición. Escenarios: insuficiencia respiratoria aguda (EAP hipertensivo o EPOC hipercápnico) y parada cardiorrespiratoria en tiempo real (FV refractaria por SCACEST o AESP por hiperpotasemia) con desfibrilador manual, artefacto de compresiones, temporizador de ciclo y capnografía.
+**🩺 Paciente virtual (fase 1):** motor común de escenarios (`mundo/motor/`) con paciente 2,5D que respira y cambia según tus decisiones, monitor multiparamétrico (ECG, pletismografía, capnografía, PANI), auscultación sintetizada, ventilador de VMNI ajustable, modo tutor/examen y debriefing por competencias con línea temporal y repetición. Escenarios: insuficiencia respiratoria aguda (EAP hipertensivo o EPOC hipercápnico) El paciente virtual de parada cardiorrespiratoria se basa en el Simulador PCR · SVA ERC 2025 (`mundo/modulos/rcp.html?sim=1`), con paciente animado y repetición minuto a minuto en la evaluación.
 
 Todos los capítulos están abiertos desde el inicio; el número es solo un orden sugerido. Formato de escenario documentado en `mundo/motor/FORMATO.md`.
 

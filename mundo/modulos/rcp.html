@@ -179,6 +179,23 @@ th{color:var(--mut);font-weight:600;font-size:12px;text-transform:uppercase;lett
 textarea{width:100%;background:#0b1118;color:var(--txt);border:1px solid var(--line);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:12px}
 @media (max-width:1250px){.simgrid{grid-template-columns:240px minmax(0,1fr)}.actions{grid-column:1/-1}.topbar{grid-template-columns:repeat(4,1fr)}}
 @media (max-width:900px){.algo-wrap,.setup,.ref-grid{grid-template-columns:1fr}.simgrid{grid-template-columns:1fr}.branches,.side-cards{grid-template-columns:1fr}.detail{position:static}.eval-head{grid-template-columns:1fr}.causes{grid-template-columns:1fr}.mon-row{grid-template-columns:1fr 92px}.num .v{font-size:26px}.topbar{grid-template-columns:repeat(2,1fr)}}
+
+/* paciente animado (Mundo Emergencia) */
+#ptWrap .bag{transform-box:fill-box;transform-origin:center}
+#ptWrap.vent .bag{animation:squeeze 1s ease-in-out infinite}
+@keyframes squeeze{0%,100%{transform:scale(1,1)}45%{transform:scale(.72,.82)}}
+#ptWrap.vent:not(.comp) #ptChest{animation:rise 1s ease-in-out infinite;transform-origin:120px 250px}
+@keyframes rise{45%{transform:scale(1.025,1.03)}}
+#ptWrap.breath #ptChest{animation:rise 4.2s ease-in-out infinite;transform-origin:120px 250px}
+#ptWrap .nails{stroke:#6a7fc2}
+#simRun button{transition:transform .08s, box-shadow .2s}
+#simRun button:active{transform:scale(.96)}
+#simRun button.pressed{box-shadow:0 0 0 3px #39c7ff88 !important}
+.replay{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin-top:10px}
+.snapR{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:8px}
+.snapR div{background:#05080f;border:1px solid #1d2a38;border-radius:8px;padding:6px 8px;font-family:"IBM Plex Mono",monospace;font-size:13px}
+.snapR small{display:block;font-family:inherit;color:#8394a6;font-size:10.5px}
+.replog{max-height:140px;overflow:auto;font-family:"IBM Plex Mono",monospace;font-size:12px;color:#9fb0c3;margin-top:8px;display:grid;gap:2px}
 </style>
 </head>
 <body>
@@ -284,35 +301,66 @@ textarea{width:100%;background:#0b1118;color:var(--txt);border:1px solid var(--l
         <div id="ptWrap">
         <svg viewBox="0 0 240 360" aria-label="Paciente virtual">
           <defs>
-            <radialGradient id="gl" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#fff" stop-opacity=".15"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+            <radialGradient id="gl" cx="50%" cy="35%" r="65%"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></radialGradient>
+            <linearGradient id="mat" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c9d3df"/><stop offset=".5" stop-color="#e6ecf3"/><stop offset="1" stop-color="#c9d3df"/></linearGradient>
+            <linearGradient id="blk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9cc0e6"/><stop offset="1" stop-color="#6f98c6"/></linearGradient>
+            <linearGradient id="scrub" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1f6f8b"/><stop offset="1" stop-color="#2b8fae"/></linearGradient>
           </defs>
-          <rect x="10" y="4" width="220" height="352" rx="18" fill="#0e151d" stroke="#1d2a38"/>
+          <rect x="4" y="2" width="232" height="356" rx="18" fill="#0b1219" stroke="#1d2a38"/>
+          <!-- camilla -->
+          <rect x="22" y="14" width="196" height="318" rx="22" fill="#2b3644"/>
+          <rect x="30" y="20" width="180" height="306" rx="18" fill="url(#mat)"/>
+          <rect x="70" y="22" width="100" height="44" rx="16" fill="#f5f8fb" stroke="#d3dce7"/>
           <g id="ptBody">
-            <g id="ptAP-post" style="display:none"><rect x="108" y="150" width="40" height="46" rx="6" fill="none" stroke="#ffb020" stroke-dasharray="4 3"/><text x="128" y="208" text-anchor="middle" fill="#ffb020" font-size="8">posterior</text></g>
-            <rect class="skin" x="26" y="104" width="30" height="190" rx="14"/>
-            <rect class="skin" x="184" y="104" width="30" height="190" rx="14"/>
-            <rect class="skin" x="104" y="74" width="32" height="32" rx="8"/>
-            <path id="ptChest" class="skin" d="M58 104 Q120 88 182 104 L176 300 Q120 312 64 300 Z"/>
-            <path d="M58 104 Q120 88 182 104 L176 300 Q120 312 64 300 Z" fill="url(#gl)"/>
-            <circle class="skin" cx="120" cy="48" r="30"/>
-            <line x1="120" y1="130" x2="120" y2="210" stroke="#00000033" stroke-width="2"/>
-            <path d="M108 60 q12 7 24 0" stroke="#00000055" fill="none" stroke-width="2"/>
-            <circle cx="109" cy="42" r="2.4" fill="#00000077"/><circle cx="131" cy="42" r="2.4" fill="#00000077"/>
+            <g id="ptAP-post" style="display:none"><rect x="104" y="146" width="40" height="46" rx="6" fill="none" stroke="#ffb020" stroke-dasharray="4 3"/><text x="124" y="204" text-anchor="middle" fill="#ffb020" font-size="8">posterior</text></g>
+            <!-- brazos -->
+            <path class="skin" d="M60 100 q-22 6 -26 40 l-6 110 q-1 14 10 15 q10 1 12 -12 l10 -110 z"/>
+            <path class="skin" d="M180 100 q22 6 26 40 l6 110 q1 14 -10 15 q-10 1 -12 -12 l-10 -110 z"/>
+            <ellipse class="skin" cx="38" cy="268" rx="9" ry="12"/><ellipse class="skin" cx="202" cy="268" rx="9" ry="12"/>
+            <path class="nails" d="M33 278 h10 M197 278 h10" stroke-width="3" stroke-linecap="round"/>
+            <!-- cuello -->
+            <rect class="skin" x="106" y="70" width="28" height="30" rx="8"/>
+            <!-- tórax desnudo (camisón abierto) -->
+            <path id="ptChest" class="skin" d="M58 104 Q120 86 182 104 L178 252 Q120 262 62 252 Z"/>
+            <path d="M58 104 Q120 86 182 104 L178 252 Q120 262 62 252 Z" fill="url(#gl)"/>
+            <path d="M74 150 q22 10 40 0 M126 150 q22 10 40 0" stroke="#00000022" stroke-width="2" fill="none"/>
+            <circle cx="92" cy="152" r="2.2" fill="#00000033"/><circle cx="148" cy="152" r="2.2" fill="#00000033"/>
+            <line x1="120" y1="118" x2="120" y2="214" stroke="#00000030" stroke-width="2"/>
+            <path d="M100 222 q20 8 40 0" stroke="#00000022" stroke-width="2" fill="none"/>
+            <!-- electrodos -->
+            <g><circle cx="76" cy="116" r="5" fill="#f8fafc" stroke="#94a3b8"/><circle cx="164" cy="116" r="5" fill="#f8fafc" stroke="#94a3b8"/><circle cx="160" cy="236" r="5" fill="#f8fafc" stroke="#94a3b8"/>
+              <path d="M76 116 q-30 -40 -50 -90 M164 116 q30 -40 50 -90 M160 236 q40 -10 56 -60" stroke="#ef4444" stroke-width="1.2" fill="none" opacity=".75"/></g>
+            <!-- sábana -->
+            <path d="M40 250 q80 -14 160 0 l6 74 q-86 12 -172 0z" fill="url(#blk)"/>
+            <path d="M58 270 q62 -8 124 0 M60 296 q60 -6 120 0" stroke="#5b86b5" stroke-width="2" fill="none"/>
+            <!-- cabeza -->
+            <ellipse class="skin" cx="120" cy="44" rx="27" ry="31"/>
+            <path d="M93 38 q2 -30 27 -32 q25 2 27 32 q-6 -16 -27 -18 q-21 2 -27 18z" fill="#b8bec7"/>
+            <ellipse class="skin" cx="93" cy="46" rx="4" ry="7"/><ellipse class="skin" cx="147" cy="46" rx="4" ry="7"/>
+            <path d="M107 42 q5 3 10 0 M123 42 q5 3 10 0" stroke="#3b2a20" stroke-width="2" fill="none"/>
+            <path d="M120 44 q-3 8 -1 11 h3" stroke="#00000044" stroke-width="1.6" fill="none"/>
+            <path id="ptLips" d="M112 62 q8 4 16 0" stroke="#5b6aa0" stroke-width="3" fill="none" stroke-linecap="round"/>
           </g>
-          <!-- pads -->
-          <g id="padAL1" style="display:none"><rect x="70" y="112" width="34" height="26" rx="5" fill="#e8eef5" stroke="#ff8a1f" stroke-width="2"/><text x="87" y="129" text-anchor="middle" font-size="9" fill="#333">STERN</text></g>
-          <g id="padAL2" style="display:none"><rect x="160" y="176" width="26" height="40" rx="5" fill="#e8eef5" stroke="#ff8a1f" stroke-width="2"/><text x="173" y="200" text-anchor="middle" font-size="9" fill="#333">APEX</text></g>
-          <g id="padAP1" style="display:none"><rect x="126" y="140" width="38" height="36" rx="6" fill="#e8eef5" stroke="#ffb020" stroke-width="2"/><text x="145" y="162" text-anchor="middle" font-size="9" fill="#333">ANT</text></g>
-          <!-- hands -->
-          <g id="ptHands" style="display:none"><ellipse cx="120" cy="188" rx="20" ry="13" fill="#5b6f86" stroke="#9bb0c6"/><ellipse cx="120" cy="182" rx="18" ry="11" fill="#7088a3" stroke="#b9cbe0"/></g>
-          <!-- airway -->
-          <g id="awBVM" style="display:none"><ellipse cx="120" cy="58" rx="17" ry="12" fill="#9fd3ff55" stroke="#9fd3ff"/><rect x="108" y="6" width="24" height="44" rx="10" fill="#3a6ea5" stroke="#9fd3ff"/></g>
-          <g id="awIGEL" style="display:none"><path d="M112 66 q8 8 16 0 v-8 h-16z" fill="#46d17e"/><rect x="116" y="10" width="8" height="52" fill="#46d17e"/></g>
-          <g id="awETT" style="display:none"><rect x="117" y="10" width="6" height="56" fill="#dfe8f0"/><rect x="110" y="22" width="20" height="10" rx="2" fill="#ffd23c"/><text x="138" y="30" font-size="8" fill="#ffd23c">CO₂</text></g>
-          <!-- access -->
-          <g id="acIV" style="display:none"><rect x="186" y="230" width="26" height="8" rx="3" fill="#39c7ff"/><line x1="199" y1="230" x2="214" y2="200" stroke="#39c7ff" stroke-width="2"/><text x="200" y="252" font-size="8" fill="#39c7ff" text-anchor="middle">IV</text></g>
-          <g id="acIO" style="display:none"><circle cx="64" cy="112" r="7" fill="#c9a7ff"/><text x="64" y="98" font-size="8" fill="#c9a7ff" text-anchor="middle">IO húmero</text></g>
-          <text id="ptLabel" x="120" y="342" text-anchor="middle" font-size="11" fill="#8394a6">En PCR</text>
+          <!-- parches -->
+          <g id="padAL1" style="display:none"><rect x="70" y="108" width="36" height="28" rx="6" fill="#f1f5f9" stroke="#ff8a1f" stroke-width="2"/><rect x="74" y="112" width="28" height="20" rx="4" fill="#cbd5e1" opacity=".6"/><text x="88" y="126" text-anchor="middle" font-size="8.5" font-weight="700" fill="#334155">STERN</text><path d="M88 108 q-10 -40 -50 -90" stroke="#ff8a1f" stroke-width="2.5" fill="none"/></g>
+          <g id="padAL2" style="display:none"><rect x="156" y="172" width="28" height="42" rx="6" fill="#f1f5f9" stroke="#ff8a1f" stroke-width="2"/><rect x="160" y="176" width="20" height="34" rx="4" fill="#cbd5e1" opacity=".6"/><text x="170" y="197" text-anchor="middle" font-size="8.5" font-weight="700" fill="#334155">APEX</text><path d="M184 190 q30 -60 26 -170" stroke="#ff8a1f" stroke-width="2.5" fill="none"/></g>
+          <g id="padAP1" style="display:none"><rect x="124" y="138" width="40" height="38" rx="6" fill="#f1f5f9" stroke="#ffb020" stroke-width="2"/><text x="144" y="161" text-anchor="middle" font-size="8.5" font-weight="700" fill="#334155">ANT</text><path d="M164 150 q40 -50 40 -130" stroke="#ffb020" stroke-width="2.5" fill="none"/></g>
+          <!-- reanimador: brazos y manos (se animan con la RCP) -->
+          <g id="ptHands" style="display:none">
+            <path d="M112 180 L6 206 L6 232 L114 196 Z" fill="url(#scrub)" opacity=".95"/>
+            <path d="M114 190 L6 246 L6 272 L120 202 Z" fill="url(#scrub)" opacity=".85"/>
+            <ellipse cx="120" cy="188" rx="21" ry="14" fill="#d9a07e" stroke="#9c6b52"/>
+            <ellipse cx="121" cy="182" rx="19" ry="12" fill="#e7b18c" stroke="#9c6b52"/>
+            <path d="M134 180 h6 M134 185 h7 M134 190 h6" stroke="#9c6b52" stroke-width="1.6"/>
+          </g>
+          <!-- vía aérea -->
+          <g id="awBVM" style="display:none"><ellipse cx="120" cy="56" rx="19" ry="15" fill="#bfe3ff55" stroke="#e2f2ff" stroke-width="2"/><rect x="117" y="30" width="6" height="14" fill="#94a3b8"/><g class="bag"><ellipse cx="120" cy="16" rx="26" ry="12" fill="#fbbf24" stroke="#b45309" stroke-width="1.5"/></g><text x="152" y="62" font-size="8" fill="#e2f2ff">O₂ 15 L</text></g>
+          <g id="awIGEL" style="display:none"><path d="M110 64 q10 10 20 0 v-10 h-20z" fill="#46d17e"/><rect x="116" y="26" width="8" height="34" fill="#46d17e"/><g class="bag"><ellipse cx="120" cy="16" rx="24" ry="11" fill="#fbbf24" stroke="#b45309" stroke-width="1.5"/></g><text x="150" y="58" font-size="8" fill="#46d17e">i-gel</text></g>
+          <g id="awETT" style="display:none"><rect x="117" y="28" width="6" height="38" fill="#dfe8f0"/><rect x="104" y="58" width="32" height="6" rx="2" fill="#f8fafc" opacity=".9"/><rect x="110" y="34" width="20" height="9" rx="2" fill="#ffd23c"/><text x="138" y="42" font-size="8" fill="#ffd23c">CO₂</text><g class="bag"><ellipse cx="120" cy="16" rx="24" ry="11" fill="#fbbf24" stroke="#b45309" stroke-width="1.5"/></g></g>
+          <!-- accesos -->
+          <g id="acIV" style="display:none"><rect x="186" y="214" width="26" height="9" rx="3" fill="#39c7ff"/><path d="M199 214 q10 -40 20 -150" stroke="#39c7ff" stroke-width="2" fill="none"/><text x="199" y="236" font-size="8" fill="#39c7ff" text-anchor="middle">IV</text></g>
+          <g id="acIO" style="display:none"><circle cx="64" cy="112" r="7" fill="#c9a7ff" stroke="#7c3aed"/><path d="M64 105 q-10 -40 -30 -90" stroke="#c9a7ff" stroke-width="2" fill="none"/><text x="64" y="98" font-size="8" fill="#c9a7ff" text-anchor="middle">IO húmero</text></g>
+          <text id="ptLabel" x="120" y="350" text-anchor="middle" font-size="11" fill="#8394a6">En PCR</text>
         </svg>
         </div>
         <div class="chips" id="ptChips"></div>
@@ -863,7 +911,7 @@ function loop(){
     V.hr=Math.round(S.hr+(V.nora?4:0)+Math.sin(S.t/7)*2);
     S.etco2=V.et;
   }
-  if(Math.floor(S.t)!==Math.floor(S.t-dt)) S.samples.push({t:Math.floor(S.t),r:S.phase==='rosc'?'ROSC':(S.hiddenROSC?'SR':S.rhythm),c:S.effComp?1:(S.cprOn?0.5:0)});
+  if(Math.floor(S.t)!==Math.floor(S.t-dt)) S.samples.push({t:Math.floor(S.t),r:S.phase==='rosc'?'ROSC':(S.hiddenROSC?'SR':S.rhythm),c:S.effComp?1:(S.cprOn?0.5:0),et:Math.round(S.etco2||0),hr:S.phase==='rosc'?S.v.hr:0,sbp:S.phase==='rosc'?S.v.sbp:0,q:S.cprOn?Math.round((S.q||0)*100):0});
   updateUI();
 }
 
@@ -1148,6 +1196,73 @@ function drawTimeline(){
   g.fillStyle='#8394a6'; g.font='10px IBM Plex Mono'; for(let t=0;t<=T;t+=60){ g.fillText(fmt(t),X(t)-14,12); g.fillStyle='#1b2632'; g.fillRect(X(t),16,1,104); g.fillStyle='#8394a6'; }
   if(S.roscT!=null){ g.fillStyle='#2fd47a'; g.fillRect(X(S.roscT),16,2,104); }
 }
+</script>
+
+<script>
+/* ===== Capa «paciente virtual» de Mundo Emergencia (no modifica la lógica clínica del simulador) ===== */
+(function(){
+  const $1 = s => document.querySelector(s);
+  // abrir directamente en el simulador clínico (?sim=1)
+  if (/[?&]sim=1/.test(location.search)){ const b = document.querySelector('nav button[data-view="sim"]'); if (b) b.click(); }
+  // respuesta visual inmediata al pulsar cualquier botón
+  document.addEventListener("click", e => { const b = e.target.closest("#simRun button"); if (!b) return; b.classList.add("pressed"); setTimeout(() => b.classList.remove("pressed"), 260); }, true);
+  // animación: ventilaciones (30:2 con bolsa; 10/min con dispositivo avanzado), respiración y color tras la RCE
+  function anim(){
+    try{
+      if (typeof S !== "undefined" && S && S.phase){
+        const w = $1("#ptWrap");
+        let vent = false;
+        if (S.phase === "arrest"){
+          if (S.airway === "BVM" && S.cprOn) vent = ((S.t - (S.ventRef || 0)) % 20.4) > 16.4;
+          else if (S.airway === "iGel" || S.airway === "ETT") vent = (S.t % 6) < 1;
+        } else if (S.phase === "rosc" && S.airway !== "none") vent = (S.t % 5) < 1;
+        w.classList.toggle("vent", vent);
+        w.classList.toggle("breath", S.phase === "rosc" && S.airway === "none");
+        const lips = $1("#ptLips"); if (lips) lips.setAttribute("stroke", S.phase === "rosc" ? "#b9675c" : "#5b6aa0");
+        document.querySelectorAll("#ptWrap .nails").forEach(n => n.style.stroke = S.phase === "rosc" ? "#e7a9a0" : "#6a7fc2");
+      }
+    }catch(e){}
+    requestAnimationFrame(anim);
+  }
+  requestAnimationFrame(anim);
+
+  // evaluación: repetición minuto a minuto + registro para las misiones de Mundo Emergencia
+  const fmt2 = t => { t = Math.max(0, Math.round(t)); return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };
+  const RN = r => ({ VF: "FV gruesa", fVF: "FV fina", pVT: "TV sin pulso", VT: "TV sin pulso", ASY: "Asistolia", PEA: "AESP", SR: "Organizado", ROSC: "RCE (sinusal)" }[r] || r);
+  if (typeof renderEval === "function"){
+    const _re = renderEval;
+    renderEval = function(E){
+      _re(E);
+      try{
+        const H = JSON.parse(localStorage.getItem("motor_hist") || "[]");
+        H.push({ esc: "pcr", caso: S.key, modo: MODE === "train" ? "tutor" : "examen", pct: Math.round(E.score), crit: (S.crit || []).length, arrest: S.roscT == null, t: Date.now() });
+        localStorage.setItem("motor_hist", JSON.stringify(H.slice(-100)));
+      }catch(e){}
+      try{
+        const tl = $1("#tl"); if (!tl || !S.samples || !S.samples.length) return;
+        const box = document.createElement("div");
+        box.innerHTML = `<h3 style="margin-top:14px">Repetición minuto a minuto</h3>
+          <div class="replay"><button class="btn" id="rpPlay">▶ Reproducir</button><input type="range" id="rpS" min="0" max="${S.samples.length - 1}" value="0" style="width:100%"><b class="mono" id="rpT">00:00</b></div>
+          <div class="snapR" id="rpSnap"></div><div class="replog" id="rpLog"></div>`;
+        tl.parentNode.insertBefore(box, tl.nextSibling.nextSibling);
+        const upd = () => {
+          const smp = S.samples[+$1("#rpS").value], t = smp.t;
+          $1("#rpT").textContent = fmt2(t);
+          $1("#rpSnap").innerHTML = [["Ritmo", RN(smp.r)], ["RCP", smp.c === 1 ? "Sí" : smp.c ? "Pausa vent." : "No"], ["Calidad", smp.c ? (smp.q || 0) + " %" : "—"], ["EtCO₂", (smp.et || 0) + " mmHg"], ["FC", smp.hr ? smp.hr : "—"], ["PAS", smp.sbp ? smp.sbp : "—"]].map(([k, v]) => `<div><small>${k}</small>${v}</div>`).join("");
+          $1("#rpLog").innerHTML = S.log.filter(l => l.t <= t + .5).slice(-8).reverse().map(l => `<div><span style="color:#41ff86">${fmt2(l.t)}</span> ${l.msg}</div>`).join("") || "<div>Sin eventos todavía.</div>";
+        };
+        $1("#rpS").oninput = upd; upd();
+        let pl = null;
+        $1("#rpPlay").onclick = () => {
+          if (pl){ clearInterval(pl); pl = null; $1("#rpPlay").textContent = "▶ Reproducir"; return; }
+          if (+$1("#rpS").value >= +$1("#rpS").max) $1("#rpS").value = 0;
+          $1("#rpPlay").textContent = "⏸ Pausa";
+          pl = setInterval(() => { const r = $1("#rpS"); r.value = Math.min(+r.max, +r.value + 2); upd(); if (+r.value >= +r.max){ clearInterval(pl); pl = null; $1("#rpPlay").textContent = "▶ Reproducir"; } }, 120);
+        };
+      }catch(e){ console.warn(e); }
+    };
+  }
+})();
 </script>
 </body>
 </html>

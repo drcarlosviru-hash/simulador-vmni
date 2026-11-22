@@ -62,16 +62,15 @@ const CAPITULOS = [
     color: "#38bdf8", icono: "⚡",
     historia: "Mientras lo trasladas a TAC, el monitor cambia: fibrilación ventricular. Compresiones, descarga, adrenalina, causas reversibles. Cada segundo sin compresiones cuenta.",
     modulos: [
-      { id: "rcp_pv", nombre: "🩺 Paciente virtual · Parada cardiorrespiratoria", url: "motor/paciente.html?esc=pcr", desc: "En tiempo real: compresiones, desfibrilador manual, ritmos, capnografía, fármacos, 4H/4T y cuidados tras la RCE, con debriefing por competencias." },
-      { id: "rcp", nombre: "Simulador PCR · Algoritmo SVA", url: "modulos/rcp.html", desc: "Escenarios de parada con monitor, cronómetro y evaluación." }
+      { id: "rcp", nombre: "🩺 Paciente virtual · Parada cardiorrespiratoria (SVA ERC 2025)", url: "modulos/rcp.html?sim=1", desc: "Tu simulador de referencia: 6 casos, desfibrilador manual, identificación del ritmo en cada pausa, 4H/4T, cuidados tras la RCE, evaluación y repetición minuto a minuto. Incluye el algoritmo interactivo y la referencia rápida." }
     ],
     misiones: [
       { id: "rcp_open", txt: "Entra en el simulador de PCR", xp: 50, auto: s => s.visit("rcp") },
       { id: "rcp_caso", txt: "Termina un escenario completo", xp: 100, auto: s => s.list("pcr_hist").length >= 1 },
       { id: "rcp_rosc", txt: "Consigue una recuperación de la circulación (RCE)", xp: 150, auto: s => s.list("pcr_hist").some(h => h.rosc) },
       { id: "rcp_80", txt: "Obtén 80 puntos o más en un escenario", xp: 150, auto: s => s.list("pcr_hist").some(h => +h.sc >= 80) },
-      { id: "rcp_pv1", txt: "Paciente virtual: RCE en la FV refractaria con ≥ 75 % en modo examen", xp: 250, auto: s => s.list("motor_hist").some(h => h.esc === "pcr" && h.caso === "fv" && h.modo === "examen" && h.pct >= 75) },
-      { id: "rcp_pv2", txt: "Paciente virtual: AESP resuelta sin fallos críticos", xp: 250, auto: s => s.list("motor_hist").some(h => h.esc === "pcr" && h.caso === "aesp" && h.crit === 0) },
+      { id: "rcp_pv1", txt: "RCE en la FV presenciada con ≥ 75 puntos en modo evaluación", xp: 250, auto: s => s.list("motor_hist").some(h => h.esc === "pcr" && h.caso === "fv" && h.modo === "examen" && h.pct >= 75 && !h.arrest) },
+      { id: "rcp_pv2", txt: "AESP por hiperpotasemia resuelta sin errores críticos", xp: 250, auto: s => s.list("motor_hist").some(h => h.esc === "pcr" && h.caso === "hiperk" && h.crit === 0 && !h.arrest) },
       { id: "rcp_exam", txt: "Supera el examen del capítulo", xp: 0, auto: s => s.stars("rcp") >= 1 }
     ],
     insignia: { id: "rosc", nombre: "RCE", icono: "💓", txt: "Examen de SVA superado" }
