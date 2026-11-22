@@ -22,6 +22,21 @@ El motor pone la interfaz (paciente 2,5D, monitor, dispositivos, auscultación, 
 | `COMPETENCIAS`, `recursos` | objetos | Nombres de las competencias y recomendación de refuerzo |
 | `rubrica(S, L)` | → `[{comp, txt, ok, critico}]` | Evaluación objetiva. Las críticas pesan el doble; una parada limita la nota al 40 % |
 
+## Campos opcionales (escenarios en tiempo real, p. ej. `pcr.js`)
+| Campo | Para qué |
+|---|---|
+| `velocidad` | Velocidad inicial (1 = tiempo real; la PCR usa ×1) |
+| `finAlParar: false` | La parada no termina el caso (es el propio escenario) |
+| `desfibrilador`, `energias` | Muestra el desfibrilador manual en pantalla: parches, energía, cargar, descargar, desarmar. Llama a `aplicar(S, "parches")` y `aplicar(S, "descarga", {energia})` |
+| `rapidas[]` | Ids de tratamientos que salen como botones grandes bajo el monitor |
+| item `toggle: "clave"` | Acción que activa o desactiva `S[clave]` (p. ej. las compresiones) |
+| item `hallazgo: true` | Tras aplicarla, muestra `hallazgo(S, id)` en los resultados (p. ej. analizar el ritmo) |
+| `aplicar` → `{error}` · `{msg, tipo, siempre}` | Rechaza la acción con un aviso, o muestra un mensaje (solo en tutor, salvo `siempre`) |
+| Estado `S.ritmo`, `S.pulso`, `S.cpr`, `S.cicloT`, `S.arrestActivo`, `S.supino`, `S.parches`, `S.via`, `S.viaAerea` | Monitor con ritmos (sinus, fv, tv, asist, aesp), artefacto de compresiones, temporizador de ciclo y paciente en decúbito |
+| `dispositivos(S)` | Lista HTML de lo que está en marcha (sustituye a la de por defecto) |
+| `grafica`, `franja`, `snapKeys`, `snapVista(h)` | Series del debriefing, franja sombreada (p. ej. tiempo con RCP) y panel de la repetición |
+| `resultado(S)` | Texto del resultado clínico final |
+
 ## API del registro `L` (para pistas y rúbricas)
 `hecho(id)` · `primero(id)` → minuto · `primeroDe([ids])` · `algo([ids])` · `cuenta([ids])` · `registro(id)` → `[{t, p}]` · `ultimo(id)` · `estadoEn(t)` → constantes en ese minuto · `minutosCon(fn)` → minutos en que se cumple una condición.
 

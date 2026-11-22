@@ -211,7 +211,7 @@ footer{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--mut);font-
   <section class="intro">
     <div>
       <h1>Tu guardia empieza <span>ahora</span>.</h1>
-      <p>Recorre el mundo de la emergencia capítulo a capítulo: de la calle al parte de la ambulancia, del box de trauma a la parada, la ventilación, el box vital y el box de agudos. Completa misiones, aprueba los exámenes y sube de rango.</p>
+      <p>Recorre el mundo de la emergencia capítulo a capítulo: de la calle al parte de la ambulancia, del box de trauma a la parada, la ventilación, el box vital y el box de agudos. Entra en el capítulo que quieras, completa misiones, aprueba los exámenes y sube de rango.</p>
     </div>
     <div class="modes">
       <button class="btn pri" id="bContinue">▶ Continuar</button>
@@ -276,12 +276,7 @@ function capStats(c){
   const total = c.misiones.length;
   return { done, total, pct: Math.round(done / total * 100), complete: done === total };
 }
-function unlocked(c){
-  if (S.libre || c.n === 1) return true;
-  if (sens.stars(c.id) || c.modulos.some(m => S.visitas[m.id])) return true; // ya empezado
-  const prev = CAPITULOS.find(x => x.n === c.n - 1);
-  return prev.sinExamen ? capStats(prev).complete : sens.stars(prev.id) >= 1;
-}
+function unlocked(c){ return true; } // todos los capítulos abiertos desde el inicio; el número es solo un orden sugerido
 function badgeOn(c){ return c.sinExamen ? capStats(c).complete : sens.stars(c.id) >= 1; }
 const EXTRA = [
   { id:"guardia", nombre:"Guardia completa", icono:"🏆", txt:"Todos los capítulos al 100 %", on:() => CAPITULOS.every(c => capStats(c).complete) },
@@ -607,7 +602,7 @@ function openStars(){
 function openSettings(){
   modal(`<div class="mh"><button class="ibtn x" aria-label="Cerrar">✕</button><div class="kick" style="color:var(--mut)">Ajustes</div><h2>⚙️ Configuración</h2></div>
     <div class="mb">
-      <div class="toggle"><div><b>Modo libre</b><div style="font-size:12.5px;color:var(--mut)">Desbloquea todos los capítulos sin aprobar el anterior (para docentes o repaso)</div></div><button class="sw ${S.libre ? "on" : ""}" id="swLibre" aria-label="Modo libre"></button></div>
+      <p style="font-size:13.5px;color:var(--mut);margin-bottom:6px">Todos los capítulos están abiertos desde el principio: el número indica un orden sugerido, no un requisito.</p>
       <div class="sec">Tu progreso</div>
       <p style="font-size:13.5px;color:var(--mut);margin-bottom:10px">Se guarda en este navegador. Expórtalo para llevarlo a otro dispositivo.</p>
       <div class="row">
@@ -616,7 +611,6 @@ function openSettings(){
         <button class="btn" id="bReset" style="color:var(--bad)">Reiniciar</button>
       </div>
     </div>`);
-  $("#swLibre").onclick = () => { S.libre = !S.libre; save(); render(); openSettings(); };
   $("#bExp").onclick = () => {
     const extra = {}; ["phtls_ch","phtls_cs","phtls_qz","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist","hktaller","hiperk_hist","motor_hist"].forEach(k => { const v = localStorage.getItem(k); if (v != null) extra[k] = v; });
     const blob = new Blob([JSON.stringify({ mundo: S, modulos: extra, fecha: new Date().toISOString() }, null, 1)], { type: "application/json" });

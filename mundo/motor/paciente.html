@@ -41,6 +41,19 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .q:hover{border-color:#3a4d7a}.q.done{opacity:.6}
 .mist1{animation:mist 2.4s ease-out infinite}.mist2{animation:mist 2.4s ease-out infinite .8s}
 @keyframes mist{0%{transform:translateY(8px);opacity:.1}50%{opacity:.6}100%{transform:translateY(-14px);opacity:0}}
+.quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.quick:empty{display:none}
+.qbtn{flex:1;min-width:130px;padding:12px 10px;border-radius:12px;background:var(--card2);border:1px solid var(--line);font-weight:800;font-size:13.5px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.12s}
+.qbtn:hover:not(:disabled){border-color:#3a6a96;transform:translateY(-1px)}
+.qbtn.on{background:#3a1a06;border-color:#f97316;color:#fed7aa;animation:pulseb 1s infinite}
+@keyframes pulseb{50%{box-shadow:0 0 0 4px #f9731633}}
+.defib{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#1c1407,#140f05);border:1px solid #6b4a12}
+.defib .dl{font-family:Sora,Inter,sans-serif;font-weight:800;font-size:12px;letter-spacing:.1em;color:#fbbf24}
+.defib button{padding:9px 12px;border-radius:10px;background:#2a1f0a;border:1px solid #6b4a12;font-weight:800;font-size:13px;color:#fde68a}
+.defib button:hover:not(:disabled){border-color:#fbbf24}
+.defib button.armed{background:#b91c1c;border-color:#fecaca;color:#fff;animation:pulseb .6s infinite}
+.defib select{padding:8px;border-radius:10px;background:#0b0f18;color:#fde68a;border:1px solid #6b4a12;font:inherit;font-weight:700}
+.defib .dstat{margin-left:auto;font-family:var(--mono);font-weight:700;color:#fca5a5}
 /* monitor */
 .monitor{background:#000;border-radius:14px;border:2px solid #1b2333;overflow:hidden;position:relative}
 #mon{width:100%;height:auto;display:block}
@@ -118,7 +131,7 @@ input[type=range]{width:100%;accent-color:#38bdf8}
   <span class="chip" id="casoChip">Paciente desconocido</span>
   <span class="grow"></span>
   <span class="clock" id="clk">00:00</span>
-  <div class="spd" id="spd"><button data-s="0" title="Pausa">⏸</button><button data-s="1">×1</button><button data-s="5">×5</button><button data-s="10" class="on">×10</button><button data-s="30">×30</button></div>
+  <div class="spd" id="spd"><button data-s="0" title="Pausa">⏸</button><button data-s="1">×1</button><button data-s="2">×2</button><button data-s="5">×5</button><button data-s="10" class="on">×10</button><button data-s="30">×30</button></div>
   <button class="btn" id="skip">+5 min</button>
   <button class="btn red" id="fin">Finalizar y evaluar</button>
 </div>
@@ -135,6 +148,8 @@ input[type=range]{width:100%;accent-color:#38bdf8}
 
   <section class="col-mon">
     <div class="monitor"><canvas id="mon" width="980" height="420"></canvas><button class="mute" id="mute">🔇 Alarmas</button></div>
+    <div id="defib"></div>
+    <div class="quick" id="quick"></div>
     <div class="devs" id="devs"></div>
     <div id="hints"></div>
   </section>

@@ -69,7 +69,9 @@ function start(modo, caso){
   $("#tit").textContent = E.titulo;
   $("#modo").textContent = modo === "tutor" ? "🎓 Modo tutor" : "📝 Modo examen"; $("#modo").className = "chip " + modo;
   $("#casoChip").textContent = "Paciente desconocido";
-  snapshot(); measureNibp(); renderQs(); renderActs(); renderDevs(); renderPatient(true);
+  speed = E.velocidad || 10; document.querySelectorAll("#spd button").forEach(x => x.classList.toggle("on", +x.dataset.s === speed));
+  lastSnap = 0; lastHint = 0; lastSay = 0;
+  cargando = false; dfE = (E.energias || [150])[1] || 150; snapshot(); measureNibp(); renderQs(); renderActs(); renderDevs(); renderQuick(); renderDefib(); renderPatient(true);
   say("Paciente", E.fraseLibre(S));
   running = true;
 }
@@ -90,11 +92,12 @@ function tickSim(){
   if (MODO === "tutor" && S.t - lastHint >= .25){ lastHint = S.t; checkHints(); }
   if (S.t - lastSay > 4){ lastSay = S.t; if (!speaking) say(S.iot ? "" : "Paciente", E.fraseLibre(S)); }
   $("#clk").textContent = mmss(S.t);
-  if (S.arrest && !ended){ hint("bad", "⛔ Parada cardiorrespiratoria por insuficiencia respiratoria no resuelta."); setTimeout(finish, 1500); ended = true; }
+  if (S.arrest && !ended && E.finAlParar !== false){ hint("bad", "⛔ Parada cardiorrespiratoria por insuficiencia respiratoria no resuelta."); setTimeout(finish, 1500); ended = true; }
+  if (S.terminado && !ended){ ended = true; hint("warn", S.terminado); setTimeout(finish, 1200); }
   if (S.t >= E.duracionMax && !ended){ ended = true; hint("warn", "⏱️ Fin del tiempo del escenario."); setTimeout(finish, 800); }
-  renderDevs(); renderPatient(false);
+  renderDevs(); renderQuick(); renderDefib(); renderPatient(false);
 }
-function snapshot(){ HIST.push({ t: +S.t.toFixed(2), spo2: S.spo2, hr: S.hr, rr: S.rr, sbp: S.sbp, dbp: S.dbp, etco2: S.etco2, gcs: S.gcs, ph: S.ph, paco2: S.paco2, fio2ef: S.fio2ef, niv: S.niv, iot: S.iot }); }
+function snapshot(){ const h = { t: +S.t.toFixed(2), spo2: S.spo2, hr: S.hr, rr: S.rr, sbp: S.sbp, dbp: S.dbp, etco2: S.etco2, gcs: S.gcs, ph: S.ph, paco2: S.paco2, fio2ef: S.fio2ef, niv: S.niv, iot: S.iot }; (E.snapKeys || []).forEach(k => h[k] = S[k]); HIST.push(h); }
 function measureNibp(){ lastNibp = S.t; nibp = { s: Math.round(S.sbp), d: Math.round(S.dbp), t: S.t }; }
 
 /* ---------------- habla del paciente ---------------- */
@@ -118,7 +121,7 @@ function renderActs(){
   let h = "";
   if (tab === "exp") h = E.exploraciones.map(x => `<button class="act" data-x="${x.id}"><span class="i">${x.ico}</span><div><b>${esc(x.txt)}</b><small>${x.audio ? "Incluye sonido" : "Hallazgo inmediato"}</small></div>${L.hecho(x.id) ? `<span class="tag">✓ ${L.registro(x.id).length}</span>` : ""}</button>`).join("");
   if (tab === "pru") h = E.pruebas.map(x => { const pend = PEND.find(p => p.id === x.id && !p.done); return `<button class="act" data-p="${x.id}" ${pend ? "disabled" : ""}><span class="i">🧪</span><div><b>${esc(x.txt)}</b><small>Resultado en ${x.demora} min</small></div><span class="tag">${pend ? "⏳ " + Math.max(0, Math.ceil(pend.listo - S.t)) + " min" : L.hecho(x.id) ? "✓" : ""}</span></button>`; }).join("");
-  if (tab === "tra") h = E.tratamientos.map(g => `<div class="grp">${esc(g.grupo)}</div>` + g.items.map(x => { const n = L.registro(x.id).length; const act = (x.o2 != null && S.o2dev === x.id) || (x.id === "niv" && S.niv) || (x.id === "pos" && S.pos) || (x.id === "iot" && S.iot); return `<button class="act" data-tx="${x.id}" ${(x.id === "iot" && S.iot) || (x.id === "pos" && S.pos) ? "disabled" : ""}><span class="i">${x.o2 != null ? "🫧" : x.id === "niv" ? "😷" : x.id === "iot" ? "🫁" : x.id === "pos" ? "🛏️" : "💉"}</span><div><b>${esc(x.txt)}</b><small>${esc(x.desc || "")}</small></div><span class="tag">${act ? "● activo" : n ? "×" + n : ""}</span></button>`; }).join("")).join("");
+  if (tab === "tra") h = E.tratamientos.map(g => `<div class="grp">${esc(g.grupo)}</div>` + g.items.map(x => { const n = L.registro(x.id).length; const act = (x.o2 != null && S.o2dev === x.id) || (x.id === "niv" && S.niv) || (x.id === "pos" && S.pos) || (x.id === "iot" && S.iot) || (x.toggle && S[x.toggle]); return `<button class="act" data-tx="${x.id}" ${(x.id === "iot" && S.iot) || (x.id === "pos" && S.pos) ? "disabled" : ""}><span class="i">${x.ico || (x.o2 != null ? "🫧" : x.id === "niv" ? "😷" : x.id === "iot" ? "🫁" : x.id === "pos" ? "🛏️" : "💉")}</span><div><b>${esc(x.txt)}</b><small>${esc(x.desc || "")}</small></div><span class="tag">${act ? "● activo" : n ? "×" + n : ""}</span></button>`; }).join("")).join("");
   if (tab === "dec"){
     const dx = L.ultimo("dx"), de = L.ultimo("destino");
     h = `<div class="grp">Diagnóstico principal</div>` + E.diagnosticos.map(d => `<button class="act" data-dx="${d.id}" style="${dx && dx.p.id === d.id ? "border-color:#38bdf8;background:#0f2a40" : ""}"><span class="i">${dx && dx.p.id === d.id ? "🔵" : "⚪"}</span><div><b>${esc(d.txt)}</b></div></button>`).join("")
@@ -164,15 +167,52 @@ function showResult(p){
 }
 function tratar(id){
   const x = ALL_TX.find(t => t.id === id);
-  if (id === "niv") return nivModal();
-  if (id === "ntg_iv") return ntgModal();
+  if (x.dispositivo === "niv" || id === "niv") return nivModal();
+  if (x.dispositivo === "ntg" || id === "ntg_iv") return ntgModal();
+  if (x.dispositivo === "defib") return defibModal();
   if (id === "iot") return iotModal();
-  E.aplicar(S, id, {}); logA(id, "tra", {}, x.txt);
+  const r = E.aplicar(S, id, {});
+  if (r && r.error){ hint("warn", "⚠️ " + r.error); return; }
+  const txt = x.toggle ? (S[x.toggle] ? x.txt : (x.txtOff || x.txt + " (detener)")) : x.txt;
+  logA(x.toggle && !S[x.toggle] ? id + "_off" : id, "tra", {}, txt);
+  if (x.hallazgo){ const h = E.hallazgo(S, id); addRes(`<div class="h"><span>🔎 ${esc(x.txt)}</span><span>${mmss(S.t)}</span></div>${esc(h)}`); }
   afterTx(id);
 }
+function renderQuick(){
+  if (!E.rapidas){ return; }
+  const items = E.rapidas.map(id => ALL_TX.find(t => t.id === id)).filter(Boolean);
+  const html = items.map(x => { const on = x.toggle && S[x.toggle]; const dis = x.activo && !x.activo(S); return `<button class="qbtn ${on ? "on" : ""}" data-qk="${x.id}" ${dis ? "disabled" : ""}>${x.ico || "•"} <span>${esc(on && x.txtOn ? x.txtOn : x.corto || x.txt)}</span></button>`; }).join("");
+  if ($("#quick").innerHTML !== html){ $("#quick").innerHTML = html; $("#quick").querySelectorAll("[data-qk]").forEach(b => b.onclick = () => tratar(b.dataset.qk)); }
+}
 function afterTx(id){
+  renderQuick(); renderDefib();
   if (MODO === "tutor"){ const c = E.comentario(S, id); if (c) hint(c.startsWith("⛔") ? "bad" : c.startsWith("⚠️") ? "warn" : "", c); }
   renderActs(); renderDevs(); renderPatient(true);
+}
+
+
+/* ---------------- desfibrilador manual (en pantalla, sin pausar el tiempo) ---------------- */
+let dfE = 150, cargando = false, cargaT = null;
+function renderDefib(){
+  if (!E.desfibrilador){ $("#defib").innerHTML = ""; return; }
+  const html = `<div class="defib"><span class="dl">⚡ DESFIBRILADOR</span>
+    <button data-df="parches" ${S.parches ? "disabled" : ""}>${S.parches ? "✓ Parches colocados" : "Colocar parches"}</button>
+    <select id="dfE" ${S.cargado || cargando ? "disabled" : ""}>${(E.energias || [120, 150, 200, 360]).map(j => `<option value="${j}" ${j === dfE ? "selected" : ""}>${j} J</option>`).join("")}</select>
+    <button data-df="cargar" ${!S.parches || S.cargado || cargando ? "disabled" : ""}>Cargar</button>
+    <button data-df="descargar" class="${S.cargado ? "armed" : ""}" ${!S.cargado ? "disabled" : ""}>⚡ DESCARGA</button>
+    <button data-df="desarmar" ${!S.cargado ? "disabled" : ""}>Desarmar</button>
+    <span class="dstat">${S.cargado ? "CARGADO " + dfE + " J" : cargando ? "Cargando…" : ""}</span></div>`;
+  if ($("#defib").innerHTML.replace(/\s+/g, "") === html.replace(/\s+/g, "")) return;
+  $("#defib").innerHTML = html;
+  $("#dfE").onchange = e => dfE = +e.target.value;
+  $("#defib").querySelectorAll("[data-df]").forEach(b => b.onclick = () => {
+    const a = b.dataset.df;
+    if (a === "parches"){ E.aplicar(S, "parches", {}); logA("parches", "tra", {}, "Parches de desfibrilación colocados"); }
+    if (a === "cargar"){ cargando = true; logA("cargar", "tra", { energia: dfE }, `Carga ${dfE} J${S.cpr ? " (sin detener compresiones)" : ""}`); clearTimeout(cargaT); cargaT = setTimeout(() => { cargando = false; S.cargado = true; S.energia = dfE; renderDefib(); }, 2200); }
+    if (a === "descargar"){ const r = E.aplicar(S, "descarga", { energia: S.energia }); logA("descarga", "tra", { energia: S.energia, ritmo: r && r.ritmo }, `⚡ DESCARGA ${S.energia} J`); S.cargado = false; if (r && r.msg && (MODO === "tutor" || r.siempre)) hint(r.tipo || "", r.msg); afterTx("descarga"); }
+    if (a === "desarmar"){ S.cargado = false; logA("desarmar", "tra", {}, "Desfibrilador desarmado"); }
+    renderDefib();
+  });
 }
 
 /* ---------------- dispositivos ---------------- */
@@ -232,12 +272,13 @@ function ntgModal(){
   document.querySelectorAll("[data-n]").forEach(b => b.onclick = () => { const n = +b.dataset.n; closeModal(); E.aplicar(S, "ntg_iv", { nivel: n }); logA(n ? "ntg_iv" : "ntg_off", "tra", { nivel: n }, "NTG IV: " + N[n]); afterTx(n ? "ntg_iv" : "ntg_off"); });
 }
 function iotModal(){
-  $("#modal").innerHTML = `<h2>🫁 Intubación orotraquial</h2><p style="color:var(--mut)">Secuencia rápida, ventilación mecánica invasiva e ingreso en UCI. ¿Confirmas la indicación?</p>
+  $("#modal").innerHTML = `<h2>🫁 Intubación orotraquial</h2><p style="color:var(--mut)">${S.arrestActivo ? "Intubación durante la RCP: minimiza la pausa de compresiones (< 5 s) y confirma con capnografía." : "Secuencia rápida, ventilación mecánica invasiva e ingreso en UCI."} ¿Confirmas?</p>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button class="btn" id="cc">Cancelar</button><button class="btn red" id="ok">Intubar</button></div>`;
   openModal(); $("#cc").onclick = closeModal;
   $("#ok").onclick = () => { closeModal(); E.aplicar(S, "iot", {}); logA("iot", "tra", {}, "Intubación orotraquial"); afterTx("iot"); };
 }
 function renderDevs(){
+  if (E.dispositivos){ const html = E.dispositivos(S).map(x => `<div class="dev">${x}</div>`).join(""); if ($("#devs").innerHTML !== html) $("#devs").innerHTML = html; return; }
   const d = [];
   if (S.iot) d.push(`🫁 <b>IOT</b> · VM invasiva`);
   else if (S.niv) d.push(`<span data-dev="niv" style="cursor:pointer">😷 <b>${S.cpap ? "CPAP " + S.epap : "BiPAP " + S.ipap + "/" + S.epap}</b> · FiO₂ ${Math.round(S.nivFio2 * 100)} % <span class="x">⚙️</span></span>`);
@@ -246,7 +287,7 @@ function renderDevs(){
   if (S.ntgIv) d.push(`<span data-dev="ntg" style="cursor:pointer">💉 NTG IV <b>${["", "baja", "media", "alta"][S.ntgIv]}</b> <span class="x">⚙️</span></span>`);
   if (S._ef && S._ef.neb > .1) d.push(`💨 Nebulización activa`);
   if (S.pos) d.push(`🛏️ Incorporado`);
-  if (S.furo.length) d.push(`💧 Furosemida ×${S.furo.length}`);
+  if (S.furo && S.furo.length) d.push(`💧 Furosemida ×${S.furo.length}`);
   const html = d.map(x => `<div class="dev">${x}</div>`).join("");
   if ($("#devs").innerHTML !== html){ $("#devs").innerHTML = html; const n = $("[data-dev=niv]"); if (n) n.onclick = nivModal; const g = $("[data-dev=ntg]"); if (g) g.onclick = ntgModal; }
 }
@@ -266,6 +307,7 @@ function hint(cls, txt, short){
 let visKey = "";
 function renderPatient(force){
   if (!S) return;
+  if (S.supino) return renderSupino(force);
   const gcsLvl = S.iot ? 0 : S.gcs >= 14 ? 2 : S.gcs >= 10 ? 1 : 0;
   const neb = !!(S._ef && S._ef.neb > .1 && !S.niv && !S.iot);
   const key = [S.o2dev, S.niv, S.iot, S.pos, gcsLvl, Math.round(S.cianosis * 5), Math.round(S.sudor * 3), Math.round(S.wob * 4), neb].join("|");
@@ -355,8 +397,41 @@ function renderPatient(force){
     </g>
     <path d="M70 250 q110 -16 220 0 v50 h-220z" fill="url(#blanket)"/><path d="M100 262 q80 -8 160 0" stroke="#94a3b8" stroke-width="1.5" fill="none" opacity=".6"/>`;
 }
+
+/* paciente en decúbito supino (vista cenital) para la parada */
+function renderSupino(force){
+  const key = ["sup", S.cpr, S.parches, S.via, S.viaAerea, S.pulso, Math.round((S.cianosis || 0) * 4), S.gcs > 8].join("|");
+  if (!force && key === visKey) return; visKey = key;
+  const skin = S.pulso ? lerpC("e9b48f", "c9b7b0", (S.cianosis || 0) * .6) : lerpC("c8bdb8", "98a4bf", .55);
+  const lips = S.pulso ? "#b9675c" : "#5b6aa0";
+  const pads = S.parches ? `<g><rect x="132" y="108" width="34" height="24" rx="5" fill="#f8fafc" stroke="#94a3b8"/><rect x="200" y="166" width="34" height="26" rx="5" fill="#f8fafc" stroke="#94a3b8" transform="rotate(-20 217 179)"/><path d="M149 108 q-20 -40 -60 -70 M217 166 q30 -60 80 -140" stroke="#ef4444" stroke-width="2" fill="none"/><path d="M152 112 h0" stroke="#000"/></g>` : "";
+  const via = S.via ? `<g><rect x="${S.via === "io" ? 300 : 120}" y="${S.via === "io" ? 196 : 206}" width="12" height="8" rx="2" fill="#38bdf8"/><path d="M${S.via === "io" ? 306 : 126} ${S.via === "io" ? 196 : 206} q20 -60 70 -180" stroke="#7dd3fc" stroke-width="2" fill="none"/></g>` : "";
+  let aw = "";
+  if (S.viaAerea === "iot") aw = `<rect x="34" y="146" width="40" height="7" rx="3" fill="#e2e8f0"/><rect x="58" y="142" width="8" height="15" rx="2" fill="#38bdf8"/><path d="M34 150 q-20 0 -26 -40" stroke="#93c5fd" stroke-width="7" fill="none"/><g id="bvm"><ellipse cx="14" cy="96" rx="12" ry="22" fill="#fde68a" fill-opacity=".8" stroke="#f59e0b"/></g>`;
+  else if (S.viaAerea === "sga") aw = `<path d="M40 150 h32" stroke="#a78bfa" stroke-width="8" stroke-linecap="round"/><path d="M40 150 q-20 0 -26 -40" stroke="#c4b5fd" stroke-width="6" fill="none"/><g id="bvm"><ellipse cx="14" cy="96" rx="12" ry="22" fill="#fde68a" fill-opacity=".8" stroke="#f59e0b"/></g>`;
+  else if (S.viaAerea === "bvm") aw = `<ellipse cx="62" cy="150" rx="18" ry="14" fill="#e0f2fe" fill-opacity=".5" stroke="#e2e8f0" stroke-width="2"/><g id="bvm"><ellipse cx="28" cy="150" rx="22" ry="13" fill="#fde68a" fill-opacity=".85" stroke="#f59e0b"/></g>`;
+  const hands = S.cpr ? `<g id="hands"><path d="M182 0 L176 128 M206 0 L198 128" stroke="#2563eb" stroke-width="22" stroke-linecap="round"/><ellipse cx="188" cy="150" rx="20" ry="15" fill="#e7b18c" stroke="#b07d63"/><ellipse cx="188" cy="146" rx="18" ry="13" fill="#eab995" stroke="#b07d63"/></g>` : "";
+  $("#pt").innerHTML = `
+    <defs><linearGradient id="fl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b2a4d"/><stop offset="1" stop-color="#101934"/></linearGradient>
+    <linearGradient id="gown2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a7c8ec"/><stop offset="1" stop-color="#7aa6d6"/></linearGradient></defs>
+    <rect width="360" height="300" fill="url(#fl)"/>
+    <rect x="14" y="88" width="336" height="124" rx="16" fill="#cbd5e1"/><rect x="22" y="96" width="320" height="108" rx="12" fill="#e2e8f0"/>
+    <rect x="18" y="212" width="10" height="40" fill="#64748b"/><rect x="336" y="212" width="10" height="40" fill="#64748b"/>
+    <g id="chestS">
+      <path d="M96 112 q50 -16 140 -4 v84 q-90 12 -140 -4z" fill="${S.cpr ? "#e9e2dc" : "url(#gown2)"}"/>
+      ${S.cpr ? `<path d="M120 118 q60 -10 110 -2 v68 q-50 8 -110 -2z" fill="${skin}" opacity=".9"/>` : ""}
+    </g>
+    <path d="M100 116 q-12 -16 10 -24 q60 -6 120 -2" stroke="${skin}" stroke-width="16" fill="none" stroke-linecap="round"/>
+    <path d="M100 184 q-12 16 10 24 q60 6 120 2" stroke="${skin}" stroke-width="16" fill="none" stroke-linecap="round"/>
+    <path d="M236 108 h104 v84 h-104z" fill="#cfd8e6"/><path d="M240 124 h96 M240 150 h96 M240 176 h96" stroke="#b6c2d6" stroke-width="2"/>
+    <g transform="translate(66 150)"><rect x="18" y="-12" width="20" height="24" fill="${skin}"/><ellipse cx="0" cy="0" rx="30" ry="26" fill="${skin}"/><path d="M-26 -10 q-6 10 0 22" stroke="#c9c9c9" stroke-width="7" fill="none"/>
+      <path d="M8 -12 q4 3 8 0 M8 12 q4 -3 8 0" stroke="#3b2a20" stroke-width="2" fill="none"/><path d="M22 -4 v8" stroke="${lips}" stroke-width="3"/></g>
+    ${pads}${via}${aw}${hands}
+    <text x="180" y="282" text-anchor="middle" font-size="12" font-weight="700" fill="${S.pulso ? "#4ade80" : "#fb7185"}" font-family="Inter">${S.pulso ? (S.gcs > 8 ? "Con pulso · respira" : "Con pulso · RCE") : S.cpr ? "RCP en curso" : "Sin pulso · ¡sin compresiones!"}</text>`;
+}
+
 // respiración sincronizada (tiempo real, frecuencia del modelo)
-let brPh = 0, hbPh = 0, lastFrame = performance.now(), talkPh = 0;
+let brPh = 0, hbPh = 0, lastFrame = performance.now(), talkPh = 0, cprPh = 0, ventPh = 0;
 function animPatient(now){
   const dt = Math.min(.1, (now - lastFrame) / 1000); lastFrame = now;
   if (S){
@@ -368,6 +443,13 @@ function animPatient(now){
     if (h) h.setAttribute("transform", `translate(0 ${-insp * amp * 120})`);
     if (b) b.setAttribute("transform", `translate(180 176) scale(1 ${1 - insp * .4}) translate(-180 -176)`);
     if (r) r.setAttribute("opacity", S.iot ? 0 : (insp * cl((S.wob - .4) * 2, 0, 1)).toFixed(2));
+    if (S.supino){
+      const hd = document.getElementById("hands"), ch = document.getElementById("chestS"), bv = document.getElementById("bvm");
+      cprPh = (cprPh + dt * 1.85) % 1; const pr = S.cpr ? Math.max(0, Math.sin(cprPh * 2 * Math.PI)) : 0;
+      if (hd) hd.setAttribute("transform", `translate(188 150) scale(${1 - pr * .07}) translate(-188 -150)`);
+      if (ch) ch.setAttribute("transform", S.cpr ? `translate(166 150) scale(1 ${1 - pr * .05}) translate(-166 -150)` : S.pulso ? `translate(166 150) scale(1 ${1 + insp * .03}) translate(-166 -150)` : "");
+      if (bv){ ventPh = (ventPh + dt * Math.max(.1, (S.rr || 10)) / 60) % 1; bv.setAttribute("transform", `translate(20 120) scale(${1 - (ventPh < .2 ? Math.sin(ventPh / .2 * Math.PI) * .35 : 0)} 1) translate(-20 -120)`); }
+    }
     if (m && speaking && !S.niv && !S.iot && S.gcs > 11){ talkPh += dt * 9; m.setAttribute("ry", (2 + Math.abs(Math.sin(talkPh)) * 5).toFixed(1)); }
   }
   drawMonitor(dt);
@@ -386,20 +468,36 @@ function capV(ph, et, forma){
   if (ph < .62){ const x = ph / .62; const k = .04 + forma * .32; return et * (1 - Math.exp(-x / k)) * (forma > .4 ? .82 + x * .18 : .96 + x * .04); }
   const x = (ph - .62) / .38; return et * Math.max(0, 1 - x * 8) * (forma > .4 ? 1 : 1);
 }
+// formas de onda por ritmo (para escenarios de parada: S.ritmo, S.pulso, S.cpr)
+function wideV(ph, hr){ const per = 60 / hr, t = ph * per; return G(t, .1, .05, .9) + G(t, .2, .06, -.5) + G(t, .45, .09, .25); }
+function ecgRitmo(tt, cph, hr){
+  const r = S.ritmo;
+  let v;
+  if (!r || r === "sinus") v = ecgV(cph, hr);
+  else if (r === "fv"){ const a = S.fvAmp != null ? S.fvAmp : .4; v = a * (Math.sin(tt * 27) * .6 + Math.sin(tt * 41 + 1.3) * .35 + Math.sin(tt * 13 + .4) * .3); }
+  else if (r === "tv"){ v = .95 * Math.sin(2 * Math.PI * tt * (hr / 60)) ** 3 + .1 * Math.sin(2 * Math.PI * tt * (hr / 60)); }
+  else if (r === "asist") v = .015 * Math.sin(tt * 3.1) + .01 * Math.sin(tt * 17);
+  else if (r === "aesp" || r === "brady_ancho") v = wideV(cph, hr);
+  else v = ecgV(cph, hr);
+  if (S.cpr) v = v * .35 + .85 * Math.sin(2 * Math.PI * tt * 1.85) + .12 * Math.sin(2 * Math.PI * tt * 3.7);
+  return v;
+}
 function drawMonitor(dt){
   const W = MC.width, H = MC.height;
   mc.fillStyle = "#000"; mc.fillRect(0, 0, W, H);
   if (!S){ mc.fillStyle = "#334155"; mc.font = "16px Inter"; mc.fillText("Monitor en espera", 20, 40); return; }
   monT += dt; blink = (blink + dt) % 1;
-  const arrest = S.arrest, hr = S.hr, rr = Math.max(4, S.rr);
+  const modoRitmo = S.ritmo != null;
+  const sinPulso = modoRitmo ? !S.pulso : S.arrest;
+  const arrest = S.arrest && !modoRitmo, hr = Math.max(20, S.hr || 60), rr = Math.max(4, S.rr || 10);
   const n = Math.max(1, Math.round(dt * 150));
   for (let i = 0; i < n; i++){
     sx = (sx + 1) % WW;
     const tt = monT - (n - i) / 150;
     const cph = ((tt * hr / 60) % 1 + 1) % 1, rph = ((tt * rr / 60) % 1 + 1) % 1;
-    bufs.ecg[sx] = arrest ? .35 * Math.sin(tt * 29) + .25 * Math.sin(tt * 41 + 1) : ecgV(cph, hr);
-    bufs.ple[sx] = arrest ? 0 : pleV(((cph - .1) % 1 + 1) % 1) * (S.spo2 < 75 ? .5 : 1);
-    bufs.cap[sx] = arrest ? 3 : capV(rph, Math.max(0, S.etco2), S.iot ? .15 : S.capnoForma);
+    bufs.ecg[sx] = arrest ? .35 * Math.sin(tt * 29) + .25 * Math.sin(tt * 41 + 1) : modoRitmo ? ecgRitmo(tt, cph, hr) : ecgV(cph, hr);
+    bufs.ple[sx] = sinPulso ? (S.cpr ? .22 * Math.max(0, Math.sin(2 * Math.PI * tt * 1.85)) : 0) : pleV(((cph - .1) % 1 + 1) % 1) * (S.spo2 < 75 ? .5 : 1);
+    bufs.cap[sx] = arrest ? 3 : (S.rr || 0) < 1 ? 0 : capV(rph, Math.max(0, S.etco2), S.iot ? .15 : (S.capnoForma || 0));
     for (let j = 1; j < 12; j++){ const k = (sx + j) % WW; bufs.ecg[k] = bufs.ple[k] = bufs.cap[k] = null; }
   }
   const capMax = S.etco2 > 55 ? 100 : 60;
@@ -411,8 +509,15 @@ function drawMonitor(dt){
     mc.stroke();
   });
   mc.fillStyle = "#475569"; mc.font = "11px Inter"; mc.fillText(capMax + " mmHg", 640, 278);
+  if (S.cpr){ mc.fillStyle = "#f97316"; mc.font = "700 12px Inter"; mc.fillText("ARTEFACTO DE COMPRESIONES · pausa para analizar el ritmo", 40, 20); }
+  if (S.cicloT != null && S.arrestActivo){
+    const c = S.t - S.cicloT, over = c >= 2;
+    mc.fillStyle = over && blink < .5 ? "#7f1d1d" : "#111827"; mc.fillRect(500, 146, 186, 40); mc.strokeStyle = over ? "#ef4444" : "#334155"; mc.strokeRect(500, 146, 186, 40);
+    mc.fillStyle = over ? "#fecaca" : "#e5e7eb"; mc.font = "600 11px Inter"; mc.fillText(over ? "¡2 MIN! COMPRUEBA RITMO" : "CICLO DE RCP", 508, 160);
+    mc.font = '700 18px "JetBrains Mono", monospace'; mc.fillText(mmss(c), 508, 180);
+  }
   // numéricos
-  const al = { hr: hr > 130 || hr < 50 || arrest, spo2: S.spo2 < 88 || arrest, rr: S.rr > 30 || S.rr < 8, sbp: nibp && (nibp.s > 180 || nibp.s < 90), et: S.etco2 > 55 || S.etco2 < 25 };
+  const al = { hr: sinPulso || hr > 130 || hr < 50, spo2: sinPulso || S.spo2 < 88, rr: !S.iot && !modoRitmo && (S.rr > 30 || S.rr < 8), sbp: !sinPulso && nibp && (nibp.s > 180 || nibp.s < 90), et: modoRitmo ? false : S.etco2 > 55 || S.etco2 < 25 };
   const box = (x, y, w, h, lbl, val, unit, col, alarm, sub) => {
     const on = alarm && blink < .5;
     mc.fillStyle = on ? "#7f1d1d" : "#05080f"; mc.fillRect(x, y, w, h); mc.strokeStyle = "#1f2937"; mc.strokeRect(x, y, w, h);
@@ -421,15 +526,19 @@ function drawMonitor(dt){
     let fs = h > 80 ? 46 : 34; mc.font = `700 ${fs}px "JetBrains Mono", monospace`; while (mc.measureText(String(val)).width > w - 14 && fs > 16){ fs -= 2; mc.font = `700 ${fs}px "JetBrains Mono", monospace`; } mc.fillStyle = col; mc.fillText(val, x + 8, y + h - (sub ? 22 : 12));
     if (sub){ mc.font = "11px Inter"; mc.fillStyle = "#94a3b8"; mc.fillText(sub, x + 8, y + h - 8); }
   };
-  box(700, 6, 274, 92, "FC", arrest ? "---" : Math.round(hr), "lpm", "#4ade80", al.hr);
-  box(700, 104, 274, 92, "SpO₂", arrest ? "---" : Math.round(S.spo2), "%", "#22d3ee", al.spo2);
-  box(700, 202, 136, 104, "PANI", nibp ? nibp.s + "/" + nibp.d : "--", "mmHg", "#f1f5f9", al.sbp, nibp ? "hace " + Math.max(0, Math.round(S.t - nibp.t)) + " min" : "");
-  box(838, 202, 136, 104, "FR", Math.round(S.rr), "rpm", "#fde047", al.rr);
+  const fcTxt = arrest ? "---" : S.cpr ? "RCP" : modoRitmo && (S.ritmo === "fv" || S.ritmo === "asist") ? "---" : Math.round(hr);
+  box(700, 6, 274, 92, "FC", fcTxt, "lpm", "#4ade80", al.hr);
+  box(700, 104, 274, 92, "SpO₂", sinPulso ? "---" : Math.round(S.spo2), "%", "#22d3ee", al.spo2);
+  box(700, 202, 136, 104, "PANI", !sinPulso && nibp && nibp.s > 0 ? nibp.s + "/" + nibp.d : "--", "mmHg", "#f1f5f9", al.sbp, !sinPulso && nibp ? "hace " + Math.max(0, Math.round(S.t - nibp.t)) + " min" : "");
+  box(838, 202, 136, 104, S.iot || modoRitmo ? "FR vent." : "FR", Math.round(S.rr || 0), "rpm", "#fde047", al.rr);
   box(700, 312, 136, 102, "EtCO₂", arrest ? "--" : Math.round(Math.max(0, S.etco2)), "mmHg", "#facc15", al.et);
   box(838, 312, 136, 102, "T ª", f1(S.temp), "°C", "#c4b5fd", false);
   const anyAl = Object.values(al).some(Boolean);
   if (anyAl && !muted && monT - lastBeep > 1.6){ lastBeep = monT; beep(); }
+  if (S.cpr && !muted && monT - lastMet > 60 / 110){ lastMet = monT; tick(); }
 }
+let lastMet = 0;
+function tick(){ const a = actx(), o = a.createOscillator(), g = a.createGain(); o.frequency.value = 1400; g.gain.setValueAtTime(.06, a.currentTime); g.gain.exponentialRampToValueAtTime(.0001, a.currentTime + .04); o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + .05); }
 $("#mute").onclick = () => { muted = !muted; $("#mute").textContent = muted ? "🔇 Alarmas" : "🔔 Alarmas"; if (!muted) actx(); };
 
 /* ---------------- audio: alarmas y auscultación sintetizada ---------------- */
@@ -481,9 +590,9 @@ function finish(){
   const comps = {};
   items.forEach(it => { const w = it.critico ? 2 : 1; comps[it.comp] = comps[it.comp] || { ok: 0, tot: 0 }; comps[it.comp].tot += w; if (it.ok) comps[it.comp].ok += w; });
   const tot = items.reduce((a, it) => a + (it.critico ? 2 : 1), 0), okw = items.reduce((a, it) => a + (it.ok ? (it.critico ? 2 : 1) : 0), 0);
-  let pct = Math.round(okw / tot * 100); if (S.arrest) pct = Math.min(pct, 40);
+  let pct = Math.round(okw / tot * 100); if (S.arrest && E.finAlParar !== false) pct = Math.min(pct, 40);
   const critFail = items.filter(i => i.critico && !i.ok);
-  const outcome = S.arrest ? "Parada cardiorrespiratoria" : S.iot ? "Intubado · UCI" : S.spo2 >= 90 && S.wob < .45 && S.gcs >= 14 ? "Estable y mejorando" : "Sigue inestable";
+  const outcome = E.resultado ? E.resultado(S) : S.arrest ? "Parada cardiorrespiratoria" : S.iot ? "Intubado · UCI" : S.spo2 >= 90 && S.wob < .45 && S.gcs >= 14 ? "Estable y mejorando" : "Sigue inestable";
   const caso = E.casos[S.caso], dx = L.ultimo("dx");
   const worst = Object.entries(comps).map(([k, v]) => [k, v.ok / v.tot]).sort((a, b) => a[1] - b[1])[0];
   try{ const H = JSON.parse(localStorage.getItem("motor_hist") || "[]"); H.push({ esc: E.id, caso: S.caso, modo: MODO, pct, crit: critFail.length, arrest: !!S.arrest, comps: Object.fromEntries(Object.entries(comps).map(([k, v]) => [k, Math.round(v.ok / v.tot * 100)])), t: Date.now() }); localStorage.setItem("motor_hist", JSON.stringify(H.slice(-100))); }catch(e){}
@@ -494,11 +603,11 @@ function finish(){
   $("#modal").innerHTML = `<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start">
       <div><h2>Debriefing · ${esc(E.titulo)}</h2>
       <p style="color:var(--mut)">${MODO === "tutor" ? "🎓 Modo tutor" : "📝 Modo examen"} · ${mmss(S.t)} simulados · Resultado clínico: <b style="color:${S.arrest ? "#fb7185" : "#e8eefc"}">${outcome}</b></p>
-      <p style="margin-top:6px">El paciente tenía: <b style="color:#7dd3fc">${esc(caso.nombre)}</b>. Tu diagnóstico: <b style="color:${dx && dx.p.id === S.caso ? "#4ade80" : "#fb7185"}">${dx ? esc(E.diagnosticos.find(d => d.id === dx.p.id).txt) : "no registrado"}</b></p></div>
+      <p style="margin-top:6px">El paciente tenía: <b style="color:#7dd3fc">${esc(caso.nombre)}</b>. Tu diagnóstico: <b style="color:${dx && dx.p.id === (caso.dx || S.caso) ? "#4ade80" : "#fb7185"}">${dx ? esc(E.diagnosticos.find(d => d.id === dx.p.id).txt) : "no registrado"}</b></p></div>
       <div style="display:flex;gap:8px"><button class="btn" id="rep">↻ Repetir este caso</button><button class="btn pri" id="otro">🎲 Nuevo paciente</button></div></div>
     <div class="dgrid">
       <div><div class="ring"><svg viewBox="0 0 200 200" width="200" height="200"><circle cx="100" cy="100" r="${R}" fill="none" stroke="#1b2741" stroke-width="16"/><circle cx="100" cy="100" r="${R}" fill="none" stroke="${col}" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C * pct / 100} ${C}" transform="rotate(-90 100 100)"/></svg><div class="v" style="color:${col}">${pct}%</div></div>
-        <p style="text-align:center;color:var(--mut);font-size:12.5px">Desempeño global${S.arrest ? " (limitado al 40 % por la parada)" : ""}${critFail.length ? ` · ${critFail.length} acción(es) crítica(s) fallida(s)` : ""}</p></div>
+        <p style="text-align:center;color:var(--mut);font-size:12.5px">Desempeño global${S.arrest && E.finAlParar !== false ? " (limitado al 40 % por la parada)" : ""}${critFail.length ? ` · ${critFail.length} acción(es) crítica(s) fallida(s)` : ""}</p></div>
       <div>${Object.entries(comps).map(([k, v]) => { const p = Math.round(v.ok / v.tot * 100), c = p >= 80 ? "#4ade80" : p >= 60 ? "#fbbf24" : "#fb7185"; return `<div class="comp"><span>${esc(E.COMPETENCIAS[k])}</span><b style="text-align:right;color:${c}">${p} %</b><div class="bar"><i style="width:${p}%;background:${c}"></i></div></div>`; }).join("")}</div>
     </div>
     <div class="dgrid" style="grid-template-columns:1fr 1fr">
@@ -515,7 +624,7 @@ function finish(){
   drawChart();
   const scrub = $("#scrub"); let pl = null;
   const upd = () => { const t = +scrub.value / 2, h = L.estadoEn(t) || HIST[0]; $("#scT").textContent = mmss(t);
-    $("#snap").innerHTML = [["SpO₂", Math.round(h.spo2) + " %"], ["FC", Math.round(h.hr)], ["FR", Math.round(h.rr)], ["PA", Math.round(h.sbp) + "/" + Math.round(h.dbp)], ["GCS", h.gcs], ["pH · PaCO₂", h.ph.toFixed(2) + " · " + Math.round(h.paco2)]].map(([k, v]) => `<div><small>${k}</small>${v}</div>`).join("");
+    $("#snap").innerHTML = (E.snapVista ? E.snapVista(h) : [["SpO₂", Math.round(h.spo2) + " %"], ["FC", Math.round(h.hr)], ["FR", Math.round(h.rr)], ["PA", Math.round(h.sbp) + "/" + Math.round(h.dbp)], ["GCS", h.gcs], ["pH · PaCO₂", h.ph.toFixed(2) + " · " + Math.round(h.paco2)]]).map(([k, v]) => `<div><small>${k}</small>${v}</div>`).join("");
     $("#acLog").innerHTML = LOG.filter(r => r.t <= t).slice(-8).reverse().map(r => `<div><span>${mmss(r.t)}</span> ${esc(r.txt)}</div>`).join("") || "<div>Sin acciones todavía.</div>";
     const m = document.getElementById("cursor"); if (m){ const x = 50 + t / Math.max(1, S.t) * 930; m.setAttribute("x1", x); m.setAttribute("x2", x); } };
   scrub.oninput = upd; upd();
@@ -525,12 +634,13 @@ function finish(){
 }
 function drawChart(){
   const T = Math.max(1, S.t), X = t => 50 + t / T * 930;
-  const ser = [["spo2", "#22d3ee", 60, 100, "SpO₂"], ["hr", "#4ade80", 40, 180, "FC"], ["rr", "#fde047", 5, 45, "FR"], ["sbp", "#e2e8f0", 60, 200, "PAS"]];
+  const ser = E.grafica || [["spo2", "#22d3ee", 60, 100, "SpO₂"], ["hr", "#4ade80", 40, 180, "FC"], ["rr", "#fde047", 5, 45, "FR"], ["sbp", "#e2e8f0", 60, 200, "PAS"]];
   let s = `<rect x="50" y="10" width="930" height="220" fill="#050a14"/>`;
+  if (E.franja) { let st = null; HIST.forEach((h, i) => { const on = !!h[E.franja.key]; if (on && st == null) st = h.t; if ((!on || i === HIST.length - 1) && st != null){ s += `<rect x="${X(st)}" y="10" width="${Math.max(1, X(h.t) - X(st))}" height="220" fill="${E.franja.color}" opacity=".13"/>`; st = null; } }); }
   for (let i = 0; i <= 4; i++) s += `<line x1="50" x2="980" y1="${10 + i * 55}" y2="${10 + i * 55}" stroke="#16213a"/>`;
   for (let m = 0; m <= T; m += T > 40 ? 10 : 5) s += `<text x="${X(m)}" y="246" text-anchor="middle" font-size="11" fill="#64748b">${m}′</text>`;
   ser.forEach(([k, c, lo, hi, n], i) => {
-    s += `<polyline fill="none" stroke="${c}" stroke-width="2" points="${HIST.map(h => X(h.t).toFixed(1) + "," + (230 - (cl(h[k], lo, hi) - lo) / (hi - lo) * 220).toFixed(1)).join(" ")}"/>`;
+    s += `<polyline fill="none" stroke="${c}" stroke-width="2" points="${HIST.map(h => X(h.t).toFixed(1) + "," + (230 - (cl(+h[k] || 0, lo, hi) - lo) / (hi - lo) * 220).toFixed(1)).join(" ")}"/>`;
     s += `<text x="${60 + i * 80}" y="26" font-size="12" font-weight="700" fill="${c}">${n}</text>`;
   });
   s += `<line x1="50" x2="980" y1="${230 - (90 - 60) / 40 * 220}" y2="${230 - (90 - 60) / 40 * 220}" stroke="#22d3ee" stroke-dasharray="4 4" opacity=".4"/>`;
