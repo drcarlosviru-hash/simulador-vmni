@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador hiperpotasemia aguda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: clínico, preciso, sin adornos; como una sala de críticos.
+   IDEA: el monitor multiparamétrico de box de urgencias.
+   PICTURE: monitor de ECG con barrido en tiempo real que cambia con el K+.
+   COLOUR and TYPE: fondo clínico claro, monitor negro con trazo fósforo, rojo alarma; IBM Plex Sans + Plex Mono para cifras.
+   LAYOUT: monitor arriba a todo ancho; debajo, acciones a la izquierda y paciente/analítica/registro a la derecha. */
+:root{color-scheme:light dark;--bg:light-dark(#eef3f4,#0b1215);--card:light-dark(#ffffff,#121c20);--ink:light-dark(#0f2a33,#e2edf0);--mut:light-dark(#4f6871,#93a9b0);--line:light-dark(#d5e0e3,#24343a);--acc:light-dark(#0a6f7e,#4cc3d3);--red:#e2283c;--amb:#e59a00;--ok:#14935a;--mon:#04090a;--ph:#3dff8f}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "IBM Plex Sans",system-ui,sans-serif;overflow-x:clip}
+h1{font-size:clamp(28px,4vw,42px);line-height:1.05;margin:0 0 6px;text-wrap:balance}
+h2{font-size:20px;margin:0 0 10px}h3{font-size:16px;margin:0 0 6px}
+.band{padding:clamp(18px,3vw,36px) max(4vw,14px)}
+.wrap{max-width:1240px;margin:0 auto}
+.src{color:var(--mut);font-size:14px;margin:0}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 12px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);min-height:44px;padding:8px 14px}
+button:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.tab[aria-pressed=true]{background:var(--acc);color:#fff;border-color:var(--acc)}
+.monitor{background:var(--mon);border-radius:18px;padding:14px;display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:14px;box-shadow:0 18px 40px -20px #0008}
+.fig{position:relative;min-height:300px;border-radius:10px;overflow:hidden}
+.fig>canvas{position:absolute;inset:0;width:100%;height:100%}
+.vit{display:grid;gap:8px;align-content:start;color:#cfe;font-family:"IBM Plex Mono",monospace}
+.v{border-bottom:1px solid #123;padding-bottom:6px}.v small{display:block;font:500 12px "IBM Plex Sans",sans-serif;color:#8ab}
+.v b{font-size:34px;line-height:1;color:var(--ph)}.v.k b{color:#ffd24a}.v.g b{color:#6fd3ff}.v.p b{color:#e9a6ff;font-size:26px}.v.t b{color:#fff;font-size:24px}
+.v em{font-style:normal;font-size:12px;color:#7a9}
+.alarm{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;color:#cfe}
+.alarm .msg{font-weight:600;padding:6px 12px;border-radius:8px;background:#0e2a1d;color:var(--ph)}
+.alarm .msg.w{background:#3a2a00;color:#ffd24a}.alarm .msg.d{background:#4a0610;color:#ff8a96;animation:bl 1s steps(2) infinite}
+@keyframes bl{50%{opacity:.55}}@media(prefers-reduced-motion:reduce){.alarm .msg.d{animation:none}}
+.ctl{display:flex;flex-wrap:wrap;gap:6px}.ctl button{background:#0f1d1f;color:#dfe;border-color:#21393c;min-height:40px}
+.ctl button[aria-pressed=true]{background:#1f5a4a;border-color:#3dff8f}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;margin-top:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.acts{display:grid;gap:14px}.grp h3{color:var(--acc);font-size:14px;margin:0 0 6px}
+.grp .row{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.act{text-align:left;display:grid;gap:2px;padding:10px 12px}.act b{font-size:15px}.act span{font-size:13px;color:var(--mut)}
+.act:hover{border-color:var(--acc)}.act.done{border-color:var(--ok);box-shadow:inset 3px 0 0 var(--ok)}
+.pt p{margin:0 0 6px;font-size:15px}.chip{display:inline-block;font-size:13px;padding:2px 8px;border-radius:99px;background:light-dark(#e3f0f2,#1b2c31);margin:2px 4px 2px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}td.n,th.n{text-align:right;white-space:nowrap}
+.log{max-height:260px;overflow:auto;font-size:14px;margin:0;padding:0;list-style:none}
+.log li{padding:6px 0;border-bottom:1px solid var(--line)}.log time{font-family:"IBM Plex Mono",monospace;color:var(--acc);margin-right:8px;white-space:nowrap}
+.log .w{color:var(--amb)}.log .d{color:var(--red)}.log .o{color:var(--ok)}
+.ecg12{position:relative;height:210px;background:#fff7f7;border-radius:8px;margin-top:8px}.ecg12 canvas{position:absolute;inset:0;width:100%;height:100%}
+.explore{display:none}.explore input[type=range]{width:100%;height:44px;accent-color:var(--acc)}
+.big{font:600 clamp(40px,7vw,64px)/1 "IBM Plex Mono",monospace;color:var(--acc)}
+.atlas{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px}
+.strip{position:relative;height:130px;background:#fff6f6;border-radius:8px}.strip canvas{position:absolute;inset:0;width:100%;height:100%}
+.atlas .card p{font-size:14px;margin:8px 0 0;color:var(--mut)}
+.sev td:first-child{font-weight:600}.l1{background:#fff3c4;color:#5a4300}.l2{background:#ffd9a8;color:#5c2e00}.l3{background:#ffc2c2;color:#6b0010}
+.note{font-size:13px;color:var(--mut)}
+dialog{max-height:92vh;overflow:auto;border:0;border-radius:16px;max-width:760px;width:calc(100% - 24px);background:var(--card);color:var(--ink);padding:0}
+dialog::backdrop{background:#0009}.dl{padding:20px}.ck{list-style:none;padding:0;margin:0}.ck li{padding:7px 0;border-bottom:1px solid var(--line);display:flex;gap:10px}
+.ck .y{color:var(--ok);font-weight:700}.ck .x{color:var(--red);font-weight:700}.ck .c{font-size:12px;color:var(--red);margin-left:4px}
+.chart{position:relative;height:220px}.chart svg{position:absolute;inset:0;width:100%;height:100%}
+.score{font:600 44px/1 "IBM Plex Mono",monospace}
+.chk{display:flex;gap:8px;align-items:center;min-height:44px}
+.chk input{width:20px;height:20px;accent-color:var(--acc)}
+@media(max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.monitor{grid-template-columns:minmax(0,1fr)}.vit{grid-template-columns:repeat(3,minmax(0,1fr))}.v b{font-size:26px}.fig{min-height:220px}.atlas{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<header class="band" style="padding-bottom:0"><div class="wrap">
+<h1>Simulador de hiperpotasemia aguda</h1>
+<p class="src">Basado en la guía práctica derivada de Rech MA et al. <i>Diagnosis and management of acute hyperkalaemia.</i> BMJ 2026;394:e100287. Herramienta docente: no sustituye protocolos locales ni el juicio clínico.</p>
+<div class="tabs" role="group" aria-label="Escenario">
+<button class="tab" data-case="0" aria-pressed="true">Caso 1 · ERC + IECA</button>
+<button class="tab" data-case="1" aria-pressed="false">Caso 2 · ¿Pseudohiperpotasemia?</button>
+<button class="tab" data-case="2" aria-pressed="false">Caso 3 · Hemodiálisis, sesión perdida</button>
+<button class="tab" data-case="x" aria-pressed="false">Explorar ECG libremente</button>
+</div>
+</div></header>
+
+<main class="band" style="padding-top:0"><div class="wrap">
+<section class="monitor" aria-label="Monitor">
+<div class="fig"><canvas id="mon"></canvas></div>
+<div class="vit">
+<div class="v"><small>FC (lpm)</small><b id="vHR">--</b></div>
+<div class="v k"><small>K⁺ último (mmol/L)</small><b id="vK">--</b><em id="vKt">sin analítica</em></div>
+<div class="v g"><small>Glucemia (mg/dL)</small><b id="vG">--</b><em id="vGt"></em></div>
+<div class="v p"><small>pH</small><b id="vP">--</b></div>
+<div class="v t"><small>Tiempo</small><b id="vT">0 min</b></div>
+</div>
+<div class="alarm">
+<span class="msg" id="msg">Ritmo sinusal</span>
+<div class="ctl" id="ctl">
+<button id="bPlay" aria-pressed="true">Pausa</button>
+<button data-sp="1" aria-pressed="true">×1 (1 min/s)</button>
+<button data-sp="5" aria-pressed="false">×5</button>
+<button id="b15">+15 min</button>
+<button id="bEnd">Finalizar y evaluar</button>
+<label class="chk" style="color:#cfe"><input type="checkbox" id="real"> K⁺ real (docente)</label>
+</div>
+</div>
+</section>
+
+<div class="grid" id="sim">
+<section class="card acts" aria-label="Acciones">
+<h2>Actuaciones</h2>
+<div id="acts"></div>
+</section>
+<div style="display:grid;gap:16px;align-content:start">
+<section class="card pt"><h2 id="ptTitle"></h2><div id="pt"></div></section>
+<section class="card"><h2>Analítica</h2><div class="scroll"><table><thead><tr><th>Min</th><th>Muestra</th><th class="n">K⁺</th><th class="n">pH</th><th class="n">Glu</th></tr></thead><tbody id="labs"><tr><td colspan="5" class="note">Sin resultados todavía.</td></tr></tbody></table></div></section>
+<section class="card"><h2>ECG de 12 derivaciones</h2><p class="note" id="e12t">Solicítelo en «Diagnóstico». Se muestran DII, V2 y V4.</p><div class="ecg12"><canvas id="e12"></canvas></div></section>
+<section class="card"><h2>Registro</h2><ul class="log" id="log"></ul></section>
+</div>
+</div>
+
+<div class="grid explore" id="exp">
+<section class="card">
+<h2>K⁺ sérico</h2>
+<div class="big" id="xK">7.0</div>
+<input type="range" id="xR" min="2.5" max="10" step="0.1" value="7" aria-label="Potasio">
+<label class="chk"><input type="checkbox" id="xCa"> Calcio IV administrado (estabiliza la membrana, no baja el K⁺)</label>
+<div class="ctl" id="xPre" style="margin-top:8px"></div>
+</section>
+<section class="card"><h2 id="xT"></h2><p id="xD"></p><p class="note">La correlación K⁺–ECG es imperfecta: puede haber arritmias con cambios mínimos y ECG casi normal con K⁺ muy alto, sobre todo en ERC crónica. La velocidad de subida importa tanto como la cifra.</p></section>
+</div>
+
+<section style="margin-top:28px"><h2>Atlas: cómo cambia el ECG al subir el K⁺</h2>
+<p class="note">Derivación DII, 25 mm/s, 10 mm/mV. Trazados sintéticos generados por el mismo modelo del monitor.</p>
+<div class="atlas" id="atlas"></div></section>
+
+<section class="grid" style="margin-top:28px">
+<div class="card"><h2>Grados de severidad</h2>
+<table class="sev"><thead><tr><th>Grado</th><th class="n">K⁺ (mmol/L)</th><th>Comentario</th></tr></thead><tbody>
+<tr class="l1"><td>Leve</td><td class="n">5,0 – 5,9</td><td>Consenso amplio (KDIGO, UKKA)</td></tr>
+<tr class="l2"><td>Moderada</td><td class="n">6,0 – 6,4</td><td>AAFP: si no hay cambios ECG</td></tr>
+<tr class="l3"><td>Grave</td><td class="n">≥ 6,5</td><td>O cualquier cifra con cambios ECG</td></tr></tbody></table>
+<p class="note">Los umbrales varían entre guías (AHA considera grave desde 6,0). El riesgo es continuo, no un umbral único.</p></div>
+<div class="card"><h2>Secuencia de manejo</h2>
+<ol style="margin:0;padding-left:20px;font-size:15px">
+<li>Confirmar y descartar pseudohiperpotasemia (hemólisis, trombocitosis, leucocitosis, torniquete, retraso).</li>
+<li>Estabilizar la membrana: calcio IV si hay cambios ECG o K⁺ ≥ 6,5.</li>
+<li>Redistribuir: insulina + glucosa, salbutamol, bicarbonato si acidosis (bajan 0,6–1,5 mmol/L).</li>
+<li>Eliminar: furosemida (si diuresis), ciclosilicato de sodio y zirconio, patiromer, hemodiálisis.</li>
+<li>Tratar la causa y prevenir recidivas: fármacos, acidosis, dieta, quelantes, seguimiento.</li></ol></div>
+</section>
+</div></main>
+
+<dialog id="dlg"><div class="dl" id="dlb"></div></dialog>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const g=(x,m,s)=>Math.exp(-(((x-m)/s)**2)/2);
+const sm=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)};
+
+/* ---------- Modelo ECG ---------- */
+function ecgP(k,baseHR){
+  const s1=sm(5.3,6.6,k),s2=sm(7.0,8.0,k),s3=sm(7.6,8.7,k),s4=sm(8.6,9.3,k),lo=sm(3.6,2.8,k);
+  return{pAmp:.15*(1-s2*.6)*(1-s3),pr:.16+.06*s2,qrs:.085+.06*s2+.08*s3,r:1.3-.35*s2-.3*s3,s:.25+.3*s3,
+    t:(.3+.75*s1+.1*s2)*(1-.7*lo),tSig:.055-.022*s1+.02*s3,u:.12*lo,sine:s4,vf:k>=9.4,hr:baseHR*(1-.28*s3-.15*s4)};
+}
+function beatVal(tb,dur,P,L){
+  L=L||{r:1,s:1,t:1,inv:1};
+  const tp=.08,tq=tp+P.pr,tc=tq+.2+P.qrs*.9;
+  let v=P.pAmp*g(tb,tp,.022)-.1*P.r*L.r*g(tb,tq-P.qrs*.35,P.qrs*.12)+P.r*L.r*g(tb,tq,P.qrs*.18)
+    -P.s*L.s*g(tb,tq+P.qrs*.38,P.qrs*.16)+P.t*L.t*g(tb,tc,P.tSig)+P.u*g(tb,tc+.2,.04);
+  if(P.sine>0){const sw=.9*Math.sin(2*Math.PI*(tb-tq+P.qrs*.5)/dur);v=v*(1-P.sine)+sw*P.sine*Math.max(.5,L.r)}
+  return v*L.inv;
+}
+const vfVal=t=>.45*Math.sin(2*Math.PI*5.1*t)+.28*Math.sin(2*Math.PI*3.3*t+1)+.2*Math.sin(2*Math.PI*7.7*t+2)*Math.sin(2*Math.PI*.4*t);
+function describe(k){
+  if(k>=9.4)return["Fibrilación ventricular","Ritmo terminal: parada cardiaca. RCP, calcio IV, medidas de redistribución y diálisis urgente.","d"];
+  if(k>=8.6)return["Patrón en onda sinusoidal","Fusión de QRS ancho y onda T: preludio inminente de FV o asistolia. Emergencia vital.","d"];
+  if(k>=7.6)return["QRS ancho, P ausente, bradicardia","Ensanchamiento del QRS y bradicardia: marcadores de mayor riesgo. Ritmo sinoventricular.","d"];
+  if(k>=7.2)return["P aplanada, PR largo, QRS ensanchándose","Disminución de la conducción auricular e intraventricular. Calcio IV urgente.","w"];
+  if(k>=5.6)return["Ondas T picudas","T altas, estrechas y simétricas («en tienda de campaña»), más visibles en V2–V4.","w"];
+  if(k<3.5)return["Hipopotasemia","T aplanadas y onda U: ¿sobrecorrección?","w"];
+  return["Ritmo sinusal normal","Sin alteraciones atribuibles al potasio.",""];
+}
+describe.fix=s=>s.replace("preparo","preludio");
+
+/* ---------- Monitor en tiempo real ---------- */
+const cv=$("#mon"),cx=cv.getContext("2d");let W=0,H=0,ys=[],wx=0,ph=0,bd=.8,eT=0,curP=ecgP(4.5,80);
+function sizeMon(){const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;W=Math.round(r.width);H=Math.round(r.height);cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0);ys=new Array(W).fill(null);wx=0}
+const roM=new ResizeObserver(sizeMon);roM.observe(cv);
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000);last=now;
+  const pxs=W/6,n=dt*pxs;let steps=Math.max(1,Math.round(n));
+  for(let i=0;i<steps;i++){
+    const st=dt/steps;eT+=st;ph+=st;
+    if(ph>=bd){ph-=bd;bd=60/Math.max(20,curP.hr)*(1+(Math.random()-.5)*.04)}
+    const v=curP.vf?vfVal(eT):beatVal(ph,bd,curP);
+    wx=(wx+n/steps);if(wx>=W)wx-=W;ys[Math.floor(wx)]=v;
+  }
+  draw();requestAnimationFrame(frame);
+}
+function grid(c,w,h,mm,maj,min){c.lineWidth=1;for(let x=0;x<w;x+=mm){c.strokeStyle=(Math.round(x/mm)%5==0)?maj:min;c.beginPath();c.moveTo(x+.5,0);c.lineTo(x+.5,h);c.stroke()}
+  for(let y=0;y<h;y+=mm){c.strokeStyle=(Math.round(y/mm)%5==0)?maj:min;c.beginPath();c.moveTo(0,y+.5);c.lineTo(w,y+.5);c.stroke()}}
+function draw(){
+  if(!W)return;cx.fillStyle="#04090a";cx.fillRect(0,0,W,H);const mm=W/150;grid(cx,W,H,mm,"#0f2a22","#08160f");
+  const base=H*.58,sc=mm*10*Math.min(1.6,H/(mm*38));cx.strokeStyle=curP.vf?"#ff5a6a":"#3dff8f";cx.lineWidth=2;cx.shadowColor=cx.strokeStyle;cx.shadowBlur=6;cx.beginPath();
+  const gap=Math.floor(wx);let pen=false;
+  for(let x=0;x<W;x++){const d=(x-gap+W)%W;if(d>0&&d<14){pen=false;continue}const v=ys[x];if(v==null){pen=false;continue}const y=base-v*sc;if(pen)cx.lineTo(x,y);else cx.moveTo(x,y);pen=true}
+  cx.stroke();cx.shadowBlur=0;cx.fillStyle="#7fb";cx.font="12px IBM Plex Sans";cx.fillText("II   25 mm/s   10 mm/mV",8,16);
+}
+requestAnimationFrame(frame);
+
+/* ---------- Tiras estáticas ---------- */
+const LEADS={II:{r:1,s:1,t:1,inv:1},V2:{r:.45,s:2.6,t:1.6,inv:1},V4:{r:1.3,s:1.2,t:1.45,inv:1}};
+function strip(c,k,leads,hr){
+  const r=c.getBoundingClientRect(),d=devicePixelRatio||1,w=r.width,h=r.height;if(!w)return;c.width=w*d;c.height=h*d;const x=c.getContext("2d");x.setTransform(d,0,0,d,0,0);
+  x.fillStyle="#fff6f6";x.fillRect(0,0,w,h);const mm=Math.max(3,w/(leads.length>1?100:120));grid(x,w,h,mm,"#f2b8b8","#fbe0e0");
+  const P=ecgP(k,hr),secs=w/(mm*25),rowH=h/leads.length;
+  leads.forEach((ln,i)=>{const L=LEADS[ln],base=rowH*i+rowH*.62;x.strokeStyle="#1b1b1b";x.lineWidth=1.5;x.beginPath();let bdur=60/P.hr,t0=.15;
+    for(let px=0;px<w;px++){const t=px/(mm*25);let v;if(P.vf)v=vfVal(t);else{const tb=((t+t0)%bdur);v=beatVal(tb,bdur,P,L)}const y=base-v*mm*10*Math.min(1,rowH/(mm*26));px?x.lineTo(px,y):x.moveTo(px,y)}
+    x.stroke();x.fillStyle="#7a1e1e";x.font="600 12px IBM Plex Sans";x.fillText(ln,6,rowH*i+15)});
+  void secs;
+}
+const ATL=[[4.5,"Normal (K⁺ ≈ 4,5)","P, PR, QRS y T normales.",75],[6.4,"T picudas (≈ 5,5–7)","Primer signo: T alta, estrecha y simétrica.",80],[7.5,"P aplanada, PR largo (≈ 7–7,5)","Se enlentece la conducción; el QRS empieza a ensancharse.",76],[8.0,"QRS ancho + bradicardia (≈ 8)","P desaparece; marcadores de alto riesgo.",70],[8.9,"Onda sinusoidal (≈ 9)","QRS y T se funden: preludio de la parada.",70],[9.6,"Fibrilación ventricular","Ritmo de parada.",70]];
+$("#atlas").innerHTML=ATL.map((a,i)=>`<div class="card"><h3>${a[1]}</h3><div class="strip"><canvas id="at${i}"></canvas></div><p>${a[2]}</p></div>`).join("");
+const roA=new ResizeObserver(()=>ATL.forEach((a,i)=>strip($("#at"+i),a[0],["II"],a[3])));roA.observe($("#atlas"));
+
+/* ---------- Casos ---------- */
+const CASES=[
+{title:"Varón de 68 años",chips:["ERC estadio 4 (FGe 22)","IC","Diabetes","IECA + espironolactona"],
+ text:"Consulta por debilidad y palpitaciones. Analítica inicial: K⁺ 7,1 mmol/L, creatinina 4,0 mg/dL, pH 7,20. El monitor muestra el ritmo actual.",
+ k0:7.1,drift:.15,driftStop:.03,pH:7.20,glu:180,hr:92,esrd:false,bb:false,anuric:false,hdPrep:90,pseudo:0,init:["Laboratorio central",7.1,7.20,180]},
+{title:"Mujer de 34 años",chips:["Sin antecedentes","Asintomática","Extracción difícil"],
+ text:"Analítica de rutina en atención primaria tras varios intentos con torniquete prolongado. El laboratorio avisa: K⁺ 6,9 mmol/L, «hemólisis ++». La remiten a urgencias.",
+ k0:4.3,drift:0,driftStop:0,pH:7.40,glu:92,hr:76,esrd:false,bb:false,anuric:false,hdPrep:60,pseudo:2.6,init:["Atención primaria (hemolizada)",6.9,null,92]},
+{title:"Varón de 59 años",chips:["ERC terminal en hemodiálisis","FAV brazo izquierdo","Bisoprolol","Anúrico","No diabético"],
+ text:"Lunes. Faltó a la sesión de diálisis del viernes. Debilidad progresiva en piernas y mareo. Analítica de triaje: K⁺ 8,4 mmol/L, pH 7,24.",
+ k0:8.4,drift:.5,driftStop:.5,pH:7.24,glu:92,hr:64,esrd:true,bb:true,anuric:true,hdPrep:30,pseudo:0,init:["Gasometría de triaje",8.4,7.24,92]}];
+
+const ACTS=[
+ ["Diagnóstico",[["ecg","ECG de 12 derivaciones","Buscar T picudas, QRS ancho, bradicardia"],["gaso","Gasometría venosa","K⁺, pH y glucosa · resultado en 5 min"],["rep","Repetir extracción correcta","Sin torniquete, procesamiento rápido · 30 min"],["glu","Glucemia capilar","Resultado inmediato"]]],
+ ["Estabilizar la membrana",[["cag","Gluconato cálcico 10 % 30 mL IV","En 2–5 min · inicio 1–3 min · dura 30–60 min"],["cac","Cloruro cálcico 10 % 10 mL IV","Vía central preferible · misma eficacia"]]],
+ ["Desplazar K⁺ al interior celular",[["ins10","Insulina regular 10 U + glucosa 25 g","Inicio 15–30 min · dura 4–6 h"],["ins5","Insulina 5 U + glucosa 25 g","Dosis reducida si ERC o riesgo de hipoglucemia"],["g10","Perfusión de glucosa 10 %","Prevención de hipoglucemia tardía"],["salb","Salbutamol 10–20 mg nebulizado","Inicio 30 min · dura 2–3 h"],["bic","Bicarbonato sódico 50 mmol IV","Si acidosis metabólica (pH < 7,2)"]]],
+ ["Eliminar K⁺",[["furo","Furosemida 40 mg IV","Requiere diuresis y volemia · inicio 30–60 min"],["szc","Ciclosilicato de sodio y zirconio 10 g VO","Inicio 1 h · cada 8 h, hasta 3 dosis"],["pat","Patiromer 8,4 g VO","Inicio 7 h · control sostenido"],["hd","Nefrología: hemodiálisis urgente","Grave/refractaria, ERC avanzada, anuria"]]],
+ ["Tratar la causa",[["stop","Suspender fármacos hiperpotasemiantes","IECA/ARA-II, espironolactona, AINE, trimetoprim…"]]]];
+$("#acts").innerHTML=ACTS.map(gp=>`<div class="grp"><h3>${gp[0]}</h3><div class="row">${gp[1].map(a=>`<button class="act" data-a="${a[0]}"><b>${a[1]}</b><span>${a[2]}</span></button>`).join("")}</div></div>`).join("");
+
+let C,S,timer=null,speed=1,running=true;
+function reset(i){
+  ys.fill(null);C=CASES[i];S={i,t:0,acts:[],shifts:[],rem:[],ca:[],gluFx:[],bic:0,stopped:false,pseudo:C.pseudo>0,pend:[],hist:[],minG:C.glu,arrest:false,vfMin:0,lastK:null,lastG:null,lastP:null,done:false};
+  $("#ptTitle").textContent=C.title;$("#pt").innerHTML=`<p>${C.chips.map(c=>`<span class="chip">${c}</span>`).join("")}</p><p>${C.text}</p>`;
+  $("#labs").innerHTML="";$("#log").innerHTML="";$("#e12t").textContent="Solicítelo en «Diagnóstico». Se muestran DII, V2 y V4.";const e=$("#e12");e.getContext("2d").clearRect(0,0,e.width,e.height);
+  document.querySelectorAll(".act").forEach(b=>b.classList.remove("done"));
+  addLab(C.init[0],C.init[1],C.init[2],C.init[3]);
+  log("Paciente monitorizado. Vía venosa periférica canalizada.","");
+  setRun(true);update();
+}
+/* curvas */
+const ramp=(tau,on,pk,dur,off)=>tau<on?0:tau<pk?(tau-on)/(pk-on):tau<dur?1:tau<off?1-(tau-dur)/(off-dur):0;
+const lin=(tau,a,b)=>tau<=a?0:tau>=b?1:(tau-a)/(b-a);
+function K(t){
+  if(S===undefined)return 4.5;
+  let k=C.k0;const tStop=S.stopped===false?null:S.stopped;
+  const dr=tStop==null?C.drift*t:C.drift*tStop+C.driftStop*(t-tStop);k+=dr/60;
+  for(const s of S.shifts)k-=s.mag*ramp(t-s.t0,s.on,s.pk,s.dur,s.off);
+  for(const r of S.rem)k-=r.amt*lin(t-r.t0,r.a,r.b);
+  return Math.max(2.3,k);
+}
+const memb=t=>S.ca.reduce((m,t0)=>Math.max(m,ramp(t-t0,0,2,40,60)),0);
+const kEff=t=>K(t)-1.6*memb(t);
+function GLU(t){let v=C.glu;for(const f of S.gluFx){const tau=t-f.t0;if(tau<0)continue;
+  if(f.type=="ins")v+=50*g(tau,12,10)-f.drop*g(tau,120,55);if(f.type=="g10")v+=45*ramp(tau,0,30,240,300)}return v}
+const PH=t=>C.pH+S.shifts.filter(s=>s.type=="bic").reduce((a,s)=>a+.08*ramp(t-s.t0,0,30,120,240),0)+S.rem.filter(r=>r.type=="hd").reduce((a,r)=>a+.12*lin(t-r.t0,r.a,r.b),0);
+const fmt=t=>`${Math.floor(t)} min`;
+function log(m,c){const li=document.createElement("li");li.innerHTML=`<time>${fmt(S.t)}</time><span class="${c||""}">${m}</span>`;$("#log").prepend(li)}
+function addLab(src,k,p,gl){const tr=document.createElement("tr");tr.innerHTML=`<td>${Math.floor(S.t)}</td><td>${src}</td><td class="n">${k==null?"–":k.toFixed(1)}</td><td class="n">${p==null?"–":p.toFixed(2)}</td><td class="n">${gl==null?"–":Math.round(gl)}</td>`;$("#labs").prepend(tr);
+  if(k!=null){S.lastK=[k,S.t]}if(p!=null)S.lastP=p;if(gl!=null)S.lastG=[gl,S.t]}
+const cnt=id=>S.acts.filter(a=>a.id==id).length,first=id=>{const a=S.acts.find(a=>a.id==id);return a?a.t:null};
+
+function act(id){
+  if(S.done)return;const t=S.t,k=K(t);S.acts.push({id,t});document.querySelector(`[data-a="${id}"]`).classList.add("done");
+  const sh=(type,mag,on,pk,dur,off)=>S.shifts.push({type,t0:t,mag,on,pk,dur,off});
+  switch(id){
+  case"ecg":{$("#e12t").textContent=`ECG realizado en el minuto ${Math.floor(t)} · ${describe.fix(describe(kEff(t))[0])}`;strip($("#e12"),kEff(t),["II","V2","V4"],curP.hr);log("ECG de 12 derivaciones: "+describe.fix(describe(kEff(t))[0]).toLowerCase()+".",describe(kEff(t))[2]?"w":"o");break}
+  case"gaso":S.pend.push({t:t+5,f:()=>{const kk=K(S.t)+(Math.random()-.5)*.1;addLab("Gasometría venosa",kk,PH(S.t),GLU(S.t));log(`Gasometría: K⁺ ${kk.toFixed(1)}, pH ${PH(S.t).toFixed(2)}.`,"o");if(S.i==1&&!S.pseudoSeen){S.pseudoSeen=true;log("K⁺ normal en muestra sin hemólisis: era pseudohiperpotasemia.","o")}}});log("Gasometría venosa extraída.");break;
+  case"rep":S.pend.push({t:t+30,f:()=>{const kk=K(S.t)+(Math.random()-.5)*.1;addLab("Laboratorio (sin hemólisis)",kk,null,GLU(S.t));log(`Repetición: K⁺ ${kk.toFixed(1)} mmol/L, sin hemólisis.`,"o");if(S.i==1&&!S.pseudoSeen){S.pseudoSeen=true;log("Confirmada pseudohiperpotasemia por hemólisis y torniquete prolongado.","o")}}});log("Nueva muestra extraída sin torniquete, enviada para procesamiento inmediato.");break;
+  case"glu":addLab("Glucemia capilar",null,null,GLU(t));log(`Glucemia capilar: ${Math.round(GLU(t))} mg/dL.`,GLU(t)<70?"d":"");break;
+  case"cag":case"cac":S.ca.push(t);log(id=="cag"?"Gluconato cálcico 10 % 30 mL IV en 3 min.":"Cloruro cálcico 10 % 10 mL IV.");
+    if(id=="cac")log("Sin vía central: el cloruro cálcico por vía periférica conlleva riesgo de necrosis si se extravasa.","w");
+    if(S.ca.length>3)log("Varias dosis de calcio: valore la causa y la diálisis en lugar de repetir indefinidamente.","w");
+    if(C.pseudo)log("Calcio administrado sin hiperpotasemia confirmada ni cambios ECG.","w");break;
+  case"ins10":case"ins5":{const m=id=="ins10"?.9:.65;sh("ins",C.pseudo?.9:m,15,45,240,360);S.gluFx.push({type:"ins",t0:t,drop:(id=="ins10"?110:75)*(C.esrd?1.2:1)*(C.glu<120?1.15:1)});log(id=="ins10"?"Insulina regular 10 U IV + 50 mL de glucosa al 50 %.":"Insulina regular 5 U IV + 50 mL de glucosa al 50 %.");log("Recuerde controlar la glucemia cada 30–60 min durante 4–6 h.","");break}
+  case"g10":S.gluFx.push({type:"g10",t0:t});log("Perfusión de glucosa al 10 % a 50 mL/h.");break;
+  case"salb":sh("salb",(C.esrd||C.bb)?.4:.8,0,30,120,180);log("Salbutamol 10 mg nebulizado.");if(C.bb)log("Con betabloqueante y ERC terminal el efecto del salbutamol puede ser menor.","w");break;
+  case"bic":if(PH(t)<=7.2+1e-9||C.pH<7.25){sh("bic",.3,0,30,120,240);log("Bicarbonato sódico 1 M 50 mL IV.")}else{sh("bic",.05,0,30,120,240);log("Bicarbonato sin acidosis: efecto mínimo sobre el K⁺ y carga de sodio/volumen.","w")}break;
+  case"furo":if(C.anuric)log("Furosemida 40 mg IV: sin respuesta diurética (paciente anúrico).","w");else if(C.pseudo)log("Furosemida sin indicación: K⁺ real normal.","w");else{S.rem.push({type:"furo",t0:t,amt:.3,a:30,b:180});log("Furosemida 40 mg IV. Diuresis presente (función renal residual).")}break;
+  case"szc":if(cnt("szc")>3){log("Ya se han administrado 3 dosis de SZC.","w");break}S.rem.push({type:"szc",t0:t,amt:C.pseudo?.25:.4,a:60,b:240});log("Ciclosilicato de sodio y zirconio 10 g VO.");if(C.pseudo)log("Quelante sin hiperpotasemia confirmada.","w");break;
+  case"pat":S.rem.push({type:"pat",t0:t,amt:.4,a:420,b:720});log("Patiromer 8,4 g VO. Su efecto empieza en ~7 h: no sirve para la urgencia.","w");break;
+  case"hd":if(cnt("hd")>1){log("La diálisis ya está solicitada.","");break}S.rem.push({type:"hd",t0:t,amt:1.3,a:C.hdPrep,b:C.hdPrep+60},{type:"hd",t0:t,amt:1.1,a:C.hdPrep+60,b:C.hdPrep+240});
+    log(`Nefrología avisada. Hemodiálisis prevista en ~${C.hdPrep} min${C.hdPrep>60?" (requiere catéter)":" (FAV funcionante)"}.`);S.pend.push({t:t+C.hdPrep,f:()=>log("Inicio de la hemodiálisis.","o")});if(C.pseudo)log("Diálisis solicitada sin hiperpotasemia confirmada.","d");break;
+  case"stop":if(S.stopped===false){S.stopped=t;log(S.i==0?"Suspendidos IECA y espironolactona.":S.i==2?"Revisada medicación: sin fármacos hiperpotasemiantes relevantes. La causa es la diálisis perdida.":"Sin fármacos hiperpotasemiantes.","")}break;
+  }
+  update();
+}
+document.querySelector("#acts").addEventListener("click",e=>{const b=e.target.closest(".act");if(b)act(b.dataset.a)});
+
+function step(min){
+  for(let m=0;m<min&&!S.done;m++){
+    S.t+=1;const t=S.t;S.pend=S.pend.filter(p=>{if(p.t<=t){p.f();return false}return true});
+    const gl=GLU(t);S.minG=Math.min(S.minG,gl);S.hist.push([t,K(t),gl,kEff(t)]);
+    if(gl<54&&!S.hypo){S.hypo=true;log("Paciente sudoroso y confuso: hipoglucemia no detectada.","d")}
+    if(K(t)<3.3&&!S.hypoK){S.hypoK=true;log("Hipopotasemia por tratamiento innecesario o excesivo.","d")}
+    if(kEff(t)>=9.4){S.vfMin++;if(S.vfMin==1)log("¡Fibrilación ventricular! Parada cardiaca.","d");if(S.vfMin>=2){S.arrest=true;finish();return}}else S.vfMin=0;
+    if(t>=360){finish();return}
+  }
+  update();
+}
+function update(){
+  const t=S.t,ke=kEff(t);curP=ecgP(ke,C.hr+S.shifts.filter(s=>s.type=="salb").reduce((a,s)=>a+15*ramp(t-s.t0,0,20,60,120),0));
+  const d=describe(ke);$("#msg").textContent=describe.fix(d[0]);$("#msg").className="msg "+d[2];
+  $("#vHR").textContent=curP.vf?"FV":Math.round(curP.hr);$("#vT").textContent=fmt(t);
+  if($("#real").checked){$("#vK").textContent=K(t).toFixed(1);$("#vKt").textContent="real (docente)"}
+  else{$("#vK").textContent=S.lastK?S.lastK[0].toFixed(1):"--";$("#vKt").textContent=S.lastK?`hace ${Math.floor(t-S.lastK[1])} min`:"sin analítica"}
+  $("#vG").textContent=S.lastG?Math.round(S.lastG[0]):"--";$("#vGt").textContent=S.lastG?`hace ${Math.floor(t-S.lastG[1])} min`:"";
+  $("#vP").textContent=S.lastP?S.lastP.toFixed(2):"--";
+}
+function setRun(r){running=r;$("#bPlay").textContent=r?"Pausa":"Reanudar";$("#bPlay").setAttribute("aria-pressed",r)}
+$("#bPlay").onclick=()=>{if(!S.done)setRun(!running)};
+document.querySelectorAll("[data-sp]").forEach(b=>b.onclick=()=>{speed=+b.dataset.sp;document.querySelectorAll("[data-sp]").forEach(x=>x.setAttribute("aria-pressed",x==b))});
+$("#b15").onclick=()=>{if(!S.done)step(15)};$("#bEnd").onclick=()=>{if(!S.done)finish()};$("#real").onchange=()=>S&&update();
+let acc=0;timer=setInterval(()=>{if(mode!="x"&&running&&!S.done){acc+=speed*.1;const n=Math.floor(acc);if(n>0){acc-=n;step(n)}}},100);
+
+/* ---------- Evaluación ---------- */
+function checks(){
+  const ins=Math.min(...["ins10","ins5"].map(first).filter(x=>x!=null));const hasIns=isFinite(ins);
+  const gluAfter=hasIns&&S.acts.some(a=>(a.id=="glu"||a.id=="gaso")&&a.t>=ins+20&&a.t<=ins+180);
+  const ca=Math.min(...["cag","cac"].map(first).filter(x=>x!=null));const kEnd=K(S.t);
+  const shiftIds=["cag","cac","ins10","ins5","salb","bic","szc","furo","hd","pat"];
+  if(S.i==0)return[
+   [first("ecg")!=null&&first("ecg")<=10,"ECG de 12 derivaciones en los primeros 10 min",0],
+   [ca<=10,"Calcio IV en ≤ 10 min (T picudas, K⁺ ≥ 6,5)",1],
+   [hasIns&&ins<=30,"Insulina + glucosa en ≤ 30 min",1],
+   [gluAfter,"Control de glucemia entre 20 y 180 min tras la insulina",0],
+   [S.stopped!==false,"Suspender IECA y espironolactona",1],
+   [first("furo")!=null||first("szc")!=null,"Medida de eliminación (furosemida o SZC)",0],
+   [S.acts.some(a=>(a.id=="gaso"||a.id=="rep")&&hasIns&&a.t>=ins+30),"K⁺ de control tras el tratamiento",0],
+   [S.minG>=70,`Sin hipoglucemia (mínima ${Math.round(S.minG)} mg/dL)`,1],
+   [kEnd<6,`K⁺ al final < 6,0 (actual ${kEnd.toFixed(1)})`,0]];
+  if(S.i==1){const conf=Math.min(...["gaso","rep"].map(first).filter(x=>x!=null));const tr=Math.min(...shiftIds.map(first).filter(x=>x!=null));return[
+   [first("ecg")!=null,"ECG para valorar repercusión (normal)",0],
+   [isFinite(conf)&&(!isFinite(tr)||conf<tr),"Confirmar con una muestra adecuada antes de tratar",1],
+   [!isFinite(tr),"Sin tratamientos innecesarios",1],
+   [!S.hypoK,"Sin hipopotasemia iatrogénica",1]]}
+  return[
+   [ca<=5,"Calcio IV en ≤ 5 min (QRS ancho, bradicardia)",1],
+   [cnt("cag")+cnt("cac")>=2,"Repetir calcio si persisten cambios o se agota su efecto",0],
+   [hasIns&&ins<=30,"Insulina + glucosa en ≤ 30 min",1],
+   [first("g10")!=null||first("ins5")!=null,"Prevención de hipoglucemia (no diabético, ERC terminal)",0],
+   [gluAfter,"Control de glucemia tras la insulina",0],
+   [first("hd")!=null&&first("hd")<=30,"Hemodiálisis urgente solicitada en ≤ 30 min",1],
+   [first("furo")==null,"No usar furosemida en paciente anúrico",0],
+   [!S.arrest,"Sin parada cardiaca",1],
+   [S.minG>=70,`Sin hipoglucemia (mínima ${Math.round(S.minG)} mg/dL)`,1]];
+}
+function finish(){
+  S.done=true;setRun(false);update();const L=checks(),ok=L.filter(x=>x[0]).length;try{const H=JSON.parse(localStorage.getItem("hiperk_hist")||"[]");H.push({c:S.i,ok,n:L.length,crit:L.filter(x=>x[2]&&!x[0]).length,arrest:!!S.arrest,t:Date.now()});localStorage.setItem("hiperk_hist",JSON.stringify(H.slice(-50)))}catch(e){}
+  $("#dlb").innerHTML=`<h2>${S.arrest?"Parada cardiaca por hiperpotasemia":"Evaluación del caso"}</h2>
+  <p class="note">${C.title} · ${fmt(S.t)} simulados</p><p class="score">${ok}/${L.length}</p>
+  <div class="chart"><svg id="chs"></svg></div><p class="note">Línea amarilla: K⁺ sérico. Línea verde discontinua: «K⁺ efectivo» sobre el miocardio (refleja la protección del calcio). Puntos: actuaciones.</p>
+  <ul class="ck">${L.map(x=>`<li><span class="${x[0]?"y":"x"}">${x[0]?"✓":"✗"}</span><span>${x[1]}${x[2]&&!x[0]?'<span class="c">crítico</span>':""}</span></li>`).join("")}</ul>
+  <p style="margin-top:14px">${S.i==1?"Ante un K⁺ discordante con la clínica y el ECG, confirme antes de tratar: tratar una pseudohiperpotasemia expone a hipoglucemia e hipopotasemia.":S.i==2?"En el paciente en diálisis la medida definitiva es la diálisis; el calcio y la redistribución solo ganan tiempo (bajan 0,6–1,5 mmol/L).":"El calcio salva vidas pero no baja el K⁺; la insulina y el salbutamol lo redistribuyen de forma transitoria; la eliminación y la causa evitan el rebote."}</p>
+  <div class="ctl" style="margin-top:12px"><button id="again">Repetir caso</button><button id="close">Cerrar</button></div>`;
+  const dl=$("#dlg");try{dl.showModal()}catch(e){dl.setAttribute("open","")}
+  $("#again").onclick=()=>{dl.close();reset(S.i)};$("#close").onclick=()=>dl.close();
+  requestAnimationFrame(()=>chart($("#chs")));
+}
+function chart(s){
+  const W=s.clientWidth,H=s.clientHeight,h=S.hist;if(!W||!h.length)return;const T=Math.max(30,S.t),pl=34,pb=22;
+  const X=t=>pl+(W-pl-8)*t/T,Y=k=>8+(H-pb-8)*(1-(k-2.5)/7.5);
+  const line=(i,c,dash)=>`<polyline fill="none" stroke="${c}" stroke-width="2" ${dash?'stroke-dasharray="5 4"':""} points="${h.map(p=>X(p[0])+","+Y(p[i])).join(" ")}"/>`;
+  let ax="";for(const k of [3,5,6.5,8,9.4])ax+=`<line x1="${pl}" x2="${W-8}" y1="${Y(k)}" y2="${Y(k)}" stroke="${k==6.5?"#e2283c":"#8884"}" stroke-dasharray="${k==6.5?"4 3":""}"/><text x="4" y="${Y(k)+4}" font-size="11" fill="currentColor">${k}</text>`;
+  for(let t=0;t<=T;t+=60)ax+=`<text x="${X(t)-8}" y="${H-6}" font-size="11" fill="currentColor">${t}′</text>`;
+  const dots=S.acts.map(a=>`<circle cx="${X(a.t)}" cy="${H-pb-4}" r="4" fill="#0a6f7e"><title>${a.id} · ${a.t} min</title></circle>`).join("");
+  s.innerHTML=ax+line(3,"#14935a",1)+line(1,"#e59a00")+dots;
+}
+
+/* ---------- Explorar ---------- */
+let mode="0";const PRE=[[4.5,"Normal"],[6.2,"T picudas"],[7.5,"PR largo"],[8,"QRS ancho"],[8.9,"Sinusoidal"],[9.6,"FV"]];
+$("#xPre").innerHTML=PRE.map(p=>`<button data-k="${p[0]}">${p[1]}</button>`).join("");
+$("#xPre").onclick=e=>{const b=e.target.closest("button");if(b){$("#xR").value=b.dataset.k;xUp()}};
+function xUp(){const k=+$("#xR").value,ke=k-($("#xCa").checked?1.6:0);$("#xK").textContent=k.toFixed(1);curP=ecgP(ke,78);const d=describe(ke);
+  $("#xT").textContent=describe.fix(d[0]);$("#xD").textContent=describe.fix(d[1])+($("#xCa").checked?" Con calcio el trazado mejora aunque el K⁺ sigue igual: su efecto dura 30–60 min.":"");
+  $("#msg").textContent=describe.fix(d[0]);$("#msg").className="msg "+d[2];$("#vHR").textContent=curP.vf?"FV":Math.round(curP.hr);$("#vK").textContent=k.toFixed(1);$("#vKt").textContent="modo libre"}
+$("#xR").oninput=xUp;$("#xCa").onchange=xUp;
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-pressed",x==b));mode=b.dataset.case;
+  const x=mode=="x";$("#sim").style.display=x?"none":"";$("#exp").style.display=x?"grid":"none";$("#ctl").style.visibility=x?"hidden":"visible";
+  if(x){$("#vG").textContent="--";$("#vP").textContent="--";$("#vT").textContent="—";xUp()}else reset(+mode)});
+reset(0);
+}
+</script>
+</body>
+</html>

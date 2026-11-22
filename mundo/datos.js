@@ -93,7 +93,28 @@ const CAPITULOS = [
     insignia: { id: "sincronia", nombre: "Sincronía", icono: "〰️", txt: "Examen de VMNI superado" }
   },
   {
-    id: "cad", n: 6, titulo: "Box de agudos", sub: "Cetoacidosis y estado hiperosmolar · CAD/EHH",
+    id: "hk", n: 6, titulo: "Box vital", sub: "Hiperpotasemia aguda",
+    color: "#a3e635", icono: "⚡",
+    historia: "03:10 h. Varón de 68 años con ERC, IECA y espironolactona. Dice que no siente las piernas. El monitor muestra una bradicardia con QRS cada vez más ancho y la enfermera te enseña la gasometría: K⁺ 7,1. Tienes minutos, no horas.",
+    modulos: [
+      { id: "hk_taller", nombre: "Taller interactivo de hiperpotasemia", url: "modulos/hk-taller.html", desc: "ECG en vivo según el K⁺, pseudohiperpotasemia, botiquín, curva con rebote y guardia paso a paso." },
+      { id: "hk_sim", nombre: "Simulador de hiperpotasemia aguda", url: "modulos/hk-simulador.html", desc: "3 casos con monitor en tiempo real, analíticas, tratamientos y evaluación final." }
+    ],
+    misiones: [
+      { id: "hk_m1", txt: "Identifica 4 de 5 trazados de ECG", xp: 100, auto: s => !!s.obj("hktaller").ecg },
+      { id: "hk_m2", txt: "Desenmascara la pseudohiperpotasemia (3/4)", xp: 100, auto: s => !!s.obj("hktaller").pse },
+      { id: "hk_m3", txt: "Ordena el botiquín por fases", xp: 75, auto: s => !!s.obj("hktaller").kit },
+      { id: "hk_m4", txt: "Planifica un tratamiento completo en la curva (sin rebote)", xp: 75, auto: s => !!s.obj("hktaller").cur },
+      { id: "hk_m5", txt: "Completa la guardia paso a paso", xp: 100, auto: s => !!s.obj("hktaller").alg },
+      { id: "hk_m6", txt: "Termina un caso en el simulador", xp: 100, auto: s => s.list("hiperk_hist").length >= 1 },
+      { id: "hk_m7", txt: "Caso sin fallos críticos ni parada", xp: 150, auto: s => s.list("hiperk_hist").some(h => !h.crit && !h.arrest) },
+      { id: "hk_m8", txt: "Reto: paciente en diálisis (caso 3) con todo correcto", xp: 200, auto: s => s.list("hiperk_hist").some(h => h.c === 2 && h.ok === h.n) },
+      { id: "hk_exam", txt: "Supera el examen del capítulo", xp: 0, auto: s => s.stars("hk") >= 1 }
+    ],
+    insignia: { id: "membrana", nombre: "Membrana estable", icono: "⚡", txt: "Examen de hiperpotasemia superado" }
+  },
+  {
+    id: "cad", n: 7, titulo: "Box de agudos", sub: "Cetoacidosis y estado hiperosmolar · CAD/EHH",
     color: "#f472b6", icono: "🩸",
     historia: "04:30 h. Mujer de 24 años, DM1, tres días vomitando. Respira hondo y rápido, huele a manzana y tiene la boca seca. Glucemia capilar: «HI». Antes de tocar la insulina necesitas un dato que todavía no tienes: el potasio.",
     modulos: [
@@ -113,7 +134,7 @@ const CAPITULOS = [
     insignia: { id: "dulce", nombre: "Brecha cerrada", icono: "🩸", txt: "Examen de CAD/EHH superado" }
   },
   {
-    id: "turno", n: 7, titulo: "Fin de guardia", sub: "Sala de descanso · TurnoValor",
+    id: "turno", n: 8, titulo: "Fin de guardia", sub: "Sala de descanso · TurnoValor",
     color: "#a78bfa", icono: "☕",
     historia: "08:00 h. Relevo hecho. Antes de irte, mira qué ha supuesto esta guardia: horas, carga y valor de cada turno. Cuidar del equipo también es medicina de urgencias.",
     modulos: [
@@ -160,6 +181,17 @@ const PREGUNTAS = {
     { q: "La ambulancia se queda sin cobertura en mitad del servicio.", o: ["Se pierde el parte", "Se sigue trabajando off-line y se sincroniza al recuperar la cobertura", "Hay que pasar a papel", "La tablet se bloquea"], c: 1, e: "Todo el caso se guarda en la tablet." },
     { q: "En la barra de estado, una sección en naranja significa:", o: ["Que está completa", "Que le faltan datos obligatorios", "Que tiene un error del sistema", "Que es opcional"], c: 1, e: "Naranja: faltan datos. Verde con ✓: completa. Antes de cerrar, todas en verde." },
     { q: "Al iniciar el turno, ¿qué es imprescindible para que la tablet quede operativa?", o: ["Hacer una foto de la ambulancia", "Registrar unidad y tripulación, con al menos un miembro autenticado con contraseña", "Conectar la impresora", "Enviar un parte de prueba"], c: 1, e: "El sistema marca en gris los roles obligatorios que faltan." }
+  ],
+  hk: [
+    { q: "K⁺ 7,0 mmol/L con QRS ancho. ¿Primera medida?", o: ["Furosemida IV", "Calcio IV (gluconato cálcico 10 % 30 mL)", "Repetir la analítica", "Patiromer"], c: 1, e: "Estabiliza la membrana en 1–3 minutos. Con cambios ECG o K⁺ ≥ 6,5 va primero." },
+    { q: "¿Qué hace el calcio en la hiperpotasemia?", o: ["Baja el K⁺ sérico", "Estabiliza la membrana miocárdica sin bajar el K⁺; dura 30–60 min", "Elimina K⁺ por la orina", "Mete K⁺ en la célula"], c: 1, e: "Gana tiempo para redistribuir y eliminar. Se repite si persisten los cambios ECG." },
+    { q: "Pauta de redistribución con insulina:", o: ["Insulina 10 U IV + glucosa 25 g, con control de glucemia 4–6 h", "Insulina 10 U SC", "Insulina 1 U/kg IV", "Insulina sin glucosa si la glucemia es normal"], c: 0, e: "La hipoglucemia es la complicación más frecuente. Valora 5 U en la ERC avanzada." },
+    { q: "Dosis de salbutamol para la hiperpotasemia:", o: ["2,5 mg nebulizado", "10–20 mg nebulizado", "0,5 mg IV en bolo", "100 µg inhalado"], c: 1, e: "4–8 veces la dosis broncodilatadora. Efecto aditivo al de la insulina." },
+    { q: "K⁺ 6,9 en una paciente asintomática, ECG normal y muestra «hemolizada». ¿Qué haces?", o: ["Calcio e insulina ya", "Confirmar con una muestra adecuada o una gasometría antes de tratar", "Diálisis", "Alta sin más"], c: 1, e: "Pseudohiperpotasemia: hemólisis, torniquete, trombocitosis, leucocitosis, EDTA, procesamiento tardío." },
+    { q: "¿Cuándo es grave la hiperpotasemia?", o: ["Solo si K⁺ > 8", "K⁺ ≥ 6,5 o cualquier cifra con cambios ECG", "Si K⁺ > 5,5", "Solo si hay parada"], c: 1, e: "Los umbrales varían entre guías (la AHA considera grave desde 6,0). El riesgo es continuo." },
+    { q: "Paciente en hemodiálisis, anúrico, K⁺ 8,4. Tratamiento definitivo:", o: ["Furosemida a dosis altas", "Hemodiálisis urgente", "Salbutamol repetido", "Patiromer"], c: 1, e: "El calcio y la redistribución solo ganan tiempo (bajan 0,6–1,5 mmol/L). La furosemida no sirve en el anúrico." },
+    { q: "Orden de los cambios ECG al subir el K⁺:", o: ["QRS ancho → T picudas → FV", "T picudas → P plana y PR largo → QRS ancho → onda sinusoidal → FV/asistolia", "Bradicardia → T negativas → FV", "ST elevado → QRS ancho"], c: 1, e: "La correlación con la cifra es imperfecta: puede haber arritmias con cambios mínimos." },
+    { q: "A las 4 h de la insulina, el K⁺ vuelve a subir. ¿Por qué?", o: ["Error del laboratorio", "Rebote al agotarse la redistribución: hace falta eliminar K⁺ y tratar la causa", "Efecto del calcio", "Hipoglucemia"], c: 1, e: "La insulina y el salbutamol no sacan K⁺ del organismo. Control seriado del K⁺." }
   ],
   cad: [
     { q: "Criterios diagnósticos de CAD (consenso ADA/EASD/JBDS 2024):", o: ["Glucosa > 600 y osmolaridad > 320", "Glucosa ≥ 200 (o diabetes conocida), β-OHB ≥ 3,0 mmol/L y pH < 7,30 y/o HCO₃⁻ < 18", "pH < 7,0 aislado", "Cetonuria con cualquier glucemia"], c: 1, e: "La glucosa puede ser < 200 en la CAD euglucémica (iSGLT2, embarazo, ayuno)." },
