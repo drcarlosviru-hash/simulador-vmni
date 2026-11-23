@@ -596,6 +596,7 @@ function finish(){
   const caso = E.casos[S.caso], dx = L.ultimo("dx");
   const worst = Object.entries(comps).map(([k, v]) => [k, v.ok / v.tot]).sort((a, b) => a[1] - b[1])[0];
   try{ const H = JSON.parse(localStorage.getItem("motor_hist") || "[]"); H.push({ esc: E.id, caso: S.caso, modo: MODO, pct, crit: critFail.length, arrest: !!S.arrest, comps: Object.fromEntries(Object.entries(comps).map(([k, v]) => [k, Math.round(v.ok / v.tot * 100)])), t: Date.now() }); localStorage.setItem("motor_hist", JSON.stringify(H.slice(-100))); }catch(e){}
+  try{ window.goatcounter && goatcounter.count && goatcounter.count({ path: "caso/" + E.id + "/" + S.caso + "/" + MODO + (pct >= 75 && !S.arrest ? "/superado" : "/no-superado"), title: "Caso terminado", event: true }); }catch(e){}
   const col = pct >= 80 ? "#4ade80" : pct >= 60 ? "#fbbf24" : "#fb7185";
   const R = 84, C = 2 * Math.PI * R;
   const recurso = typeof E.recursos[worst[0]] === "function" ? E.recursos[worst[0]]() : E.recursos[worst[0]];

@@ -1238,6 +1238,7 @@ function drawTimeline(){
         H.push({ esc: "pcr", caso: S.key, modo: MODE === "train" ? "tutor" : "examen", pct: Math.round(E.score), crit: (S.crit || []).length, arrest: S.roscT == null, t: Date.now() });
         localStorage.setItem("motor_hist", JSON.stringify(H.slice(-100)));
       }catch(e){}
+      try{ window.goatcounter && goatcounter.count && goatcounter.count({ path: "caso/pcr/" + S.key + "/" + (MODE === "train" ? "tutor" : "examen") + (E.score >= 75 && S.roscT != null ? "/superado" : "/no-superado"), title: "Caso terminado", event: true }); }catch(e){}
       try{
         const tl = $1("#tl"); if (!tl || !S.samples || !S.samples.length) return;
         const box = document.createElement("div");
@@ -1264,5 +1265,6 @@ function drawTimeline(){
   }
 })();
 </script>
+<script data-goatcounter="https://mundoemergencia.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
