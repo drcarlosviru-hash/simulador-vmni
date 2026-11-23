@@ -58,7 +58,27 @@ const CAPITULOS = [
     insignia: { id: "golden", nombre: "Hora de oro", icono: "⏱️", txt: "Examen ATLS superado" }
   },
   {
-    id: "rcp", n: 4, titulo: "Parada", sub: "Soporte vital avanzado · ERC 2025",
+    id: "gaso", n: 4, titulo: "Laboratorio", sub: "Gasometría y medio interno",
+    color: "#2dd4bf", icono: "🧪",
+    historia: "05:40 h. El gasómetro escupe el ticket de un varón de 72 años que llegó confuso y taquipneico: pH 7,21 · PaCO₂ 24 · HCO₃⁻ 9 · Na⁺ 138 · Cl⁻ 101. Antes de pedir nada más, el ticket ya te está contando qué le pasa. Aprende a leerlo.",
+    modulos: [
+      { id: "gaso_mundo", nombre: "Gasometría: el medio interno en movimiento", url: "modulos/gaso.html", desc: "Diagrama de Davenport vivo, 4 vídeos narrados (tampón, pulmón, riñón e integración en el tiempo), simulador de casos en 4 niveles y analizador paso a paso." }
+    ],
+    misiones: [
+      { id: "gaso_m1", txt: "Juega con el laboratorio: mueve el punto o lanza un escenario", xp: 50, auto: s => !!s.obj("gaso-v1").lab },
+      { id: "gaso_m2", txt: "Mira un vídeo completo", xp: 75, auto: s => Object.keys(s.obj("gaso-v1").v || {}).length >= 1 },
+      { id: "gaso_m3", txt: "Mira los 4 vídeos: tampón, pulmón, riñón y tiempos", xp: 100, auto: s => Object.keys(s.obj("gaso-v1").v || {}).length >= 4 },
+      { id: "gaso_m4", txt: "Interpreta una gasometría con el analizador", xp: 50, auto: s => (s.obj("gaso-v1").an || 0) >= 1 },
+      { id: "gaso_m5", txt: "Nivel 1: resuelve 3 casos", xp: 100, auto: s => ((s.obj("gaso-v1")[1] || {}).cases || 0) >= 3 },
+      { id: "gaso_m6", txt: "Nivel 2: racha de 3 casos perfectos (compensación)", xp: 150, auto: s => ((s.obj("gaso-v1")[2] || {}).best || 0) >= 3 },
+      { id: "gaso_m7", txt: "Nivel 3: 5 casos con ≥ 80 % de aciertos (anion gap)", xp: 150, auto: s => { const l = s.obj("gaso-v1")[3] || {}; return (l.cases || 0) >= 5 && l.n > 0 && l.ok / l.n >= .8; } },
+      { id: "gaso_m8", txt: "Reto: un caso perfecto de nivel 4 (mixtos, delta gap, A-a)", xp: 200, auto: s => ((s.obj("gaso-v1")[4] || {}).best || 0) >= 1 },
+      { id: "gaso_exam", txt: "Supera el examen del capítulo", xp: 0, auto: s => s.stars("gaso") >= 1 }
+    ],
+    insignia: { id: "henderson", nombre: "Henderson-Hasselbalch", icono: "🧪", txt: "Examen de gasometría superado" }
+  },
+  {
+    id: "rcp", n: 5, titulo: "Parada", sub: "Soporte vital avanzado · ERC 2025",
     color: "#38bdf8", icono: "⚡",
     historia: "Mientras lo trasladas a TAC, el monitor cambia: fibrilación ventricular. Compresiones, descarga, adrenalina, causas reversibles. Cada segundo sin compresiones cuenta.",
     modulos: [
@@ -76,7 +96,7 @@ const CAPITULOS = [
     insignia: { id: "rosc", nombre: "RCE", icono: "💓", txt: "Examen de SVA superado" }
   },
   {
-    id: "vmni", n: 5, titulo: "Respira", sub: "Ventilación mecánica no invasiva",
+    id: "vmni", n: 6, titulo: "Respira", sub: "Ventilación mecánica no invasiva",
     color: "#34d399", icono: "🫁",
     historia: "Recuperado, pero ahora es otro paciente el que te necesita: EPOC agudizado, pH 7,26, tirando de accesorios. Ajusta la máscara, el EPAP, el soporte… y lee las curvas antes de que se agote.",
     modulos: [
@@ -98,7 +118,7 @@ const CAPITULOS = [
     insignia: { id: "sincronia", nombre: "Sincronía", icono: "〰️", txt: "Examen de VMNI superado" }
   },
   {
-    id: "hk", n: 6, titulo: "Box vital", sub: "Hiperpotasemia aguda",
+    id: "hk", n: 7, titulo: "Box vital", sub: "Hiperpotasemia aguda",
     color: "#a3e635", icono: "⚡",
     historia: "03:10 h. Varón de 68 años con ERC, IECA y espironolactona. Dice que no siente las piernas. El monitor muestra una bradicardia con QRS cada vez más ancho y la enfermera te enseña la gasometría: K⁺ 7,1. Tienes minutos, no horas.",
     modulos: [
@@ -119,7 +139,7 @@ const CAPITULOS = [
     insignia: { id: "membrana", nombre: "Membrana estable", icono: "⚡", txt: "Examen de hiperpotasemia superado" }
   },
   {
-    id: "cad", n: 7, titulo: "Box de agudos", sub: "Cetoacidosis y estado hiperosmolar · CAD/EHH",
+    id: "cad", n: 8, titulo: "Box de agudos", sub: "Cetoacidosis y estado hiperosmolar · CAD/EHH",
     color: "#f472b6", icono: "🩸",
     historia: "04:30 h. Mujer de 24 años, DM1, tres días vomitando. Respira hondo y rápido, huele a manzana y tiene la boca seca. Glucemia capilar: «HI». Antes de tocar la insulina necesitas un dato que todavía no tienes: el potasio.",
     modulos: [
@@ -139,7 +159,7 @@ const CAPITULOS = [
     insignia: { id: "dulce", nombre: "Brecha cerrada", icono: "🩸", txt: "Examen de CAD/EHH superado" }
   },
   {
-    id: "turno", n: 8, titulo: "Fin de guardia", sub: "Sala de descanso · TurnoValor",
+    id: "turno", n: 9, titulo: "Fin de guardia", sub: "Sala de descanso · TurnoValor",
     color: "#a78bfa", icono: "☕",
     historia: "08:00 h. Relevo hecho. Antes de irte, mira qué ha supuesto esta guardia: horas, carga y valor de cada turno. Cuidar del equipo también es medicina de urgencias.",
     modulos: [
@@ -218,6 +238,19 @@ const PREGUNTAS = {
     { q: "¿Qué ventanas incluye el FAST clásico?", o: ["Pericárdica, hepatorrenal, esplenorrenal y pélvica", "Solo la pericárdica", "Tiroidea y pericárdica", "Aórtica y renal"], c: 0, e: "El eFAST añade las ventanas pleurales para neumotórax y hemotórax." },
     { q: "Tras un bolo inicial, la tensión mejora y luego vuelve a caer (respuesta transitoria). ¿Qué indica?", o: ["Shock neurogénico", "Hemorragia en curso: sangre y control de la hemorragia", "Exceso de fluidos", "Shock resuelto"], c: 1, e: "La respuesta transitoria indica sangrado activo: activa el protocolo de transfusión masiva y busca el foco." },
     { q: "Al colocar el drenaje por un hemotórax, ¿qué débito indica valorar una toracotomía?", o: ["300 mL iniciales", "≥ 1500 mL inmediatos o ≥ 200 mL/h durante 2–4 h", "500 mL en 24 h", "Cualquier débito hemático"], c: 1, e: "Hemotórax masivo: ≥ 1500 mL al drenar o pérdida mantenida de ≥ 200 mL/h." }
+  ],
+  gaso: [
+    { q: "pH 7,25 · PaCO₂ 25 · HCO₃⁻ 11. ¿Cómo está la compensación?", o: ["Adecuada: Winter predice 24,5 ± 2", "Hay acidosis respiratoria asociada", "Hay alcalosis respiratoria asociada", "No se puede saber sin el anion gap"], c: 0, e: "PaCO₂ esperada = 1,5 × 11 + 8 = 24,5 ± 2 (22,5–26,5). Medida 25: trastorno simple compensado." },
+    { q: "Fórmula de Winter para la acidosis metabólica:", o: ["PaCO₂ = HCO₃⁻ × 0,7 + 20", "PaCO₂ = 1,5 × HCO₃⁻ + 8 ± 2", "HCO₃⁻ = 24 + 0,4 × ΔPaCO₂", "PaCO₂ = 40 − HCO₃⁻"], c: 1, e: "Atajo práctico: PaCO₂ ≈ HCO₃⁻ + 15. Si la medida se sale del rango, hay un segundo trastorno respiratorio." },
+    { q: "Na⁺ 140 · Cl⁻ 104 · HCO₃⁻ 12. El anion gap es:", o: ["12, normal", "24, elevado", "36, elevado", "8, bajo"], c: 1, e: "AG = 140 − (104 + 12) = 24. Elevado: ácidos no medidos (lactato, cetoácidos, tóxicos, uremia)." },
+    { q: "AG 12 con albúmina 2 g/dl. ¿Qué haces?", o: ["Nada: es normal", "Corregirlo: 12 + 2,5 × (4 − 2) = 17, elevado", "Restar 5 al AG", "Usar el AG urinario"], c: 1, e: "La hipoalbuminemia baja falsamente el AG y puede esconder una acidosis láctica (cirrosis, sepsis, desnutrición)." },
+    { q: "Acidosis con AG elevado y delta gap de +10. Significa:", o: ["Acidosis pura", "Alcalosis metabólica asociada", "Acidosis hiperclorémica asociada", "Error de laboratorio"], c: 1, e: "ΔG = (AG − 12) − (24 − HCO₃⁻). Si es > +6, el HCO₃⁻ está más alto de lo esperado: vómitos, diuréticos, SNG." },
+    { q: "Acidosis respiratoria crónica: por cada 10 mmHg que sube la PaCO₂, el HCO₃⁻ sube:", o: ["1 mEq/l", "2 mEq/l", "4 mEq/l", "10 mEq/l"], c: 2, e: "Aguda: 1 por cada 10 (solo tampones). Crónica, tras 2–5 días de adaptación renal: 4 por cada 10." },
+    { q: "Hipoxemia con gradiente A-a normal. La causa más probable es:", o: ["Shunt", "Alteración V/Q", "Hipoventilación (o FiO₂ baja)", "Trastorno de difusión"], c: 2, e: "El pulmón intercambia bien: la PaO₂ baja la explica la PaCO₂ alta. Piensa en opioides, benzodiacepinas o enfermedad neuromuscular." },
+    { q: "Diabético con 5 días de vómitos: pH 7,40 · PaCO₂ 40 · HCO₃⁻ 24 · AG 28. ¿Qué tiene?", o: ["Nada: gasometría normal", "Acidosis con AG elevado + alcalosis metabólica que se anulan", "Alcalosis respiratoria crónica", "Error del gasómetro"], c: 1, e: "Un pH normal no descarta trastornos. El AG de 28 destapa la cetoacidosis; los vómitos han subido el HCO₃⁻ y lo «normalizan»." },
+    { q: "¿Qué mecanismo de hipoxemia NO mejora al subir la FiO₂?", o: ["Hipoventilación", "Alteración V/Q", "Shunt", "Difusión"], c: 2, e: "La sangre del shunt no pasa por alvéolos ventilados: más O₂ inspirado apenas la toca." },
+    { q: "Intoxicación por salicilatos. Patrón gasométrico típico del adulto:", o: ["Alcalosis metabólica pura", "Acidosis metabólica con AG elevado + alcalosis respiratoria", "Acidosis respiratoria aguda", "Acidosis hiperclorémica"], c: 1, e: "El salicilato estimula directamente el centro respiratorio: la PaCO₂ queda por debajo de lo que predice Winter." },
+    { q: "Alcalosis metabólica con Cl⁻ urinario de 6 mEq/l. Orienta a:", o: ["Hiperaldosteronismo primario", "Vómitos o SNG: salinosensible", "Síndrome de Bartter", "Diurético en plena acción"], c: 1, e: "Cl⁻ urinario < 10: depleción de volumen y cloro; responde a suero salino. > 20: causas salinorresistentes (mineralocorticoides, Bartter, diurético activo)." }
   ],
   rcp: [
     { q: "¿A qué frecuencia deben hacerse las compresiones torácicas en el adulto?", o: ["60–80/min", "80–100/min", "100–120/min", "> 140/min"], c: 2, e: "100–120 por minuto, con descompresión completa entre compresiones." },

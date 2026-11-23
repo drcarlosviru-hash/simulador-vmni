@@ -14,6 +14,7 @@ const ICONOS = {
   turno: '<path d="M4 9h13v5a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6V9z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 2.5c-.6 1 .6 2 0 3M11 2.5c-.6 1 .6 2 0 3M14 2.5c-.6 1 .6 2 0 3"/>',
   cad: '<path d="M12 2.8s-6.5 7.4-6.5 12.1a6.5 6.5 0 0 0 13 0C18.5 10.2 12 2.8 12 2.8z"/><path d="M8.6 15.2h1.8l1-2.2 1.6 4 1.1-1.8h1.4"/>',
   hk: '<path d="M2.5 12h4l2-5 3 10 2.5-7 1.5 2h6"/><text x="16.5" y="7.5" font-size="6.5" font-weight="800" fill="currentColor" stroke="none" font-family="Inter,sans-serif">K</text>',
+  gaso: '<path d="M8 3h8M9.5 3v12.5a2.5 2.5 0 0 0 5 0V3"/><path d="M9.5 11h5"/><text x="2" y="22" font-size="6.5" font-weight="800" fill="currentColor" stroke="none" font-family="Inter,sans-serif">pH</text>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'
 };
 function ico(id, size, color, sw){

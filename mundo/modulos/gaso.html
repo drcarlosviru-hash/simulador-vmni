@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gasometría: medio interno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: clínico y docente, preciso como un buen manual de urgencias.
+   IDEA: el ticket de un gasómetro + un atlas de fisiología que se mueve.
+   PICTURE: diagrama de Davenport vivo (PaCO₂ × HCO₃⁻) con bandas de compensación y punto arrastrable.
+   COLOUR and TYPE: sangre arterial (#8e0f24) dominante, azul CO₂ y verde-azulado HCO₃⁻ como apoyo/acento; Archivo + JetBrains Mono para cifras del ticket.
+   LAYOUT: banda roja con laboratorio; videos; simulador; analizador; referencia. Apilado bajo 600px. */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#121014);--ink:light-dark(#1b1416,#f3edef);--mute:light-dark(#6b5d62,#a89ca2);--line:light-dark(#e8dfe2,#2f2930);--card:light-dark(#faf6f7,#1b171d);
+ --blood:#8e0f24;--blood2:light-dark(#b3142f,#ff5a6e);--co2:light-dark(#2457c5,#7fa8ff);--hco3:light-dark(#0a7f75,#2ccbbb);--ok:light-dark(#0b7a43,#4fd08d);--bad:light-dark(#b3142f,#ff6b7c);--amber:light-dark(#a35e00,#f4b84c)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Archivo,system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{line-height:1.08;text-wrap:balance;margin:0}
+h1{font-size:clamp(32px,5vw,50px);font-weight:900;letter-spacing:-.02em}
+h2{font-size:clamp(26px,3.4vw,36px);font-weight:800;letter-spacing:-.01em}
+h3{font-size:19px;font-weight:800}
+p{margin:.5em 0;max-width:70ch}
+.band{padding:clamp(28px,4vw,60px) max(5vw,16px)}.wrap{max-width:1240px;margin:0 auto}
+.fig{position:relative;min-height:340px}.fig>svg,.fig>canvas{position:absolute;inset:0;width:100%;height:100%}
+pre,.scroll{overflow-x:auto}code{overflow-wrap:anywhere}html{scroll-padding-top:72px;scroll-behavior:smooth}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+nav.top{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+nav.top .scroll{display:flex;gap:4px;padding:8px max(5vw,16px);max-width:1240px;margin:0 auto}
+nav.top a{flex:none;color:var(--ink);text-decoration:none;font-weight:700;font-size:15px;padding:10px 14px;border-radius:999px}
+nav.top a:hover,nav.top a:focus-visible{background:var(--card);outline:2px solid var(--blood2)}
+.hero{background:var(--blood);color:#fff4f5}
+.hero .grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(20px,3vw,44px);align-items:start}
+.hero p{color:#ffdfe4}
+.lead{font-size:17px}
+.labcard{background:var(--bg);color:var(--ink);border-radius:20px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+#dav{min-height:400px}
+.sl{display:grid;grid-template-columns:7.5em minmax(0,1fr) 4.2em;align-items:center;gap:10px;margin:10px 0}
+.sl label{font-weight:700}.sl output{font:700 17px 'JetBrains Mono',monospace;text-align:right}
+input[type=range]{width:100%;height:44px;accent-color:var(--blood2)}
+.ticket{background:#fffdf7;color:#201a14;border-radius:6px;padding:14px 16px;font:500 14px/1.6 'JetBrains Mono',monospace;box-shadow:inset 0 0 0 1px #e6dccb;position:relative}
+.ticket::after{content:"";position:absolute;left:0;right:0;bottom:-8px;height:8px;background:radial-gradient(circle at 6px 0,transparent 6px,#fffdf7 6.5px) 0 0/12px 8px repeat-x}
+.ticket .r{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dotted #d8ccb6}
+.ticket .r b{font-weight:700}.ticket .hi{color:#b3142f}.ticket .lo{color:#2457c5}
+.ticket h4{margin:0 0 6px;font:700 13px 'JetBrains Mono',monospace;color:#7a6a55}
+.dx{margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
+.dx strong{font-size:20px;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button,.btn{font:700 15px Archivo,system-ui,sans-serif;min-height:44px;padding:10px 16px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+button:hover{border-color:var(--blood2)}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--blood2);outline-offset:2px}
+button.pri{background:var(--blood2);border-color:var(--blood2);color:#fff}
+.hero .chips button{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.35)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--mute);margin-top:6px}.legend i{display:inline-block;width:14px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
+/* videos */
+.player{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:20px;margin-top:18px}
+.screen{position:relative;aspect-ratio:16/9;background:#140f17;border-radius:16px;overflow:hidden}
+.screen canvas{position:absolute;inset:0;width:100%;height:100%}
+.cap{background:#140f17;color:#f5eef2;padding:12px 16px;font-size:16px;min-height:5.2em;border-radius:0 0 16px 16px;margin-top:-10px;padding-top:20px}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+.ctrl input[type=range]{flex:1 1 200px}
+.ctrl .time{font:600 14px 'JetBrains Mono',monospace;color:var(--mute)}
+.vtabs{display:flex;flex-wrap:wrap;gap:8px}.vtabs button[aria-pressed=true],.lv button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chap{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.chap button{width:100%;text-align:left;font-weight:600;font-size:14px;line-height:1.35}
+.chap button[aria-current=true]{border-color:var(--blood2);background:color-mix(in srgb,var(--blood2) 12%,var(--card))}
+/* simulador */
+.sim{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:24px;margin-top:18px}
+.lv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:16px}
+.lv button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px}.lv small{font-weight:500;font-size:13px;color:inherit;opacity:.8}
+.vig{font-size:17px;background:var(--card);border-left:4px solid var(--blood2);padding:12px 16px;border-radius:0 12px 12px 0}
+.extra{font-size:14px;color:var(--mute)}
+.step{border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;background:var(--bg)}
+.step .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:8px;margin-top:10px}
+.step .opts button{text-align:left;font-weight:600;line-height:1.3}
+.step .opts button.c{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--bg))}
+.step .opts button.w{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--bg))}
+.why{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--card);font-size:15px}
+.why b.ok{color:var(--ok)}.why b.no{color:var(--bad)}
+.score{display:flex;gap:18px;flex-wrap:wrap;font-weight:700;margin-top:10px}.score span{color:var(--mute);font-weight:500}
+.hint{font-size:14px;color:var(--amber);margin-top:8px}
+/* analizador */
+.an{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:24px;margin-top:18px}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
+.form label{display:flex;flex-direction:column;font-weight:700;font-size:14px;gap:4px}
+.form input{font:500 16px 'JetBrains Mono',monospace;min-height:44px;padding:8px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink)}
+.res ol{padding-left:1.3em;margin:0}.res li{margin-bottom:12px}.res li strong{display:block;font-size:17px}
+.warn{background:color-mix(in srgb,var(--amber) 15%,var(--bg));border:1px solid var(--amber);padding:10px 12px;border-radius:10px;margin-bottom:12px}
+/* referencia */
+table{width:100%;border-collapse:collapse;font-size:15px}th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:14px;color:var(--mute)}
+.refg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin-top:18px}
+.src{font-size:14px;color:var(--mute);border-top:1px solid var(--line);padding-top:12px;margin-top:24px}
+.alt{background:var(--card)}
+@media(max-width:900px){.hero .grid,.player,.sim,.an,.refg{grid-template-columns:minmax(0,1fr)}.lv{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-8em;white-space:normal;color:var(--mute);font-weight:700}.stack td:empty{display:none}.form{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}#dav{min-height:330px}}
+</style><script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script></head>
+<body>
+<nav class="top" aria-label="Secciones"><div class="scroll"><a href="#lab">Laboratorio</a><a href="#videos">Videos</a><a href="#simulador">Simulador</a><a href="#analizador">Analizador</a><a href="#referencia">Referencia</a></div></nav>
+
+<section class="band hero" id="lab"><div class="wrap grid">
+ <div>
+  <h1>Gasometría: el medio interno en movimiento</h1>
+  <p class="lead">El pH depende de un cociente: el bicarbonato, que regula el riñón, frente a la PaCO₂, que regula el pulmón. Mueve los controles o arrastra el punto del diagrama y mira qué trastorno aparece y cuánto debería compensarse.</p>
+  <div class="ticket" aria-live="polite" id="labTicket"></div>
+  <div class="chips" aria-label="Escenarios animados">
+   <button data-sc="macid">Acidosis metabólica</button><button data-sc="malk">Alcalosis metabólica</button><button data-sc="racid">Acidosis respiratoria</button><button data-sc="ralk">Alcalosis respiratoria</button><button data-sc="norm">Normal</button>
+  </div>
+  <p style="font-size:14px;margin-top:10px">Cada escenario muestra primero el trastorno primario y después la compensación: horas para el pulmón, días para el riñón.</p>
+ </div>
+ <div class="labcard">
+  <div class="fig" id="dav"><svg id="davs" role="img" aria-label="Diagrama de Davenport: PaCO₂ en el eje horizontal, bicarbonato en el vertical, con isopletas de pH y bandas de compensación"></svg></div>
+  <div class="legend"><span><i style="background:#e0485e"></i>Acidosis metabólica</span><span><i style="background:#17a596"></i>Alcalosis metabólica</span><span><i style="background:#3d6fe0"></i>Resp. aguda</span><span><i style="background:#8ba9f0"></i>Resp. crónica</span><span><i style="background:#999"></i>Normal</span><span>Líneas: isopletas de pH</span></div>
+  <div class="sl"><label for="sP">PaCO₂</label><input type="range" id="sP" min="10" max="100" step="1" value="40"><output id="oP">40</output></div>
+  <div class="sl"><label for="sH">HCO₃⁻</label><input type="range" id="sH" min="4" max="50" step="1" value="24"><output id="oH">24</output></div>
+  <div class="dx" id="labDx" aria-live="polite"></div>
+ </div>
+</div></section>
+
+<section class="band" id="videos"><div class="wrap">
+ <h2>Videos: cómo se defiende el pH</h2>
+ <p>Animaciones narradas sobre el tampón bicarbonato, el pulmón, el riñón y la integración en el tiempo, con órganos, células y eritrocitos renderizados en relieve. Activa la voz para escucharlas, o lee los subtítulos.</p>
+ <div class="vtabs" id="vtabs" role="group" aria-label="Elegir video"></div>
+ <div class="player">
+  <div>
+   <div class="screen"><canvas id="vc" aria-label="Animación del video"></canvas></div>
+   <div class="cap" id="vcap" aria-live="polite"></div>
+   <div class="ctrl">
+    <button id="vplay" class="pri" aria-label="Reproducir">▶ Reproducir</button>
+    <input type="range" id="vseek" min="0" max="1000" value="0" aria-label="Posición del video">
+    <span class="time" id="vtime">0:00</span>
+    <button id="vvoice" aria-pressed="false">🔈 Voz: no</button>
+    <select id="vspeed" aria-label="Velocidad" style="min-height:44px;border-radius:12px;padding:0 10px;font:600 15px Archivo;background:var(--card);color:var(--ink);border:1.5px solid var(--line)"><option value=".75">0,75×</option><option value="1" selected>1×</option><option value="1.25">1,25×</option></select>
+   </div>
+  </div>
+  <div><h3 style="margin-bottom:10px">Capítulos</h3><ol class="chap" id="vchap"></ol></div>
+ </div>
+</div></section>
+
+<section class="band alt" id="simulador"><div class="wrap">
+ <h2>Simulador de casos</h2>
+ <p>Casos de urgencias generados al azar con valores fisiológicamente coherentes. Resuelve paso a paso, como lo harías a pie de cama: cada respuesta muestra el cálculo.</p>
+ <div class="lv" id="lv" role="group" aria-label="Nivel">
+  <button data-l="1" aria-pressed="true">Nivel 1<small>pH y trastorno primario</small></button>
+  <button data-l="2" aria-pressed="false">Nivel 2<small>Compensación, aguda vs crónica</small></button>
+  <button data-l="3" aria-pressed="false">Nivel 3<small>Anion gap, albúmina, etiología</small></button>
+  <button data-l="4" aria-pressed="false">Nivel 4<small>Mixtos, delta gap, gradiente A-a</small></button>
+ </div>
+ <div class="score" id="score"></div>
+ <div class="sim">
+  <div><div id="caseL"></div></div>
+  <div><div id="steps"></div><div class="chips"><button class="pri" id="newCase">Nuevo caso</button><button id="toLab">Ver en el diagrama</button></div></div>
+ </div>
+</div></section>
+
+<section class="band" id="analizador"><div class="wrap">
+ <h2>Analizador: interpreta la gasometría de tu paciente</h2>
+ <p>Introduce los valores y obtén la interpretación paso a paso con las mismas reglas del simulador. Es una herramienta docente: la decisión clínica es tuya.</p>
+ <div class="an">
+  <form id="anf" class="form" novalidate>
+   <label>pH<input id="aph" inputmode="decimal" value="7,28"></label><label>PaCO₂ (mmHg)<input id="apco2" inputmode="decimal" value="24"></label>
+   <label>HCO₃⁻ (mEq/l)<input id="ahco3" inputmode="decimal" value="11"></label><label>Na⁺ (mEq/l)<input id="ana" inputmode="decimal" value="138"></label>
+   <label>Cl⁻ (mEq/l)<input id="acl" inputmode="decimal" value="100"></label><label>Albúmina (g/dl)<input id="aalb" inputmode="decimal" value="4"></label>
+   <label>PaO₂ (mmHg)<input id="apao2" inputmode="decimal" value="104"></label><label>FiO₂ (0,21–1)<input id="afio2" inputmode="decimal" value="0,21"></label>
+   <label>Edad (años)<input id="aage" inputmode="decimal" value="45"></label>
+   <div style="display:flex;align-items:flex-end"><button class="pri" type="submit" style="width:100%">Interpretar</button></div>
+  </form>
+  <div class="res" id="ares" aria-live="polite"></div>
+ </div>
+</div></section>
+
+<section class="band alt" id="referencia"><div class="wrap">
+ <h2>Referencia rápida</h2>
+ <div class="refg">
+  <div><h3>Valores normales (sangre arterial)</h3>
+   <table class="stack"><thead><tr><th>Parámetro</th><th>Rango</th></tr></thead><tbody>
+   <tr><td>pH</td><td>7,35–7,45</td></tr><tr><td>PaCO₂</td><td>35–45 mmHg (Murillo: 37–43)</td></tr><tr><td>HCO₃⁻</td><td>22–26 mEq/l</td></tr><tr><td>PaO₂</td><td>80–100 mmHg</td></tr><tr><td>Exceso de bases</td><td>± 2</td></tr><tr><td>Anion gap</td><td>12 ± 3 mEq/l</td></tr><tr><td>Gradiente A-a</td><td>5–20 mmHg (≈ edad/4 + 4)</td></tr></tbody></table>
+  </div>
+  <div><h3>Compensación esperada</h3>
+   <table class="stack"><thead><tr><th>Trastorno</th><th>Respuesta</th><th>Límite</th></tr></thead><tbody>
+   <tr><td>Acidosis metabólica</td><td>PaCO₂ = 1,5 × HCO₃⁻ + 8 ± 2 (Winter) · atajo: HCO₃⁻ + 15</td><td>≈ 15 mmHg</td></tr>
+   <tr><td>Alcalosis metabólica</td><td>↑ PaCO₂ 0,7 × ΔHCO₃⁻ (Murillo: 0,8–0,9)</td><td>≈ 55–65 mmHg</td></tr>
+   <tr><td>Acidosis resp. aguda</td><td>↑ HCO₃⁻ 1 por cada 10 mmHg</td><td></td></tr>
+   <tr><td>Acidosis resp. crónica</td><td>↑ HCO₃⁻ 4 por cada 10 mmHg</td><td>≈ 40 mEq/l</td></tr>
+   <tr><td>Alcalosis resp. aguda</td><td>↓ HCO₃⁻ 2 por cada 10 mmHg</td><td></td></tr>
+   <tr><td>Alcalosis resp. crónica</td><td>↓ HCO₃⁻ 5 por cada 10 mmHg</td><td>≈ 10 mEq/l</td></tr></tbody></table>
+  </div>
+  <div><h3>Acidosis metabólica</h3>
+   <table class="stack"><thead><tr><th>AG elevado</th><th>AG normal (hiperclorémica)</th></tr></thead><tbody>
+   <tr><td>Cetoacidosis (diabética, alcohólica, ayuno)</td><td>Diarrea, fístulas, ureterosigmoidostomía</td></tr>
+   <tr><td>Acidosis láctica (shock, hipoxia, metformina)</td><td>ATR proximal (2) y distal (1): K⁺ ↓</td></tr>
+   <tr><td>Insuficiencia renal</td><td>ATR tipo 4: K⁺ ↑</td></tr>
+   <tr><td>Tóxicos: salicilatos, metanol, etilenglicol (hiato osmolar &gt; 10)</td><td>Suero salino abundante, ClNH₄, acetazolamida</td></tr></tbody></table>
+   <p style="font-size:14px">AG = Na⁺ − (Cl⁻ + HCO₃⁻). Corregir: +2,5 por cada g/dl de albúmina por debajo de 4. ΔG = (AG − 12) − (24 − HCO₃⁻): &gt; +6 alcalosis metabólica asociada; &lt; −6 acidosis hiperclorémica asociada. AG urinario positivo: defecto renal de NH₄⁺; negativo: pérdidas digestivas.</p>
+  </div>
+  <div><h3>Alcalosis metabólica y oxigenación</h3>
+   <table class="stack"><thead><tr><th>Cl⁻ urinario &lt; 10 (salinosensible)</th><th>Cl⁻ urinario &gt; 20 (salinorresistente)</th></tr></thead><tbody>
+   <tr><td>Vómitos, aspiración nasogástrica</td><td>Hiperaldosteronismo, Cushing, regaliz</td></tr>
+   <tr><td>Diuréticos (pasado su efecto), posthipercapnia</td><td>Diuréticos activos, Bartter, hipopotasemia grave</td></tr></tbody></table>
+   <table class="stack" style="margin-top:14px"><thead><tr><th>Hipoxemia por</th><th>Gradiente A-a</th><th>Respuesta a ↑ FiO₂</th></tr></thead><tbody>
+   <tr><td>↓ O₂ inspirado</td><td>Normal</td><td>Sí</td></tr><tr><td>Hipoventilación</td><td>Normal</td><td>Sí</td></tr><tr><td>Alteración V/Q</td><td>↑</td><td>Sí</td></tr><tr><td>Difusión</td><td>↑</td><td>Sí</td></tr><tr><td>Shunt</td><td>↑↑</td><td>No</td></tr></tbody></table>
+  </div>
+ </div>
+ <p class="src">Fuentes: Harrison. Manual de Medicina Interna, cap. 3 «Equilibrio electrolítico/acidobásico» (pp. 11–15, fig. 3-2 y cuadros 3-5 y 3-6). Jiménez Murillo y Montero Pérez. Medicina de urgencias y emergencias, 6.ª ed. (Elsevier, 2018), cap. 8 «Gasometría, pulsioximetría y capnografía» (cuadro 8.1, tablas 8.1 y 8.2) y cap. 78 «Alteraciones del equilibrio acidobásico» (tabla 78.1, anion gap, delta gap). Donde las fuentes difieren se indica. Los casos clínicos son ficticios.</p>
+</div></section>
+<script>
+{
+/* ===== Motor ácido-base: fórmulas, analizador y generador de casos ===== */
+const R=(a,b)=>a+Math.random()*(b-a), RI=(a,b)=>Math.round(R(a,b)), pick=a=>a[Math.floor(Math.random()*a.length)];
+const phOf=(h,p)=>6.1+Math.log10(h/(0.03*p));
+const f1=x=>(Math.round(x*10)/10).toString().replace('.',','), f2=x=>x.toFixed(2).replace('.',',');
+const winter=h=>1.5*h+8;
+
+const PRIM={macid:'Acidosis metabólica',malk:'Alcalosis metabólica',racid:'Acidosis respiratoria',ralk:'Alcalosis respiratoria',
+  mixacid:'Acidosis mixta (metabólica + respiratoria)',mixalk:'Alcalosis mixta (metabólica + respiratoria)',normal:'Ninguno en pH/PaCO₂/HCO₃⁻ (mirar el anion gap)'};
+const COMP={ok:'Compensación adecuada (trastorno simple)','+racid':'Acidosis respiratoria asociada','+ralk':'Alcalosis respiratoria asociada',
+  aguda:'Aguda (compensación renal mínima)',cronica:'Crónica (compensación renal completa)',inter:'Agudo sobre crónico / en evolución',
+  '+macid':'Acidosis metabólica asociada','+malk':'Alcalosis metabólica asociada'};
+const EMIA={acid:'Acidemia (pH < 7,35)',alk:'Alcalemia (pH > 7,45)',norm:'pH normal (7,35–7,45)'};
+
+function analyze(v){
+  const ph=v.ph!=null?v.ph:phOf(v.hco3,v.pco2), h=v.hco3, p=v.pco2, out={ph,steps:{},order:[]};
+  const add=(k,o)=>{out.steps[k]=o;out.order.push(k)};
+  if(v.ph!=null){const hc=24*p/h, hm=Math.pow(10,9-v.ph);out.consist=Math.abs(hc-hm)/hm}
+  // 1. pH
+  const emia=ph<7.35?'acid':ph>7.45?'alk':'norm';
+  add('ph',{ans:emia,opts:['acid','norm','alk'],L:EMIA,q:'¿Cómo está el pH?',
+    why:`pH ${f2(ph)}: ${emia==='acid'?'por debajo de 7,35 → acidemia':emia==='alk'?'por encima de 7,45 → alcalemia':'dentro de 7,35–7,45. Un pH normal NO descarta un trastorno: puede haber compensación completa (solo la alcalosis respiratoria crónica lo logra) o dos trastornos opuestos.'}`});
+  // 2. Primario
+  const lowH=h<22,highH=h>26,highP=p>45,lowP=p<35; let prim;
+  if(emia==='acid') prim=lowH&&highP?'mixacid':lowH?'macid':highP?'racid':(24-h>p-40?'macid':'racid');
+  else if(emia==='alk') prim=highH&&lowP?'mixalk':highH?'malk':lowP?'ralk':(h-24>40-p?'malk':'ralk');
+  else prim=(lowH&&lowP)?(ph>=7.40?'ralk':'macid'):(highH&&highP)?(ph>=7.40?'malk':'racid'):'normal';
+  const pw={macid:`HCO₃⁻ ${h} (bajo) explica la acidemia; la PaCO₂ ${p} va en la misma dirección (↓) como respuesta.`,
+    malk:`HCO₃⁻ ${h} (alto) explica la alcalemia; la PaCO₂ ${p} sube como respuesta hipoventilatoria.`,
+    racid:`PaCO₂ ${p} (alta) explica la acidemia; el HCO₃⁻ ${h} sube como respuesta renal.`,
+    ralk:`PaCO₂ ${p} (baja) explica la alcalemia; el HCO₃⁻ ${h} baja como respuesta renal.`,
+    mixacid:`HCO₃⁻ ${h} bajo Y PaCO₂ ${p} alta: ambos empujan el pH hacia abajo. Dos trastornos primarios a la vez; no hay compensación posible.`,
+    mixalk:`HCO₃⁻ ${h} alto Y PaCO₂ ${p} baja: ambos empujan el pH hacia arriba. Alcalosis mixta, típicamente grave.`,
+    normal:`pH, PaCO₂ (${p}) y HCO₃⁻ (${h}) normales. Solo el anion gap puede destapar un trastorno oculto.`};
+  let pwx=pw[prim]; if(emia==='norm'&&(prim==='macid'||prim==='ralk'||prim==='malk'||prim==='racid')) pwx+=` Con pH normal y ambos valores alterados en la misma dirección, el lado del 7,40 en que cae el pH (${f2(ph)}) señala el trastorno primario.`;
+  add('prim',{ans:prim,opts:['macid','racid','malk','ralk','mixacid','mixalk','normal'],L:PRIM,q:'¿Cuál es el trastorno primario?',why:pwx});
+  // 3. Compensación
+  let comp=null,cw='';
+  if(prim==='macid'){const e=winter(h);comp=p<e-2?'+ralk':p>e+2?'+racid':'ok';
+    cw=`Fórmula de Winter: PaCO₂ esperada = 1,5 × ${h} + 8 = ${f1(e)} ± 2 (${f1(e-2)}–${f1(e+2)}). Medida: ${p}. ${comp==='ok'?'Dentro del rango → compensación adecuada.':comp==='+ralk'?'Más baja de lo esperado → hay además alcalosis respiratoria (hiperventilación primaria).':'Más alta de lo esperado → el pulmón no compensa: acidosis respiratoria asociada.'} (Atajo del Murillo: PaCO₂ ≈ HCO₃⁻ + 15 = ${h+15}.)`}
+  else if(prim==='malk'){const e=40+0.7*(h-24);comp=p<e-4?'+ralk':p>e+4?'+racid':'ok';
+    cw=`PaCO₂ esperada = 40 + 0,7 × ΔHCO₃⁻ = 40 + 0,7 × ${h-24} = ${f1(e)} ± 4. Medida: ${p}. ${comp==='ok'?'Compensación adecuada.':comp==='+racid'?'Más alta → acidosis respiratoria asociada.':'Más baja → alcalosis respiratoria asociada.'} La respuesta hipoventilatoria rara vez supera 55–65 mmHg (el Murillo usa 0,8–0,9 × ΔHCO₃⁻; es la compensación menos predecible).`}
+  else if(prim==='racid'){const d=p-40,a=24+0.1*d,c=24+0.4*d;
+    comp=h<a-2?'+macid':h>c+2?'+malk':Math.abs(h-a)<=2?'aguda':Math.abs(h-c)<=2?'cronica':'inter';
+    cw=`ΔPaCO₂ = ${d}. Aguda: HCO₃⁻ ≈ 24 + 0,1 × ${d} = ${f1(a)}. Crónica (2–5 días): 24 + 0,4 × ${d} = ${f1(c)}. Medido: ${h} → ${COMP[comp].toLowerCase()}.`}
+  else if(prim==='ralk'){const d=40-p,a=24-0.2*d,c=Math.max(24-0.5*d,10);
+    comp=h>a+2?'+malk':h<c-2?'+macid':Math.abs(h-a)<=2?'aguda':Math.abs(h-c)<=2?'cronica':'inter';
+    cw=`ΔPaCO₂ = −${d}. Aguda: HCO₃⁻ ≈ 24 − 0,2 × ${d} = ${f1(a)}. Crónica: 24 − 0,5 × ${d} = ${f1(c)} (límite inferior ~10). Medido: ${h} → ${COMP[comp].toLowerCase()}.`}
+  if(comp){const o=prim[0]==='m'?['ok','+racid','+ralk']:['aguda','cronica','inter','+macid','+malk'];
+    add('comp',{ans:comp,opts:o,L:COMP,q:prim[0]==='m'?'¿La respuesta respiratoria es la esperada?':'¿Aguda, crónica o hay otro trastorno metabólico?',why:cw})}
+  // 4. Anion gap
+  if(v.na!=null&&v.cl!=null){
+    const ag=v.na-v.cl-h, alb=v.alb!=null?v.alb:4, agc=ag+2.5*Math.max(0,4-alb), hi=agc>=16;
+    out.ag=ag;out.agc=agc;
+    const metA=prim==='macid'||prim==='mixacid'||comp==='+macid'||hi;
+    if(metA||v.forceAG){
+      add('ag',{ans:hi?'high':'normal',opts:['high','normal'],L:{high:'Elevado (≥ 16)',normal:'Normal (12 ± 3)'},q:'¿Cómo está el anion gap?',
+        why:`AG = Na⁺ − (Cl⁻ + HCO₃⁻) = ${v.na} − (${v.cl} + ${h}) = ${ag}.${alb<3.9?` Albúmina ${f1(alb)} g/dl: corregido = ${ag} + 2,5 × (4 − ${f1(alb)}) = ${f1(agc)}. La hipoalbuminemia baja falsamente el AG.`:''} ${hi?'Elevado → ácidos no medidos (lactato, cetoácidos, tóxicos, uremia).':'Normal → acidosis hiperclorémica: pérdida de HCO₃⁻ (digestiva o renal) o aporte de Cl⁻.'}`});
+      if(hi){const dg=(agc-12)-(24-h), dl=dg>6?'+malk':dg<-6?'+nagma':'pure';
+        out.dg=dg;
+        add('delta',{ans:dl,opts:['pure','+malk','+nagma'],L:{pure:'Delta gap normal: acidosis con AG elevado pura','+malk':'Delta gap > +6: alcalosis metabólica asociada','+nagma':'Delta gap < −6: acidosis con AG normal asociada'},
+          q:'Delta gap: ¿hay otro trastorno metabólico escondido?',
+          why:`ΔG = (AG − 12) − (24 − HCO₃⁻) = (${f1(agc)} − 12) − (24 − ${h}) = ${f1(dg)}. ${dl==='pure'?'Entre −6 y +6: el AG subió lo mismo que bajó el HCO₃⁻ → acidosis con AG elevado pura.':dl==='+malk'?'El HCO₃⁻ está más alto de lo que el AG predice: algo lo está subiendo (vómitos, diuréticos, SNG).':'El HCO₃⁻ bajó más de lo que explica el AG: hay además pérdida de HCO₃⁻ (diarrea, suero salino, ATR).'}`})}
+    }
+  }
+  // 5. Oxigenación
+  if(v.pao2!=null&&v.fio2!=null){const PA=v.fio2*713-p/0.8, g=PA-v.pao2, e=(v.age||40)/4+4, hi=g>e+4;
+    out.aa=g; out.pafi=v.pao2/v.fio2;
+    add('aa',{ans:hi?'high':'normal',opts:['normal','high'],L:{normal:'Normal: hipoxemia por hipoventilación o FiO₂ baja',high:'Elevado: V/Q, shunt o difusión'},q:'Gradiente alveolo-arterial de O₂',
+      why:`PAO₂ = FiO₂ × (760 − 47) − PaCO₂/0,8 = ${String(v.fio2).replace('.',',')} × 713 − ${p}/0,8 = ${f1(PA)}. Gradiente = ${f1(PA)} − ${v.pao2} = ${f1(g)}. Esperado para ${v.age||40} años ≈ edad/4 + 4 = ${f1(e)}. ${hi?'Elevado → el problema está en el pulmón (V/Q, shunt, difusión).':'Normal → el pulmón intercambia bien; la PaO₂ baja la explica la hipoventilación (o la FiO₂).'} PaO₂/FiO₂ = ${Math.round(v.pao2/v.fio2)}.`})}
+  return out;
+}
+
+/* ---- Casos: cada plantilla genera valores; se acepta solo si el analizador llega a la conclusión docente prevista ---- */
+const nrm=()=>({na:RI(137,142),k:f1(R(3.8,4.6)),alb:+R(3.8,4.4).toFixed(1)});
+const T=[];
+const def=(o)=>T.push(o);
+// ---------- Nivel 1–2: trastornos simples
+def({dx:'Cetoacidosis diabética',cat:'agma',lv:1,gen(){const d=RI(10,16),h=24-d;return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:12+d+RI(-2,2),k:f1(R(5,5.9)),gl:RI(420,650),
+  vig:`Mujer de ${RI(18,30)} años con diabetes tipo 1, tres días de poliuria, vómitos y dolor abdominal. Respiración profunda y rápida, aliento afrutado. Glucemia capilar «HI».`,
+  extra:[['Glucosa',RI(420,650)+' mg/dl'],['Cetonemia','5,8 mmol/l'],['Lactato','1,6 mmol/l']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.delta!=='+malk'});
+def({dx:'Diarrea aguda grave (pérdida digestiva de HCO₃⁻)',cat:'nagma',lv:1,gen(){const d=RI(7,11),h=24-d;return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:RI(9,13),k:f1(R(2.8,3.3)),
+  vig:`Varón de ${RI(25,60)} años con 15 deposiciones líquidas al día desde hace 4 días tras un viaje. Mucosas secas, taquicardia, no vómitos.`,
+  extra:[['Glucosa','98 mg/dl'],['Creatinina','1,3 mg/dl'],['Lactato','1,2 mmol/l']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.agK==='normal'});
+def({dx:'Vómitos incoercibles (pérdida de HCl)',cat:'malk',lv:1,gen(){const h=RI(32,40);return{hco3:h,pco2:Math.round(40+0.7*(h-24)+R(-1.5,1.5)),ag:RI(12,14),k:f1(R(2.7,3.2)),
+  vig:`Varón de ${RI(40,70)} años con estenosis pilórica conocida y vómitos alimentarios repetidos durante 6 días. Hipotensión ortostática.`,
+  extra:[['Cl⁻ urinario','6 mEq/l'],['Creatinina','1,4 mg/dl']]}},acc:a=>a.prim==='malk'&&a.comp==='ok'});
+def({dx:'Sobredosis de opioides (hipoventilación aguda)',cat:'racid',lv:1,gen(){const p=RI(62,80);return{pco2:p,hco3:Math.round(24+0.1*(p-40)+R(-0.4,0.4)),ag:RI(10,13),pao2:RI(55,65),fio2:0.21,age:RI(22,40),
+  vig:`Joven encontrado inconsciente en un baño público. FR 5 rpm, miosis puntiforme, SpO₂ 86 % con aire ambiente.`,extra:[['Glucosa','104 mg/dl']]}},acc:a=>a.prim==='racid'&&a.comp==='aguda'&&a.aa==='normal'});
+def({dx:'EPOC con hipercapnia crónica estable',cat:'racid',lv:1,gen(){const p=RI(64,72);return{pco2:p,hco3:Math.round(24+0.4*(p-40)+R(-0.4,0.4)),ag:RI(9,12),pao2:RI(54,60),fio2:0.21,age:RI(65,78),
+  vig:`Varón de ${RI(65,78)} años, exfumador de 60 paquetes-año, con EPOC grave en oxigenoterapia domiciliaria. Acude a revisión programada, sin cambios en su disnea habitual.`,extra:[['Hemoglobina','17,2 g/dl']]}},acc:a=>a.prim==='racid'&&a.comp==='cronica'});
+def({dx:'Hiperventilación por crisis de ansiedad',cat:'ralk',lv:1,gen(){const p=RI(22,29);return{pco2:p,hco3:Math.round(24-0.2*(40-p)+R(-0.4,0.4)),ag:RI(10,13),pao2:RI(105,115),fio2:0.21,age:RI(19,35),
+  vig:`Mujer de ${RI(19,35)} años tras una discusión: sensación de ahogo, parestesias peribucales y espasmo carpopedal. Auscultación normal.`,extra:[['Calcio iónico','1,05 mmol/l']]}},acc:a=>a.prim==='ralk'&&a.comp==='aguda'&&a.aa==='normal'});
+def({dx:'Aclimatación a la altitud (3.400 m, Cusco)',cat:'ralk',lv:2,gen(){const p=RI(27,30);return{pco2:p,hco3:Math.round(24-0.5*(40-p)+R(-0.4,0.4)),ag:RI(10,13),
+  vig:`Médico cooperante que lleva 4 semanas trabajando en Cusco (3.400 m). Asintomático; gasometría de control dentro de un estudio. Muestra tomada a esa altitud.`,extra:[['Hemoglobina','16,4 g/dl']]}},acc:a=>a.prim==='ralk'&&a.comp==='cronica'});
+def({dx:'Guillain-Barré con fallo ventilatorio',cat:'racid',lv:2,gen(){const p=RI(56,68);return{pco2:p,hco3:Math.round(24+0.1*(p-40)+R(-0.4,0.4)),ag:RI(10,13),
+  vig:`Varón de ${RI(30,55)} años con debilidad ascendente de 5 días tras una gastroenteritis. Arreflexia. Capacidad vital 12 ml/kg y en descenso; respiración superficial.`,extra:[['Capacidad vital','12 ml/kg']]}},acc:a=>a.prim==='racid'&&a.comp==='aguda'});
+// ---------- Nivel 3: anion gap, albúmina y etiología
+def({dx:'Acidosis láctica por shock hemorrágico',cat:'agma',lv:3,gen(){const d=RI(10,14),h=24-d;return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:12+d+RI(-2,2),k:f1(R(4.4,5.2)),
+  vig:`Motorista de ${RI(20,45)} años politraumatizado, fractura de pelvis. TA 75/40, FC 140, relleno capilar > 4 s. Ha recibido 1 litro de cristaloides.`,extra:[['Lactato',f1(R(8,12))+' mmol/l'],['Hemoglobina','7,8 g/dl'],['Glucosa','160 mg/dl']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.agK==='high'&&a.delta==='pure'});
+def({dx:'Insuficiencia renal avanzada (acidosis urémica)',cat:'agma',lv:3,gen(){const d=RI(8,11),h=24-d;return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:12+d+RI(-1,1),k:f1(R(6,6.8)),
+  vig:`Mujer de ${RI(60,80)} años con nefropatía diabética que abandonó la hemodiálisis hace 10 días. Náuseas, astenia, roce pericárdico.`,extra:[['Urea','310 mg/dl'],['Creatinina','11,4 mg/dl'],['Fosfato','8,1 mg/dl']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.agK==='high'&&a.delta==='pure'});
+def({dx:'Intoxicación por etilenglicol',cat:'agma',lv:3,gen(){const d=RI(14,17),h=24-d;return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:12+d+RI(-2,2),k:f1(R(4.8,5.6)),
+  vig:`Varón de ${RI(30,60)} años con alcoholismo, aparentemente ebrio pero con etanolemia negativa. Convulsión en urgencias; cristales en forma de sobre en el sedimento.`,extra:[['Hiato osmolar','38 mOsm/kg'],['Creatinina','2,9 mg/dl'],['Lactato','2,4 mmol/l'],['Calcio','7,6 mg/dl']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.agK==='high'&&a.delta==='pure'});
+def({dx:'Intoxicación por metanol',cat:'agma',lv:3,gen(){const d=RI(14,17),h=24-d;return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:12+d+RI(-2,2),
+  vig:`Tres personas acuden juntas tras beber aguardiente casero en una fiesta. Esta paciente refiere visión «como en una tormenta de nieve» 18 h después.`,extra:[['Hiato osmolar','42 mOsm/kg'],['Creatinina','1,1 mg/dl'],['Lactato','2,1 mmol/l']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.agK==='high'&&a.delta==='pure'});
+def({dx:'ATR distal (tipo 1)',cat:'nagma',lv:3,gen(){const d=RI(8,11),h=24-d;return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:RI(9,13),k:f1(R(2.6,3.1)),
+  vig:`Mujer de ${RI(30,50)} años con síndrome de Sjögren, debilidad muscular y nefrolitiasis de repetición. Sin diarrea ni fármacos.`,extra:[['pH urinario','6,6'],['AG urinario','+28 (positivo)'],['Creatinina','0,8 mg/dl']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.agK==='normal'});
+def({dx:'ATR tipo 4 (hipoaldosteronismo hiporreninémico)',cat:'nagma',lv:3,gen(){const d=RI(5,8),h=24-d;return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:RI(9,13),k:f1(R(5.9,6.6)),
+  vig:`Varón de ${RI(60,80)} años con diabetes de larga evolución e ERC moderada; recientemente se añadió espironolactona. Asintomático salvo astenia.`,extra:[['pH urinario','5,2'],['AG urinario','+22 (positivo)'],['Creatinina','1,9 mg/dl']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.agK==='normal'});
+def({dx:'Acidosis hiperclorémica por suero salino 0,9 %',cat:'nagma',lv:3,gen(){const d=RI(6,8),h=24-d;return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:RI(9,12),
+  vig:`Postoperada de cirugía abdominal mayor que ha recibido 7 litros de suero fisiológico en 24 h. Hemodinámicamente estable, diuresis conservada.`,extra:[['Lactato','1,3 mmol/l'],['Creatinina','0,9 mg/dl']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.agK==='normal'});
+def({dx:'Acidosis láctica con AG enmascarado por hipoalbuminemia',cat:'agma',lv:3,gen(){const alb=+R(1.6,1.9).toFixed(1),ag=RI(13,14),agc=ag+2.5*Math.max(0,4-alb),h=Math.round(24-(agc-12));
+  return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag,alb,vig:`Varón de ${RI(50,70)} años con cirrosis enólica Child C y ascitis a tensión, ingresado por peritonitis bacteriana espontánea con hipotensión.`,extra:[['Lactato','6,2 mmol/l'],['Bilirrubina','5,8 mg/dl'],['INR','2,1']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.agK==='high'&&a.delta==='pure'});
+def({dx:'Tratamiento con acetazolamida',cat:'nagma',lv:3,gen(){const d=RI(6,8),h=24-d;return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:RI(9,12),k:f1(R(3.1,3.4)),
+  vig:`Turista de ${RI(40,60)} años que prepara el trekking a Kuélap tomando acetazolamida 250 mg/12 h desde hace 4 días (pauta recomendada: 125 mg/12 h). Parestesias en manos.`,extra:[['pH urinario','7,1'],['AG urinario','+15']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.agK==='normal'});
+def({dx:'Hiperaldosteronismo primario',cat:'malk',lv:3,gen(){const h=RI(30,35);return{hco3:h,pco2:Math.round(40+0.7*(h-24)+R(-1,1)),ag:RI(11,14),k:f1(R(2.5,2.9)),
+  vig:`Mujer de ${RI(35,55)} años con hipertensión resistente a tres fármacos y calambres. No vómitos ni diuréticos.`,extra:[['Cl⁻ urinario','48 mEq/l'],['TA','182/104 mmHg'],['Renina','suprimida']]}},acc:a=>a.prim==='malk'&&a.comp==='ok'});
+// ---------- Nivel 4: trastornos mixtos, delta gap y oxigenación
+def({dx:'Intoxicación por salicilatos',cat:'mixed',lv:4,gen(){const d=RI(8,12),h=24-d;return{hco3:h,pco2:Math.round(winter(h)-RI(4,6)),ag:12+d+RI(-1,1),pao2:RI(95,105),fio2:0.21,age:RI(25,45),
+  vig:`Mujer de ${RI(25,45)} años que ingirió «un bote» de comprimidos para la artrosis de su madre. Acúfenos, vómitos, taquipnea marcada.`,extra:[['Salicilemia','68 mg/dl'],['Lactato','2,8 mmol/l'],['Glucosa','92 mg/dl']]}},
+  acc:a=>(a.prim==='macid'&&a.comp==='+ralk')||(a.prim==='ralk'&&a.comp==='+macid')});
+def({dx:'Shock séptico (acidosis láctica + alcalosis respiratoria)',cat:'mixed',lv:4,gen(){const d=RI(9,12),h=24-d;return{hco3:h,pco2:Math.round(winter(h)-RI(4,5)),ag:12+d+RI(-1,1),pao2:RI(58,66),fio2:0.21,age:RI(60,80),
+  vig:`Varón de ${RI(60,80)} años con fiebre de 39,5 °C, tiritona y confusión. Neumonía en base derecha. TA 82/45, FR 32.`,extra:[['Lactato',f1(R(6,9))+' mmol/l'],['PCT','24 ng/ml']]}},acc:a=>a.prim==='macid'&&a.comp==='+ralk'&&a.aa==='high'});
+def({dx:'Parada cardiorrespiratoria',cat:'mixed',lv:4,gen(){const h=RI(12,16);return{hco3:h,pco2:RI(62,80),ag:12+(24-h)+RI(-1,1),pao2:RI(50,62),fio2:1.0,age:RI(55,75),
+  vig:`Varón de ${RI(55,75)} años en PCR extrahospitalaria, 18 minutos de RCP antes de recuperar circulación espontánea. Gasometría a la llegada, intubado con FiO₂ 1,0.`,extra:[['Lactato','11 mmol/l'],['K⁺','5,8 mEq/l']]}},acc:a=>a.prim==='mixacid'&&a.aa==='high'});
+def({dx:'Cetoacidosis diabética + vómitos',ex:'cadv',cat:'mixed',lv:4,gen(){const da=RI(15,20),h=24-da+RI(10,13);return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:12+da,
+  vig:`Varón de ${RI(20,35)} años con diabetes tipo 1 que lleva 4 días vomitando todo lo que ingiere. Kussmaul leve, deshidratación intensa.`,extra:[['Glucosa','520 mg/dl'],['Cetonemia','6,1 mmol/l'],['Cl⁻ urinario','8 mEq/l']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.delta==='+malk'});
+def({dx:'CAD tratada con suero salino (AG + hiperclorémica)',cat:'mixed',lv:4,gen(){const da=RI(6,9),h=24-da-RI(8,10);return{hco3:h,pco2:Math.round(winter(h)+R(-1,1)),ag:12+da,
+  vig:`Mujer de ${RI(18,30)} años con CAD ingresada hace 14 h, tratada con 6 litros de suero fisiológico e insulina. Cetonemia en descenso, pero el bicarbonato no remonta.`,extra:[['Glucosa','210 mg/dl'],['Cetonemia','1,8 mmol/l']]}},acc:a=>a.prim==='macid'&&a.comp==='ok'&&a.delta==='+nagma'});
+def({dx:'EPOC con hipercapnia crónica + diuréticos de asa',cat:'mixed',lv:4,gen(){const p=RI(60,68),h=Math.round(24+0.4*(p-40))+RI(6,9);return{pco2:p,hco3:h,ag:RI(11,14),pao2:RI(52,58),fio2:0.21,age:RI(68,80),
+  vig:`Varón de ${RI(68,80)} años con EPOC grave e insuficiencia cardíaca; hace 2 semanas se le subió la furosemida a 80 mg/12 h. Somnolencia diurna creciente.`,extra:[['K⁺','3,0 mEq/l'],['Cl⁻ urinario','52 mEq/l']]}},
+  acc:a=>(a.prim==='racid'&&a.comp==='+malk')||(a.prim==='malk'&&a.comp==='+racid')});
+def({dx:'EPOC agudizada (agudo sobre crónico)',cat:'racid',lv:4,gen(){const p=RI(78,90),d=p-40,h=Math.round(24+0.25*d+R(-1,1));return{pco2:p,hco3:h,ag:RI(10,13),pao2:RI(45,52),fio2:0.28,age:RI(65,80),
+  vig:`Mujer de ${RI(65,80)} años con EPOC conocida y bicarbonato basal de 32. Tres días de esputo purulento; ahora somnolienta con asterixis. Recibe O₂ por Venturi al 28 %.`,extra:[['HCO₃⁻ basal previo','32 mEq/l']]}},acc:a=>a.prim==='racid'&&a.comp==='inter'&&a.aa==='high'});
+def({dx:'Cirrosis con vómitos (alcalosis mixta)',cat:'mixed',lv:4,gen(){return{pco2:RI(27,31),hco3:RI(31,35),ag:RI(11,14),k:f1(R(2.6,3)),
+  vig:`Varón de ${RI(45,65)} años con cirrosis descompensada (hiperventilación crónica por hepatopatía) que lleva 3 días con vómitos por gastroenteritis.`,extra:[['Cl⁻ urinario','7 mEq/l'],['Amonio','148 µmol/l']]}},acc:a=>a.prim==='mixalk'});
+def({dx:'Cetoacidosis alcohólica + vómitos + alcalosis respiratoria (triple)',cat:'mixed',lv:4,gen(){const da=RI(15,19),h=24-da+RI(9,11);return{hco3:h,pco2:Math.round(winter(h)-RI(7,9)),ag:12+da,
+  vig:`Varón de ${RI(40,60)} años, bebedor de 1 litro de aguardiente al día. Tras un atracón de 5 días, 48 h de vómitos sin comer. Temblor, sudoración, FR 30.`,extra:[['Glucosa','72 mg/dl'],['β-hidroxibutirato','7,0 mmol/l'],['Etanolemia','40 mg/dl']]}},
+  acc:a=>a.delta==='+malk'&&(a.comp==='+ralk'||(a.prim==='ralk'&&a.comp==='+macid')||a.prim==='ralk')});
+def({dx:'Tromboembolia pulmonar',cat:'ralk',lv:4,gen(){const p=RI(28,32);return{pco2:p,hco3:Math.round(24-0.2*(40-p)+R(-0.4,0.4)),ag:RI(10,13),pao2:RI(56,64),fio2:0.21,age:RI(45,70),
+  vig:`Mujer de ${RI(45,70)} años en el día 6 tras prótesis de cadera: disnea súbita, dolor pleurítico, taquicardia a 118. Auscultación normal.`,extra:[['Dímero D','4.800 ng/ml'],['Troponina','normal']]}},acc:a=>a.prim==='ralk'&&a.comp==='aguda'&&a.aa==='high'});
+def({dx:'Hipoventilación por benzodiacepinas',cat:'racid',lv:4,gen(){const p=RI(58,66);return{pco2:p,hco3:Math.round(24+0.1*(p-40)+R(-0.4,0.4)),ag:RI(10,13),pao2:RI(60,68),fio2:0.21,age:RI(35,55),
+  vig:`Mujer de ${RI(35,55)} años encontrada somnolienta junto a blísteres vacíos de lorazepam. FR 8, auscultación limpia, radiografía normal.`,extra:[['Glucosa','110 mg/dl']]}},acc:a=>a.prim==='racid'&&a.comp==='aguda'&&a.aa==='normal'});
+def({dx:'Trastorno oculto: CAD + vómitos con pH normal',ex:'cadv',cat:'mixed',lv:4,gen(){const da=RI(14,18);return{hco3:RI(23,25),pco2:RI(38,42),ag:12+da,
+  vig:`Varón de ${RI(20,35)} años diabético con vómitos de 5 días. «La gasometría es normal, puede irse a casa», dice el residente. Glucemia 480.`,extra:[['Glucosa','480 mg/dl'],['Cetonemia','5,2 mmol/l']]}},acc:a=>a.prim==='normal'&&a.agK==='high'&&a.delta==='+malk'});
+
+function makeCase(level){
+  const pool=T.filter(t=>level===4?t.lv>=3:t.lv<=level&&t.lv>=Math.max(1,level-1));
+  for(let tries=0;tries<200;tries++){
+    const t=pick(pool), g=t.gen(), b=nrm();
+    const v={pco2:Math.round(g.pco2),hco3:Math.round(g.hco3),na:b.na,alb:g.alb!=null?g.alb:b.alb,k:g.k||b.k};
+    v.cl=v.na-g.ag-v.hco3; v.ph=+phOf(v.hco3,v.pco2).toFixed(2);
+    if(g.pao2){const m=/(\d+) años/.exec(g.vig);v.pao2=g.pao2;v.fio2=g.fio2;v.age=m?+m[1]:g.age}
+    else{v.fio2=0.21;v.age=40;v.pao2=Math.round(0.21*713-v.pco2/0.8-RI(8,12))}
+    if(v.ph<6.85||v.ph>7.72||v.hco3<4)continue;
+    const a=analyze(v), s={prim:a.steps.prim.ans,comp:a.steps.comp&&a.steps.comp.ans,agK:a.steps.ag&&a.steps.ag.ans,delta:a.steps.delta&&a.steps.delta.ans,aa:a.steps.aa&&a.steps.aa.ans};
+    if(!t.acc(s))continue;
+    if(level===1&&a.steps.ph.ans==='norm')continue;
+    // pasos a preguntar según nivel
+    let ks=['ph','prim'];
+    if(level>=2&&a.steps.comp)ks.push('comp');
+    if(level>=3&&a.steps.ag)ks.push('ag');
+    if(level>=3&&a.steps.delta)ks.push('delta');
+    if(level>=4&&g.pao2&&a.steps.aa)ks.push('aa');
+    const okx=x=>x!==t&&!(t.ex&&x.ex===t.ex);const same=T.filter(x=>okx(x)&&x.cat===t.cat).map(x=>x.dx), other=T.filter(x=>okx(x)&&x.cat!==t.cat).map(x=>x.dx);
+    const dis=[...new Set([...same.sort(()=>Math.random()-.5).slice(0,2),...other.sort(()=>Math.random()-.5)])].slice(0,3);
+    return{t,v,g,a,ks,dxOpts:[t.dx,...dis].sort(()=>Math.random()-.5),showAA:level>=4&&!!g.pao2};
+  }
+  return makeCase(Math.max(1,level-1));
+}
+
+
+/* ===== Videos animados: escenas dibujadas en canvas (960×540 virtual) ===== */
+const VC={bg:'#140f17',panel:'#211926',ink:'#f5eef2',dim:'#a39aa6',co2:'#7fa8ff',h:'#ff5a6e',hco3:'#2ccbbb',h2o:'#a7d6ff',nh:'#f4b84c',po4:'#c79dff',acid:'#b07cff',line:'#3d3344',lung:'#f29aa8',na:'#d9d2cf'};
+let X;
+const IM={};['rbc.png','lungs.png','alveoli.png','kidney.png','nephron.png','cell_prox.jpg','cell_col.jpg','cell_round.png','bg_blood.jpg','bg_tissue.jpg'].forEach(f=>{const i=new Image();i.onload=()=>{window.__vredraw&&window.__vredraw()};i.src='img-gaso/'+f;IM[f.split('.')[0]]=i});
+const ok=n=>IM[n]&&IM[n].complete&&IM[n].naturalWidth>0;
+function img(n,x,y,w,h,a=1){if(!ok(n)||a<=0)return false;X.save();X.globalAlpha=a;X.drawImage(IM[n],x,y,w,h);X.restore();return true}
+function rbcAt(x,y,s,rot,tilt,a=1){if(!ok('rbc'))return;X.save();X.globalAlpha=a;X.translate(x,y);X.rotate(rot);X.scale(1,tilt);X.drawImage(IM.rbc,-s/2,-s/2,s,s);X.restore()}
+function rbcFlow(T,n,x0,x1,y0,y1,a=.8,sp=.05){for(let i=0;i<n;i++){const f=(T*sp*(1+(i%3)*.25)+i*.618)%1,y=y0+((i*.37)%1)*(y1-y0);rbcAt(L(x0,x1,f),y+Math.sin(T+i)*6,34+(i%4)*8,T*.3+i,.35+.6*Math.abs(Math.sin(T*.4+i)),a*Math.min(1,f*6,(1-f)*6))}}
+const cl=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)), E=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2, seg=(t,a,b)=>cl((t-a)/(b-a)), L=(a,b,t)=>a+(b-a)*t;
+function txt(s,x,y,o={}){X.save();X.globalAlpha=o.a??1;X.fillStyle=o.c||VC.ink;X.font=`${o.w||600} ${o.s||18}px Archivo,system-ui,sans-serif`;X.textAlign=o.al||'left';X.textBaseline=o.bl||'middle';X.shadowColor='rgba(0,0,0,.75)';X.shadowBlur=5;X.fillText(s,x,y);X.restore()}
+function wrap(s,x,y,mw,lh,o={}){X.font=`${o.w||500} ${o.s||17}px Archivo,system-ui,sans-serif`;const w=s.split(' ');let line='',yy=y;for(const t of w){const tt=line?line+' '+t:t;if(X.measureText(tt).width>mw&&line){txt(line,x,yy,o);line=t;yy+=lh}else line=tt}txt(line,x,yy,o)}
+function mol(x,y,lab,c,r=22,a=1){if(a<=0)return;X.save();X.globalAlpha=a;X.shadowColor='rgba(0,0,0,.55)';X.shadowBlur=r*.6;X.shadowOffsetY=r*.25;X.beginPath();X.arc(x,y,r,0,7);X.fillStyle=c;X.fill();X.shadowColor='transparent';
+  const g=X.createRadialGradient(x-r*.35,y-r*.4,r*.05,x,y,r);g.addColorStop(0,'rgba(255,255,255,.75)');g.addColorStop(.35,'rgba(255,255,255,.08)');g.addColorStop(.8,'rgba(0,0,0,.05)');g.addColorStop(1,'rgba(0,0,0,.38)');X.fillStyle=g;X.fill();X.restore();
+  txt(lab,x,y+1,{c:'#fff',s:r>18?Math.min(15,r*.68):Math.max(10,r*.75),w:800,al:'center',a})}
+function arrow(x1,y1,x2,y2,c=VC.dim,w=2.5,a=1){if(a<=0)return;X.save();X.globalAlpha=a;X.strokeStyle=c;X.fillStyle=c;X.lineWidth=w;X.beginPath();X.moveTo(x1,y1);X.lineTo(x2,y2);X.stroke();const an=Math.atan2(y2-y1,x2-x1);X.beginPath();X.moveTo(x2,y2);X.lineTo(x2-12*Math.cos(an-.45),y2-12*Math.sin(an-.45));X.lineTo(x2-12*Math.cos(an+.45),y2-12*Math.sin(an+.45));X.fill();X.restore()}
+function rr(x,y,w,h,r,fill,stroke,a=1){X.save();X.globalAlpha=a;X.beginPath();X.roundRect(x,y,w,h,r);if(fill){X.fillStyle=fill;X.fill()}if(stroke){X.strokeStyle=stroke;X.lineWidth=2;X.stroke()}X.restore()}
+function phBar(x,y,w,ph,ghost){const g=X.createLinearGradient(x,0,x+w,0);g.addColorStop(0,'#ff3b55');g.addColorStop(.45,'#3ad29f');g.addColorStop(.55,'#3ad29f');g.addColorStop(1,'#5a8dff');
+  rr(x,y,w,14,7,g);const px=v=>x+cl((v-6.9)/1)*w;txt('6,9',x,y+32,{s:13,c:VC.dim,al:'center'});txt('7,4',x+w/2,y+32,{s:13,c:VC.dim,al:'center'});txt('7,9',x+w,y+32,{s:13,c:VC.dim,al:'center'});
+  if(ghost!=null&&Math.abs(ghost-ph)>.06){X.save();X.setLineDash([5,5]);X.strokeStyle=VC.dim;X.lineWidth=2;X.beginPath();X.moveTo(px(ghost),y-14);X.lineTo(px(ghost),y+26);X.stroke();X.restore();txt('sin tampones',px(ghost),y-24,{s:13,c:VC.dim,al:'center'})}
+  X.save();X.fillStyle=VC.ink;X.beginPath();X.moveTo(px(ph),y-4);X.lineTo(px(ph)-9,y-20);X.lineTo(px(ph)+9,y-20);X.fill();X.restore();txt('pH '+ph.toFixed(2).replace('.',','),px(ph),y-36,{s:20,w:800,al:'center'})}
+function gauge(x,y,h,lab,v,mn,mx,c,fmt){rr(x-18,y,36,h,18,VC.panel,VC.line);const f=cl((v-mn)/(mx-mn));rr(x-12,y+h-6-(h-12)*f,24,(h-12)*f,12,c);txt(lab,x,y+h+22,{s:15,c:VC.dim,al:'center'});txt(fmt?fmt(v):Math.round(v)+'',x,y-18,{s:20,w:800,al:'center'})}
+function lungs(cx,cy,s,inf,a=1){const kk=1+.07*inf;if(img('lungs',cx-125*s*kk,cy-118*s-6*inf*s,250*s*kk,266*s*kk,a))return;X.save();X.globalAlpha=a;X.strokeStyle=VC.lung;X.lineWidth=5;X.beginPath();X.moveTo(cx,cy-110*s);X.lineTo(cx,cy-40*s);X.moveTo(cx,cy-40*s);X.lineTo(cx-30*s,cy-15*s);X.moveTo(cx,cy-40*s);X.lineTo(cx+30*s,cy-15*s);X.stroke();
+  const k=1+.16*inf;for(const d of[-1,1]){X.beginPath();X.ellipse(cx+d*62*s,cy+28*s,48*s*k,82*s*k,d*.12,0,7);X.fillStyle='rgba(242,154,168,.22)';X.fill();X.stroke()}X.restore()}
+function kidney(x,y,s=1,a=1){if(img('kidney',x-52*s,y-68*s,98*s,131*s,a))return;X.save();X.globalAlpha=a;X.translate(x,y);X.scale(s,s);X.beginPath();X.moveTo(0,-50);X.bezierCurveTo(50,-60,60,40,10,55);X.bezierCurveTo(-30,65,-45,25,-20,8);X.bezierCurveTo(-8,0,-8,-8,-20,-16);X.bezierCurveTo(-45,-35,-30,-48,0,-50);X.fillStyle='rgba(200,80,90,.35)';X.fill();X.strokeStyle='#e0707e';X.lineWidth=4;X.stroke();X.restore()}
+function stream(n,x0,y0,x1,y1,T,sp,lab,c,r=16,a=1){for(let i=0;i<n;i++){const f=(T*sp+i/n)%1;mol(L(x0,x1,f),L(y0,y1,f)+Math.sin(f*9+i)*6,lab,c,r,a*Math.min(1,f*5,(1-f)*5))}}
+function cellLayout(title,cellLab,T=0){const im=/α/.test(cellLab)?'cell_col':'cell_prox';if(img(im,0,0,960,540)){for(let i=0;i<5;i++)rbcAt(735+(i%2)*95,((T*28+i*120)%660)-60,58,i+T*.2,.45+.3*(i%2),.9)}else{rr(40,70,280,410,16,'rgba(167,214,255,.07)');rr(330,70,300,410,26,VC.panel,VC.line);rr(640,70,280,410,16,'rgba(255,90,110,.08)')}rr(0,0,960,60,0,'rgba(10,6,12,.55)');
+  txt('Luz tubular (orina)',180,100,{s:16,w:800,c:'#fff',al:'center'});txt(cellLab,480,100,{s:16,w:800,c:'#fff',al:'center'});txt('Sangre',780,100,{s:16,w:800,c:'#fff',al:'center'});txt(title,480,40,{s:22,w:800,al:'center'})}
+function tport(x,y,lab,c=VC.ink){X.save();X.beginPath();X.arc(x,y,15,0,7);X.fillStyle='#3b2f42';X.fill();X.strokeStyle=c;X.lineWidth=2.5;X.stroke();X.restore();txt(lab,x,y+32,{s:14,w:800,c:'#fff',al:'center'})}
+const NEPH=[[180,150],[260,120],[330,170],[400,140],[420,190],[420,450],[480,450],[480,220],[560,190],[640,215],[700,200],[700,500]];
+function along(pts,f){let tot=0,ls=[];for(let i=1;i<pts.length;i++){const l=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);ls.push(l);tot+=l}let d=f*tot;for(let i=0;i<ls.length;i++){if(d<=ls[i]){const u=d/ls[i];return[L(pts[i][0],pts[i+1][0],u),L(pts[i][1],pts[i+1][1],u)]}d-=ls[i]}return pts[pts.length-1]}
+function nephron(a=1){if(!img('nephron',0,0,960,540,a)){X.save();X.globalAlpha=a;X.beginPath();X.arc(140,150,42,0,7);X.fillStyle='rgba(255,90,110,.25)';X.fill();X.strokeStyle='#e0707e';X.lineWidth=3;X.stroke();
+  X.lineJoin='round';X.lineCap='round';X.strokeStyle='#4a3d52';X.lineWidth=22;X.beginPath();NEPH.forEach((p,i)=>i?X.lineTo(...p):X.moveTo(...p));X.stroke();X.strokeStyle='#2a2030';X.lineWidth=12;X.stroke();X.restore()}
+  txt('Glomérulo',140,212,{s:14,c:VC.dim,al:'center',a});txt('Túbulo proximal',300,82,{s:14,c:VC.dim,al:'center',a});txt('Asa de Henle',450,490,{s:14,c:VC.dim,al:'center',a});txt('Distal',580,160,{s:14,c:VC.dim,al:'center',a});txt('Colector',700,525,{s:14,c:VC.dim,al:'center',a})}
+
+const VIDEOS=[
+{id:'tampon',bg:'bg_blood',t:'1 · El tampón bicarbonato',s:[
+ {d:9,c:'Cada día el metabolismo produce unos 15.000 mmol de CO₂, el ácido volátil, y alrededor de 1 mmol por kilo de ácidos fijos. Sin defensas, el pH caería en minutos.',f(t,T){
+   if(!img('cell_round',90,110,280,280)){X.beginPath();X.arc(230,250,130,0,7);X.fillStyle='rgba(242,154,168,.12)';X.fill()}
+   txt('Célula',230,400,{s:20,w:800,al:'center'});txt('Plasma',780,80,{s:18,c:VC.dim,al:'center'});
+   stream(6,360,200,880,150,T,.22,'CO₂',VC.co2,22);stream(4,360,300,880,350,T,.15,'H⁺',VC.h,18);
+   txt('CO₂ ≈ 15.000 mmol/día',620,110,{s:16,c:VC.co2});txt('Ácidos fijos ≈ 1 mmol/kg/día',620,400,{s:16,c:VC.h});
+   phBar(300,470,560,7.40,L(7.40,6.95,E(seg(t,.35,1))))}},
+ {d:10,c:'En la sangre, la anhidrasa carbónica hidrata el CO₂: CO₂ + H₂O ⇄ H₂CO₃ ⇄ H⁺ + HCO₃⁻. Es un sistema abierto: el pulmón controla un extremo y el riñón el otro.',f(t,T){
+   rbcFlow(T,7,-40,1000,60,330,.55);const y=200,p=(Math.sin(T*1.6)+1)/2;mol(120,y,'CO₂',VC.co2,32);txt('+',185,y,{s:28,al:'center'});mol(250,y,'H₂O',VC.h2o,32);
+   arrow(300,y-8,400,y-8,VC.ink,2.5,.4+.6*p);arrow(400,y+8,300,y+8,VC.ink,2.5,1-.6*p);txt('anhidrasa carbónica',350,y-44,{s:14,c:VC.dim,al:'center'});
+   mol(470,y,'H₂CO₃',VC.acid,40);arrow(530,y-8,620,y-8,VC.ink,2.5,.4+.6*p);arrow(620,y+8,530,y+8,VC.ink,2.5,1-.6*p);
+   mol(680,y,'H⁺',VC.h,28);txt('+',740,y,{s:28,al:'center'});mol(820,y,'HCO₃⁻',VC.hco3,36);
+   const a1=seg(t,.25,.45),a2=seg(t,.5,.7);lungs(185,410,.6,(Math.sin(T*1.5)+1)/2,a1);txt('Pulmón: regula la PaCO₂',185,520,{s:16,al:'center',a:a1});txt('minutos',185,350-70,{s:14,c:VC.dim,al:'center',a:a1});
+   kidney(820,400,1,a2);txt('Riñón: regula el HCO₃⁻',820,500,{s:16,al:'center',a:a2});txt('días',820,330,{s:14,c:VC.dim,al:'center',a:a2})}},
+ {d:10,c:'Cuando entra un ácido fijo, el bicarbonato capta el H⁺, forma ácido carbónico y este se convierte en CO₂, que se exhala. El pH apenas se mueve; el precio es gastar bicarbonato.',f(t,T){rbcFlow(T,6,250,1000,40,420,.45);
+   for(let i=0;i<10;i++)mol(430+(i%5)*40,270+Math.floor(i/5)*44,'HCO₃⁻',VC.hco3,18,i<10-Math.round(4*seg(t,.1,.9))?1:.15);
+   for(let i=0;i<4;i++){const t0=.08+i*.18,u=seg(t,t0,t0+.2),u2=seg(t,t0+.2,t0+.42);if(u<1)mol(L(520+i*30,600-i*20,0),L(30,250,E(u)),'H⁺',VC.h,18,u>0?1:0);
+     else if(u2<1){mol(L(560,120,E(u2)),L(250,250,E(u2)),u2<.3?'H₂CO₃':'CO₂',u2<.3?VC.acid:VC.co2,22)}}
+   lungs(110,300,.55,(Math.sin(T*1.6)+1)/2);txt('se exhala',110,410,{s:14,c:VC.dim,al:'center'});
+   txt('HCO₃⁻: '+Math.round(24-4*seg(t,.1,.9))+' mEq/l',540,180,{s:20,w:800,c:VC.hco3,al:'center'});
+   phBar(300,470,560,L(7.40,7.34,seg(t,.1,.9)),L(7.40,6.98,seg(t,.1,.9)))}},
+ {d:9,c:'El pH no depende de cada valor por separado, sino del cociente bicarbonato dividido entre 0,03 por la PaCO₂. Con 24 y 40, el cociente es 20 a 1 y el pH es 7,40.',f(t){
+   balance(0,24,40,seg(t,0,.5));txt('24 / (0,03 × 40) = 24 / 1,2 = 20 : 1',480,60,{s:24,w:800,al:'center',a:seg(t,.4,.6)});txt('pH = 6,1 + log 20 = 7,40',480,100,{s:20,c:VC.dim,al:'center',a:seg(t,.6,.8)})}},
+ {d:12,c:'Si cae el bicarbonato, el pH cae. Si después el pulmón baja la PaCO₂ en proporción, el cociente se recupera y el pH vuelve hacia la normalidad: eso es la compensación.',f(t){
+   const h=L(24,12,E(seg(t,.05,.45))),p=L(40,26,E(seg(t,.55,.95))),ph=6.1+Math.log10(h/(.03*p));balance(cl((Math.log10(h/(.03*p))-Math.log10(20))*1.1,-.32,.32),h,p,1);
+   txt(`pH = 6,1 + log ( ${h.toFixed(0)} / (0,03 × ${p.toFixed(0)}) ) = ${ph.toFixed(2).replace('.',',')}`,480,60,{s:22,w:800,al:'center'});
+   txt(t<.5?'1 · Cae el HCO₃⁻: acidosis metabólica':'2 · El pulmón baja la PaCO₂: compensación',480,100,{s:17,c:t<.5?VC.h:VC.co2,al:'center'});phBar(300,480,560,ph)}},
+ {d:9,c:'Por eso cualquier trastorno primario provoca un cambio en la misma dirección del otro componente. La compensación casi nunca normaliza del todo el pH.',f(t){
+   const B=[['Acidosis metabólica','↓ HCO₃⁻','↓ PaCO₂',VC.h],['Alcalosis metabólica','↑ HCO₃⁻','↑ PaCO₂',VC.hco3],['Acidosis respiratoria','↑ PaCO₂','↑ HCO₃⁻',VC.co2],['Alcalosis respiratoria','↓ PaCO₂','↓ HCO₃⁻',VC.h2o]];
+   B.forEach((b,i)=>{const a=seg(t,i*.18,i*.18+.2),x=i%2?500:60,y=i<2?60:290;rr(x,y,400,200,18,VC.panel,b[3],a);txt(b[0],x+200,y+45,{s:22,w:800,al:'center',a,c:b[3]});
+     txt('Primario: '+b[1],x+200,y+100,{s:20,al:'center',a});txt('Respuesta: '+b[2],x+200,y+145,{s:20,al:'center',a,c:VC.dim})})}}]},
+{id:'pulmon',bg:'bg_tissue',t:'2 · El pulmón',s:[
+ {d:10,c:'La ventilación alveolar elimina el CO₂. La PaCO₂ es inversamente proporcional a la ventilación: si la ventilación se duplica, la PaCO₂ cae a la mitad.',f(t,T){
+   const br=(Math.sin(T*Math.PI/2)+1)/2;lungs(240,290,1,br);const ex=Math.cos(T*Math.PI/2)<0;for(let i=0;i<5;i++){const f=((T/4)+i/5)%1;mol(240+Math.sin(i*3)*14,170-f*150,'CO₂',VC.co2,15,(ex?1:.3)*Math.min(1,(1-f)*4))}
+   if(img('alveoli',330,330,130,130,.95)){txt('alvéolos',395,475,{s:13,c:VC.dim,al:'center'})}const gx=540,gy=110,gw=360,gh=320;X.strokeStyle=VC.line;X.lineWidth=2;X.beginPath();X.moveTo(gx,gy);X.lineTo(gx,gy+gh);X.lineTo(gx+gw,gy+gh);X.stroke();
+   X.strokeStyle=VC.co2;X.lineWidth=3;X.beginPath();for(let va=2;va<=10;va+=.1){const px=gx+(va-1)/9*gw,py=gy+gh-(160/va)/90*gh;va===2?X.moveTo(px,py):X.lineTo(px,py)}X.stroke();
+   const va=L(2,8,E(seg(t,.15,.9))),pc=160/va;mol(gx+(va-1)/9*gw,gy+gh-pc/90*gh,'',VC.ink,9);
+   txt('Ventilación alveolar (l/min)',gx+gw/2,gy+gh+30,{s:14,c:VC.dim,al:'center'});txt('PaCO₂',gx-10,gy-16,{s:14,c:VC.dim});
+   txt(`VA ${va.toFixed(1).replace('.',',')} l/min → PaCO₂ ${Math.round(pc)} mmHg`,gx+gw/2,gy-40,{s:19,w:800,al:'center'})}},
+ {d:11,c:'Los quimiorreceptores centrales del bulbo detectan el H⁺ del líquido cefalorraquídeo, que refleja el CO₂. Los periféricos, carotídeos y aórticos, responden al H⁺ y a la hipoxemia.',f(t,T){
+   rr(90,60,230,110,40,'rgba(199,157,255,.18)',VC.po4);txt('Bulbo raquídeo',205,100,{s:18,w:800,al:'center'});txt('H⁺ del LCR (≈ CO₂)',205,135,{s:14,c:VC.dim,al:'center'});
+   rr(90,290,230,90,30,'rgba(255,90,110,.15)',VC.h,seg(t,.3,.45));txt('Cuerpo carotídeo',205,322,{s:17,w:800,al:'center',a:seg(t,.3,.45)});txt('H⁺ y PaO₂ < 60',205,352,{s:14,c:VC.dim,al:'center',a:seg(t,.3,.45)});
+   lungs(700,300,1,(Math.sin(T*L(1.4,3,t))+1)/2);txt('Más frecuencia y profundidad',700,500,{s:16,al:'center'});
+   for(let i=0;i<3;i++){const f=(T*.5+i/3)%1;mol(L(320,620,f),L(115,230,f),'',VC.po4,7);const g=(T*.5+i/3+.15)%1;mol(L(205,205,g),L(290,170,g),'',VC.h,6,seg(t,.35,.5))}
+   arrow(320,115,620,230,VC.po4,2,.4);arrow(205,290,205,175,VC.h,2,.4*seg(t,.35,.5))}},
+ {d:10,c:'Hipoventilación, por opioides, EPOC o fatiga muscular: el CO₂ se acumula, sube la PaCO₂ y cae el pH. Es la acidosis respiratoria.',f(t,T){
+   lungs(220,260,.9,(Math.sin(T*.7)+1)/2*.35);vessel(T,Math.round(L(8,22,t)));const p=L(40,72,E(t)),h=L(24,27,E(t));
+   gauge(720,120,240,'PaCO₂',p,20,90,VC.co2);gauge(840,120,240,'pH',6.1+Math.log10(h/(.03*p)),6.9,7.8,VC.h,v=>v.toFixed(2).replace('.',','));txt('Acidosis respiratoria',780,60,{s:20,w:800,al:'center',c:VC.h,a:seg(t,.5,.7)})}},
+ {d:9,c:'Hiperventilación, por ansiedad, hipoxemia, sepsis o embolia pulmonar: se lava el CO₂, baja la PaCO₂ y sube el pH. Es la alcalosis respiratoria.',f(t,T){
+   lungs(220,260,.9,(Math.sin(T*4.5)+1)/2);vessel(T,Math.round(L(8,2,t)));const p=L(40,24,E(t)),h=L(24,21,E(t));
+   gauge(720,120,240,'PaCO₂',p,20,90,VC.co2);gauge(840,120,240,'pH',6.1+Math.log10(h/(.03*p)),6.9,7.8,VC.h2o,v=>v.toFixed(2).replace('.',','));txt('Alcalosis respiratoria',780,60,{s:20,w:800,al:'center',c:VC.h2o,a:seg(t,.5,.7)})}},
+ {d:12,c:'Ante una acidosis metabólica el pulmón responde en minutos con la respiración de Kussmaul, y la respuesta se completa en 12 a 36 horas. PaCO₂ esperada: 1,5 por el bicarbonato más 8, más o menos 2. Es la fórmula de Winter.',f(t,T){
+   lungs(220,270,1,(Math.sin(T*2.2)+1)/2);mol(220,470,'HCO₃⁻ 12',VC.hco3,42);const p=L(40,26,E(seg(t,.1,.8)));
+   gauge(720,120,240,'PaCO₂',p,20,90,VC.co2);gauge(840,120,240,'pH',6.1+Math.log10(12/(.03*p)),6.9,7.8,VC.h,v=>v.toFixed(2).replace('.',','));
+   rr(420,400,500,90,14,VC.panel,VC.line,seg(t,.5,.65));txt('PaCO₂ esperada = 1,5 × 12 + 8 = 26 ± 2',670,445,{s:20,w:800,al:'center',a:seg(t,.5,.65)})}},
+ {d:10,c:'Límites: la compensación respiratoria rara vez baja la PaCO₂ de 15 mmHg ni la sube de 65. Si la PaCO₂ no es la esperada, hay un segundo trastorno.',f(t){
+   const x0=100,w=760,px=v=>x0+v/90*w;rr(x0,260,w,26,13,VC.panel);rr(px(15),260,px(65)-px(15),26,13,'rgba(127,168,255,.45)',null,seg(t,.1,.35));
+   [0,15,40,65,90].forEach(v=>txt(v+'',px(v),310,{s:15,c:VC.dim,al:'center'}));txt('PaCO₂ (mmHg)',x0+w/2,350,{s:15,c:VC.dim,al:'center'});
+   txt('Rango alcanzable por compensación',px(40),220,{s:18,w:800,al:'center',a:seg(t,.2,.4)});arrow(px(40),245,px(40),262,VC.ink,2,seg(t,.2,.4));
+   rr(160,400,640,70,14,VC.panel,VC.h,seg(t,.55,.7));txt('PaCO₂ fuera de lo esperado = otro trastorno respiratorio',480,435,{s:19,w:800,al:'center',a:seg(t,.55,.7)})}}]},
+{id:'rinon',bg:'bg_tissue',t:'3 · El riñón',s:[
+ {d:10,c:'El glomérulo filtra unos 180 litros al día. Con 24 mEq por litro de bicarbonato, son más de 4.000 mEq diarios que hay que recuperar casi por completo.',f(t,T){
+   nephron();for(let i=0;i<14;i++){const f=(T*.12+i/14)%1,q=f*.45;const[x,y]=along(NEPH,q);const up=seg(f,.55,1);mol(x,y-up*60,'',VC.hco3,8,f<.55?1:1-up)}
+   txt('180 l/día × 24 mEq/l',830,180,{s:22,w:800,al:'center',a:seg(t,.2,.4)});txt('≈ 4.300 mEq/día filtrados',830,220,{s:18,c:VC.hco3,al:'center',a:seg(t,.3,.5)});
+   txt('Se reabsorbe > 99 %',830,300,{s:20,w:800,al:'center',a:seg(t,.55,.75)})}},
+ {d:13,c:'En el túbulo proximal se recupera el 85 %. La célula secreta H⁺ por el intercambiador sodio-hidrógeno. En la luz, H⁺ más bicarbonato da CO₂ y agua. El CO₂ entra, se regenera el bicarbonato y sale a la sangre junto al sodio.',f(t,T){
+   cellLayout('Túbulo proximal','Célula tubular',T);tport(330,190,'NHE3');tport(630,330,'NBCe1');txt('AC IV',200,300,{s:14,w:800,c:'#fff',al:'center'});txt('AC II',480,370,{s:14,w:800,c:'#fff',al:'center'});
+   const u=(T/5)%1,a=seg(u,0,.22),b=seg(u,.22,.42),c=seg(u,.42,.62),d=seg(u,.62,.9);
+   if(u<.22){mol(L(470,220,E(a)),190,'H⁺',VC.h,18);mol(L(220,470,E(a)),230,'Na⁺',VC.na,15)}
+   mol(L(90,200,E(seg(u,0,.25))),260,'HCO₃⁻',VC.hco3,24,u<.3?1:0);
+   if(u>=.22&&u<.42)mol(210,250,b<.5?'H₂CO₃':'CO₂',b<.5?VC.acid:VC.co2,24);
+   if(u>=.42&&u<.62)mol(L(210,470,E(c)),L(250,320,E(c)),'CO₂',VC.co2,22);
+   if(u>=.62){mol(L(480,470,E(d)),L(320,200,E(d)),'H⁺',VC.h,18);mol(L(480,800,E(d)),330,'HCO₃⁻',VC.hco3,24)}
+   txt('≈ 85 % del HCO₃⁻ filtrado',780,450,{s:16,c:VC.hco3,al:'center'})}},
+ {d:12,c:'En el túbulo colector, la célula intercalada alfa bombea H⁺ a la luz con una H⁺-ATPasa, estimulada por la aldosterona. Por cada H⁺ excretado nace un bicarbonato nuevo que pasa a la sangre.',f(t,T){
+   cellLayout('Túbulo colector','Célula intercalada α',T);tport(330,200,'H⁺-ATPasa',VC.nh);txt('ATP',330,201,{s:11,w:800,al:'center',c:VC.nh});tport(630,300,'AE1 (HCO₃⁻/Cl⁻)');
+   const u=(T/4)%1,a=seg(u,0,.3),b=seg(u,.3,.85);mol(480,300,a<1?'CO₂+H₂O':'',VC.co2,30,1-a*.6);
+   if(u>=.3){mol(L(470,180,E(b)),L(270,200,E(b)),'H⁺',VC.h,18);mol(L(500,800,E(b)),300,'HCO₃⁻',VC.hco3,24);mol(L(800,520,E(b)),350,'Cl⁻',VC.na,14)}
+   txt('Aldosterona',780,180,{s:17,w:800,c:VC.nh,al:'center',a:seg(t,.4,.55)});arrow(720,195,650,215,VC.nh,2,seg(t,.4,.55));
+   txt('HCO₃⁻ nuevo',800,260,{s:15,c:VC.hco3,al:'center'})}},
+ {d:12,c:'El H⁺ libre no puede salir solo: la orina no baja de pH 4,5. Viaja unido a tampones urinarios: el fosfato, que forma la acidez titulable, y sobre todo el amonio.',f(t,T){
+   txt('Acidez titulable',240,70,{s:22,w:800,al:'center',c:VC.po4});txt('Amonio',720,70,{s:22,w:800,al:'center',c:VC.nh});X.strokeStyle=VC.line;X.lineWidth=2;X.beginPath();X.moveTo(480,60);X.lineTo(480,400);X.stroke();
+   const a=seg(t,.08,.35),b=seg(t,.4,.7);mol(240,220,a<1?'HPO₄²⁻':'H₂PO₄⁻',VC.po4,36);mol(L(120,200,E(a)),L(140,200,E(a)),'H⁺',VC.h,18,a<1?1:0);
+   mol(720,220,b<1?'NH₃':'NH₄⁺',VC.nh,32);mol(L(840,760,E(b)),L(140,200,E(b)),'H⁺',VC.h,18,b<1?1:0);
+   txt('Atrapado en la luz: no vuelve a la célula',720,300,{s:15,c:VC.dim,al:'center',a:seg(t,.7,.8)});
+   phBar(300,470,560,L(6.2,5.3,t));txt('pH urinario mínimo ≈ 4,5',480,425,{s:16,c:VC.dim,al:'center'})}},
+ {d:13,c:'Amoniogénesis: el túbulo proximal metaboliza glutamina en dos amonios y dos bicarbonatos nuevos. En la acidosis crónica la producción de amonio se multiplica en 3 a 5 días: es la compensación renal más potente.',f(t,T){
+   const a=E(seg(t,.15,.45));mol(260,250,'Glutamina',VC.nh,a<1?48:0);
+   if(a>0)for(let i=0;i<2;i++){mol(L(260,80,a),250-40+i*80,'NH₄⁺',VC.nh,24);mol(L(260,440,a),250-40+i*80,'HCO₃⁻',VC.hco3,26)}
+   txt('→ orina',80,370,{s:15,c:VC.dim,al:'center',a});txt('→ sangre',440,370,{s:15,c:VC.dim,al:'center',a});
+   const bx=560,by=420;txt('Excreción de NH₄⁺',bx+170,90,{s:17,w:800,al:'center'});for(let d=0;d<=5;d++){const v=[1,1.6,2.6,3.6,4.4,5][d],sh=seg(t,.4+d*.08,.5+d*.08);rr(bx+d*58,by-v*55*sh,40,v*55*sh,6,VC.nh);txt('día '+d,bx+20+d*58,by+20,{s:12,c:VC.dim,al:'center'})}
+   txt('×5',bx+310,by-300,{s:22,w:800,c:VC.nh,al:'center',a:seg(t,.85,.95)})}},
+ {d:14,c:'Cuando el riñón falla aparecen las acidosis tubulares: la proximal no recupera bicarbonato; la distal tipo 1 no secreta H⁺, con pH urinario mayor de 5,5; la tipo 4, por falta de aldosterona, produce poco amonio y potasio alto. Un anion gap urinario positivo delata la falta de amonio.',f(t){
+   nephron(.8);const M=[[300,140,'Proximal (tipo 2): no recupera HCO₃⁻',.05],[590,205,'Distal (tipo 1): no secreta H⁺ · pH orina > 5,5',.3],[700,380,'Tipo 4: ↓ aldosterona · ↓ NH₄⁺ · K⁺ ↑',.55]];
+   M.forEach((m,i)=>{const a=seg(t,m[3],m[3]+.12);txt('✕',m[0],m[1],{s:34,w:900,c:VC.h,al:'center',a});rr(740,60+i*92,210,78,12,VC.panel,VC.h,a);wrap(m[2],752,86+i*92,190,22,{s:15,a})});
+   rr(60,440,640,70,12,VC.panel,VC.line,seg(t,.75,.85));txt('AG urinario = Na⁺ + K⁺ − Cl⁻',380,462,{s:18,w:800,al:'center',a:seg(t,.75,.85)});txt('positivo → poco NH₄⁺ (renal) · negativo → diarrea',380,490,{s:15,c:VC.dim,al:'center',a:seg(t,.8,.9)})}}]},
+{id:'tiempo',t:'4 · Tres defensas, tres tiempos',s:[
+ {d:10,c:'Ante una carga ácida actúan tres defensas en secuencia. Los tampones, en segundos: limitan la caída del pH pero no eliminan el ácido.',f(t){timeline(seg(t,.1,.9)*.25,0)}},
+ {d:9,c:'El pulmón actúa en minutos a horas: ajusta la PaCO₂ y recupera buena parte del pH. Su respuesta se completa en 12 a 36 horas.',f(t){timeline(.25+seg(t,.05,.9)*.4,1)}},
+ {d:9,c:'El riñón tarda días, de 2 a 5: excreta el ácido fijo y regenera el bicarbonato. Es el único que corrige de verdad el trastorno metabólico.',f(t){timeline(.65+seg(t,.05,.9)*.35,2)}},
+ {d:13,c:'Por eso los trastornos respiratorios son agudos o crónicos. En la acidosis respiratoria el bicarbonato sube 1 por cada 10 mmHg de PaCO₂ si es aguda, y 4 si es crónica. En la alcalosis respiratoria baja 2 si es aguda y 5 si es crónica.',f(t){
+   const gx=120,gy=70,gw=560,gh=380,px=p=>gx+(p-15)/75*gw,py=h=>gy+gh-(h-10)/35*gh;X.strokeStyle=VC.line;X.lineWidth=2;X.beginPath();X.moveTo(gx,gy);X.lineTo(gx,gy+gh);X.lineTo(gx+gw,gy+gh);X.stroke();
+   txt('PaCO₂',gx+gw/2,gy+gh+30,{s:14,c:VC.dim,al:'center'});txt('HCO₃⁻',gx-50,gy+10,{s:14,c:VC.dim});[20,40,60,80].forEach(p=>txt(p+'',px(p),gy+gh+12,{s:12,c:VC.dim,al:'center'}));[10,20,30,40].forEach(h=>txt(h+'',gx-14,py(h),{s:12,c:VC.dim,al:'right'}));
+   const ln=(k,p0,p1,c,a,dash)=>{X.save();X.globalAlpha=a;if(dash)X.setLineDash([8,6]);X.strokeStyle=c;X.lineWidth=4;X.beginPath();X.moveTo(px(p0),py(24+k*(p0-40)));X.lineTo(px(p1),py(24+k*(p1-40)));X.stroke();X.restore()};
+   const a=seg(t,.05,.3),b=seg(t,.3,.55);ln(.1,40,90,VC.co2,a);ln(.4,40,80,VC.co2,a,1);ln(.2,15,40,VC.h2o,b);ln(.5,18,40,VC.h2o,b,1);
+   mol(px(40),py(24),'',VC.ink,8);const m=E(seg(t,.6,.95));mol(px(70),py(L(27,36,m)),'',VC.co2,11);
+   txt(m<.5?'PaCO₂ 70: aguda':'… a los 3–5 días: crónica',px(70)+20,py(L(27,36,m))-20,{s:16,w:800});
+   [['Acidosis resp. aguda: +1 / 10 mmHg',VC.co2,0],['Acidosis resp. crónica: +4 / 10 mmHg',VC.co2,1],['Alcalosis resp. aguda: −2 / 10 mmHg',VC.h2o,0],['Alcalosis resp. crónica: −5 / 10 mmHg',VC.h2o,1]].forEach((r,i)=>{const aa=i<2?a:b;X.save();X.globalAlpha=aa;X.strokeStyle=r[1];X.lineWidth=4;if(r[2])X.setLineDash([8,6]);X.beginPath();X.moveTo(720,120+i*50);X.lineTo(760,120+i*50);X.stroke();X.restore();wrap(r[0],770,120+i*50,180,18,{s:13,a:aa})})}},
+ {d:13,c:'El método, en cinco pasos: uno, el pH. Dos, el trastorno primario. Tres, ¿la compensación es la esperada? Cuatro, el anion gap, corregido por albúmina. Cinco, el delta gap. Y siempre: ¿encaja con la clínica?',f(t){
+   const S=['¿Acidemia o alcalemia?','¿Trastorno primario: HCO₃⁻ o PaCO₂?','¿Compensación esperada? (Winter, 0,1/0,4…)','Anion gap, corregido por albúmina','Delta gap: ¿otro trastorno metabólico?'];
+   S.forEach((s,i)=>{const a=seg(t,i*.15,i*.15+.15);rr(140,40+i*88,680,70,14,VC.panel,VC.line,a);mol(185,75+i*88,String(i+1),[VC.h,VC.hco3,VC.co2,VC.nh,VC.po4][i],22,a);txt(s,225,75+i*88,{s:21,w:700,a})})}}]}];
+function vessel(T,n){const g=X.createLinearGradient(0,418,0,502);g.addColorStop(0,'#e8a0a8');g.addColorStop(.12,'#7a1220');g.addColorStop(.5,'#3c070e');g.addColorStop(.88,'#7a1220');g.addColorStop(1,'#e8a0a8');rr(60,418,560,84,42,g);X.save();X.beginPath();X.roundRect(64,424,552,72,36);X.clip();for(let i=0;i<9;i++){const f=(T*.06+i/9)%1;rbcAt(L(40,640,f),448+((i*37)%30),40,i+T*.4,.4+.4*((i*7)%5)/5,.95)}X.restore();for(let i=0;i<n;i++){const f=(T*.08+i/n)%1;mol(L(90,590,f),460+Math.sin(i*7+T)*12,'',VC.co2,8)}txt('Sangre arterial',340,510,{s:14,c:VC.dim,al:'center'})}
+function balance(ang,h,p,a){X.save();X.globalAlpha=a;X.fillStyle=VC.line;X.beginPath();X.moveTo(480,300);X.lineTo(440,420);X.lineTo(520,420);X.fill();X.translate(480,300);X.rotate(ang);
+  X.fillStyle=VC.dim;X.fillRect(-250,-5,500,10);X.restore();const lx=480-250*Math.cos(ang),ly=300-250*Math.sin(ang),rx=480+250*Math.cos(ang),ry=300+250*Math.sin(ang);
+  rr(lx-90,ly+10,180,14,7,VC.line,null,a);rr(rx-90,ry+10,180,14,7,VC.line,null,a);
+  const n=Math.round(h/3);for(let i=0;i<n;i++)rr(lx-80+(i%4)*42,ly-4-Math.floor(i/4)*26,38,22,5,VC.hco3,null,a);
+  rr(rx-60,ry-4-(p/40)*30,120,(p/40)*30+4,6,VC.co2,null,a);
+  txt(`HCO₃⁻ ${h.toFixed(0)}`,lx,ly+50,{s:18,w:800,c:VC.hco3,al:'center',a});txt('riñón',lx,ly+74,{s:14,c:VC.dim,al:'center',a});
+  txt(`0,03 × PaCO₂ ${p.toFixed(0)}`,rx,ry+50,{s:18,w:800,c:VC.co2,al:'center',a});txt('pulmón',rx,ry+74,{s:14,c:VC.dim,al:'center',a})}
+function timeline(f,stage){const gx=110,gy=90,gw=780,gh=300,py=ph=>gy+gh-(ph-6.95)/.5*gh;
+  const Z=[['Tampones',0,.25,VC.hco3],['Pulmón',.25,.65,VC.co2],['Riñón',.65,1,VC.nh]];Z.forEach((z,i)=>{rr(gx+z[1]*gw,gy,(z[2]-z[1])*gw,gh,0,z[3]+(i===stage?'33':'12'));txt(z[0],gx+(z[1]+z[2])/2*gw,gy-20,{s:18,w:800,c:z[3],al:'center',a:i<=stage?1:.4})});
+  ['segundos','minutos','horas','1 día','5 días'].forEach((s,i)=>txt(s,gx+[.04,.27,.5,.68,.97][i]*gw,gy+gh+22,{s:13,c:VC.dim,al:'center'}));
+  [7.0,7.2,7.4].forEach(v=>{txt(v.toFixed(1).replace('.',','),gx-12,py(v),{s:13,c:VC.dim,al:'right'})});
+  X.save();X.setLineDash([6,6]);X.strokeStyle=VC.dim;X.lineWidth=2;X.beginPath();X.moveTo(gx,py(7.4));X.lineTo(gx+gw,py(7.4));X.stroke();X.restore();
+  const ph=x=>x<.06?7.4-(x/.06)*.17:x<.25?7.23:x<.65?7.23+.09*E((x-.25)/.4):7.32+.08*E((x-.65)/.35);
+  X.save();X.setLineDash([3,7]);X.strokeStyle=VC.h;X.globalAlpha=.6;X.lineWidth=2;X.beginPath();X.moveTo(gx,py(7.4));X.lineTo(gx+.06*gw,py(7.0));X.lineTo(gx+gw,py(7.0));X.stroke();X.restore();
+  txt('sin tampones',gx+.15*gw,py(7.0)+18,{s:13,c:VC.h,al:'center'});
+  X.strokeStyle=VC.ink;X.lineWidth=4;X.beginPath();for(let x=0;x<=f;x+=.005)x?X.lineTo(gx+x*gw,py(ph(x))):X.moveTo(gx,py(ph(0)));X.stroke();mol(gx+f*gw,py(ph(f)),'',VC.ink,8);
+  txt('pH '+ph(f).toFixed(2).replace('.',','),gx+f*gw,py(ph(f))-26,{s:18,w:800,al:'center'})}
+
+/* ===== UI ===== */
+const $=id=>document.getElementById(id), num=s=>{const v=parseFloat(String(s).replace(',','.'));return isNaN(v)?null:v};
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let store={};try{store=JSON.parse(localStorage.getItem('gaso-v1')||'{}')}catch(e){}
+const save=()=>{try{localStorage.setItem('gaso-v1',JSON.stringify(store))}catch(e){}};
+
+function summarize(a){const s=a.steps,prim=s.prim.ans,out=[];let main=prim!=='normal'?PRIM[prim]:'';
+  if(s.comp){const c=s.comp.ans;if(c==='aguda')main+=' aguda';else if(c==='cronica')main+=' crónica';else if(c==='inter')main+=' aguda sobre crónica';}
+  if(s.ag&&(prim==='macid'||prim==='mixacid'))main+=s.ag.ans==='high'?' con anion gap elevado':' con anion gap normal (hiperclorémica)';
+  if(main)out.push(main);
+  if(s.ag&&s.ag.ans==='high'&&!(prim==='macid'||prim==='mixacid'))out.push('Acidosis metabólica con anion gap elevado'+(prim==='normal'?' (oculta por pH normal)':''));
+  if(s.comp&&s.comp.ans[0]==='+')out.push(COMP[s.comp.ans]);
+  if(s.delta&&s.delta.ans==='+malk'&&!out.includes(COMP['+malk']))out.push('Alcalosis metabólica asociada (delta gap)');
+  if(s.delta&&s.delta.ans==='+nagma')out.push('Acidosis hiperclorémica asociada (delta gap)');
+  if(s.aa&&s.aa.ans==='high')out.push('Gradiente A-a elevado');
+  return out.length?out.join(' + '):'Sin alteración ácido-base'}
+const cls=(v,lo,hi)=>v==null?'':v<lo?'lo':v>hi?'hi':'';
+const row=(k,v,c='')=>`<div class="r"><span>${k}</span><b class="${c}">${v}</b></div>`;
+
+/* ---------- Laboratorio / Davenport ---------- */
+const sv=$('davs'),sP=$('sP'),sH=$('sH');let LP={p:40,h:24},anim=null;
+const BANDS=[
+ {c:'#e0485e',pts:()=>{const a=[];for(let h=5;h<=24;h+=.5)a.push([1.5*h+8,h]);return a},dir:'p',w:2},
+ {c:'#17a596',pts:()=>{const a=[];for(let h=24;h<=46;h+=.5)a.push([40+.7*(h-24),h]);return a},dir:'p',w:4},
+ {c:'#3d6fe0',pts:()=>{const a=[];for(let p=40;p<=100;p++)a.push([p,24+.1*(p-40)]);return a},dir:'h',w:2},
+ {c:'#8ba9f0',pts:()=>{const a=[];for(let p=40;p<=92;p++)a.push([p,24+.4*(p-40)]);return a},dir:'h',w:2},
+ {c:'#3d6fe0',pts:()=>{const a=[];for(let p=12;p<=40;p++)a.push([p,24-.2*(40-p)]);return a},dir:'h',w:2},
+ {c:'#8ba9f0',pts:()=>{const a=[];for(let p=12;p<=40;p++)a.push([p,Math.max(24-.5*(40-p),10)]);return a},dir:'h',w:2}];
+function drawDav(){const W=sv.clientWidth,H=sv.clientHeight;if(!W)return;const sm=W<520,m={l:sm?34:46,r:12,t:12,b:sm?34:40},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const x=p=>m.l+(p-10)/90*iw,y=h=>m.t+ih-(h/50)*ih;let s='';
+  const css=getComputedStyle(document.documentElement),ink=css.getPropertyValue('--ink'),mute=css.getPropertyValue('--mute'),line=css.getPropertyValue('--line');
+  for(let ph=6.9;ph<=7.71;ph+=.1){const k=.03*Math.pow(10,ph-6.1);let p1=100,h1=k*100;if(h1>50){h1=50;p1=50/k}
+    const main=Math.abs(ph-7.4)<.01;s+=`<line x1="${x(10)}" y1="${y(k*10)}" x2="${x(p1)}" y2="${y(h1)}" stroke="${main?ink:mute}" stroke-opacity="${main?.55:.25}" stroke-width="${main?1.6:1}" ${main?'':'stroke-dasharray="4 4"'}/>`;
+    const r=Math.round(ph*10);if(r%2===0||!sm)s+=`<text x="${x(p1)+(h1>=50?0:-4)}" y="${y(h1)+(h1>=50?-2:-6)}" font-size="${sm?10:11}" fill="${mute}" text-anchor="${h1>=50?'middle':'end'}">${ph.toFixed(1).replace('.',',')}</text>`}
+  for(const b of BANDS){const P=b.pts(),up=P.map(([p,h])=>b.dir==='p'?[p-b.w,h]:[p,h+b.w]),dn=P.map(([p,h])=>b.dir==='p'?[p+b.w,h]:[p,h-b.w]).reverse();
+    s+=`<polygon points="${[...up,...dn].map(([p,h])=>x(Math.max(10,Math.min(100,p)))+','+y(h)).join(' ')}" fill="${b.c}" fill-opacity=".32"/>`}
+  s+=`<rect x="${x(35)}" y="${y(26)}" width="${x(45)-x(35)}" height="${y(22)-y(26)}" fill="#999" fill-opacity=".35" rx="3"/>`;
+  s+=`<line x1="${m.l}" y1="${m.t+ih}" x2="${m.l+iw}" y2="${m.t+ih}" stroke="${line}"/><line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${m.t+ih}" stroke="${line}"/>`;
+  for(let p=20;p<=100;p+=sm?20:10)s+=`<text x="${x(p)}" y="${m.t+ih+16}" font-size="11" fill="${mute}" text-anchor="middle">${p}</text>`;
+  for(let h=0;h<=50;h+=10)s+=`<text x="${m.l-6}" y="${y(h)+4}" font-size="11" fill="${mute}" text-anchor="end">${h}</text>`;
+  s+=`<text x="${m.l+iw/2}" y="${H-4}" font-size="12" fill="${mute}" text-anchor="middle">PaCO₂ (mmHg)</text><text x="${m.l+6}" y="${m.t+12}" font-size="12" fill="${mute}">HCO₃⁻ (mEq/l)</text>`;
+  s+=`<circle cx="${x(LP.p)}" cy="${y(LP.h)}" r="11" fill="${ink}" fill-opacity=".15"/><circle cx="${x(LP.p)}" cy="${y(LP.h)}" r="7" fill="#b3142f" stroke="#fff" stroke-width="2.5" style="cursor:grab"/>`;
+  sv.innerHTML=s;sv._x=x;sv._m=m;sv._iw=iw;sv._ih=ih}
+const roD=new ResizeObserver(drawDav);roD.observe(sv);
+function setLab(p,h,label){LP={p:Math.max(10,Math.min(100,p)),h:Math.max(4,Math.min(50,h))};sP.value=Math.round(LP.p);sH.value=Math.round(LP.h);$('oP').textContent=Math.round(LP.p);$('oH').textContent=Math.round(LP.h);drawDav();
+  const ph=phOf(LP.h,LP.p),hp=24*LP.p/LP.h;
+  $('labTicket').innerHTML=`<h4>GASÓMETRO · MUESTRA ARTERIAL</h4>${row('pH',f2(ph),cls(ph,7.35,7.45))}${row('PaCO₂',Math.round(LP.p)+' mmHg',cls(LP.p,35,45))}${row('HCO₃⁻',Math.round(LP.h)+' mEq/l',cls(LP.h,22,26))}${row('[H⁺]',Math.round(hp)+' nmol/l')}${row('HCO₃⁻ : 0,03·PaCO₂',f1(LP.h/(.03*LP.p))+' : 1')}`;
+  const a=analyze({pco2:Math.round(LP.p),hco3:Math.round(LP.h)});const ok=a.steps.prim.ans==='normal'&&Math.abs(LP.p-40)<=5&&Math.abs(LP.h-24)<=2;
+  $('labDx').innerHTML=(label?`<div style="font-size:14px;color:var(--mute);font-weight:700">${label}</div>`:'')+`<strong>${ok?'Normal':summarize(a)}</strong><span style="font-size:15px">${a.steps.comp?a.steps.comp.why:a.steps.prim.why}</span>`}
+sP.addEventListener('input',()=>{stopAnim();setLab(+sP.value,LP.h)});sH.addEventListener('input',()=>{stopAnim();setLab(LP.p,+sH.value)});
+let drag=false;const fromEv=e=>{const r=sv.getBoundingClientRect(),m=sv._m;return[10+(e.clientX-r.left-m.l)/sv._iw*90,(m.t+sv._ih-(e.clientY-r.top))/sv._ih*50]};
+sv.addEventListener('pointerdown',e=>{drag=true;stopAnim();sv.setPointerCapture(e.pointerId);setLab(...fromEv(e))});sv.addEventListener('pointermove',e=>{if(drag)setLab(...fromEv(e))});sv.addEventListener('pointerup',()=>drag=false);
+const SC={macid:[[40,24,''],[40,12,'1 · Cae el HCO₃⁻ (p. ej., cetoacidosis): minutos'],[26,12,'2 · El pulmón baja la PaCO₂ (Winter 26 ± 2): 12–36 h']],
+ malk:[[40,24,''],[40,36,'1 · Sube el HCO₃⁻ (vómitos): horas'],[48,36,'2 · Hipoventilación compensadora: PaCO₂ ≈ 48']],
+ racid:[[40,24,''],[70,27,'1 · Aguda: solo tampones, HCO₃⁻ +3'],[70,36,'2 · Crónica (3–5 días): el riñón sube el HCO₃⁻ a ≈ 36']],
+ ralk:[[40,24,''],[25,21,'1 · Aguda: HCO₃⁻ −3'],[25,16,'2 · Crónica: el riñón elimina HCO₃⁻ (≈ 16,5)']],norm:null};
+function stopAnim(){if(anim)cancelAnimationFrame(anim);anim=null}
+function runSc(k){stopAnim();const P=k==='norm'?[[LP.p,LP.h,''],[40,24,'Normal: 20 : 1, pH 7,40']]:SC[k];if(RM){const l=P[P.length-1];setLab(l[0],l[1],l[2]);return}
+  let i=0,t0=performance.now();const step=now=>{const u=Math.min(1,(now-t0)/1700),a=P[i],b=P[i+1],e=E(u);setLab(L(a[0],b[0],e),L(a[1],b[1],e),b[2]);
+    if(u>=1){i++;t0=now+500;if(i>=P.length-1){anim=null;return}}anim=requestAnimationFrame(step)};anim=requestAnimationFrame(step)}
+document.querySelectorAll('[data-sc]').forEach(b=>b.addEventListener('click',()=>{runSc(b.dataset.sc);markLab()}));
+function markLab(){if(!store.lab){store.lab=1;save()}}
+sv.addEventListener('pointerup',markLab);sP.addEventListener('change',markLab);sH.addEventListener('change',markLab);
+setLab(40,24);
+
+/* ---------- Reproductor de video ---------- */
+const cv=$('vc'),ctx=cv.getContext('2d');let VI=0,vt=0,playing=false,voice=false,speed=1,lastS=-1,dirty=true,last=0;
+const dur=s=>Math.max(s.d,s.c.length/15);
+const cum=v=>{let a=[0];v.s.forEach(s=>a.push(a[a.length-1]+dur(s)));return a};
+let CUM=cum(VIDEOS[0]);
+function rsz(){const r=devicePixelRatio||1;cv.width=cv.clientWidth*r;cv.height=cv.clientHeight*r;dirty=true}new ResizeObserver(rsz).observe(cv);
+const sceneAt=t=>{let i=0;while(i<CUM.length-2&&t>=CUM[i+1])i++;return i};
+function render(){if(!cv.width)return;X=ctx;const k=cv.width/960;ctx.setTransform(k,0,0,k,0,0);ctx.fillStyle=VC.bg;ctx.fillRect(0,0,960,540);if(VIDEOS[VI].bg&&ok(VIDEOS[VI].bg)){ctx.globalAlpha=.75;ctx.drawImage(IM[VIDEOS[VI].bg],0,0,960,540);ctx.globalAlpha=1}
+  const i=sceneAt(vt),s=VIDEOS[VI].s[i],lt=cl((vt-CUM[i])/(CUM[i+1]-CUM[i]));ctx.save();try{s.f(lt,vt)}catch(e){console.error(e)}ctx.restore();
+  ctx.fillStyle='rgba(255,255,255,.08)';ctx.fillRect(0,536,960,4);ctx.fillStyle=VC.h;ctx.fillRect(0,536,960*vt/CUM[CUM.length-1],4);
+  if(i!==lastS){lastS=i;$('vcap').textContent=s.c;[...$('vchap').children].forEach((li,j)=>li.firstChild.setAttribute('aria-current',j===i));if(playing&&voice)speak(s.c)}
+  const tot=CUM[CUM.length-1],fm=x=>Math.floor(x/60)+':'+String(Math.floor(x%60)).padStart(2,'0');$('vtime').textContent=fm(vt)+' / '+fm(tot);$('vseek').value=Math.round(vt/tot*1000)}
+function speak(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='es-ES';const vs=speechSynthesis.getVoices();u.voice=vs.find(v=>/^es[-_]ES/i.test(v.lang))||vs.find(v=>/^es/i.test(v.lang))||null;u.rate=speed*1.02;speechSynthesis.speak(u)}catch(e){}}
+function loop(now){const dt=Math.min(.1,(now-last)/1000);last=now;if(playing){const i=sceneAt(vt),end=CUM[i+1];let nt=vt+dt*speed;
+    let talking=false;try{talking=voice&&speechSynthesis.speaking}catch(e){}
+    if(talking&&nt>=end-.02)nt=end-.02;vt=nt;if(vt>=CUM[CUM.length-1]){vt=CUM[CUM.length-1]-.001;setPlay(false);markV()}dirty=true}
+  if(dirty){render();dirty=false}requestAnimationFrame(loop)}
+function markV(){try{store.v=store.v||{};store.v[VIDEOS[VI].id]=1;save()}catch(e){}}
+function setPlay(p){playing=p;$('vplay').textContent=p?'❚❚ Pausa':'▶ Reproducir';$('vplay').setAttribute('aria-label',p?'Pausa':'Reproducir');if(!p){try{speechSynthesis.cancel()}catch(e){}}else{if(vt>=CUM[CUM.length-1]-.01)vt=0;lastS=-1}dirty=true}
+function loadV(i){VI=i;CUM=cum(VIDEOS[i]);vt=0;lastS=-1;setPlay(false);[...$('vtabs').children].forEach((b,j)=>b.setAttribute('aria-pressed',j===i));
+  $('vchap').innerHTML=VIDEOS[i].s.map((s,j)=>`<li><button data-j="${j}">${s.c.split(/[.:](?!\d)/)[0]}</button></li>`).join('');dirty=true}
+$('vtabs').innerHTML=VIDEOS.map((v,i)=>`<button data-i="${i}" aria-pressed="${i===0}">${v.t}</button>`).join('');
+$('vtabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)loadV(+b.dataset.i)});
+$('vchap').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;vt=CUM[+b.dataset.j]+.001;lastS=-1;try{speechSynthesis.cancel()}catch(x){}dirty=true;if(!playing)setPlay(true)});
+$('vplay').addEventListener('click',()=>setPlay(!playing));
+$('vseek').addEventListener('input',e=>{vt=e.target.value/1000*CUM[CUM.length-1];try{speechSynthesis.cancel()}catch(x){}lastS=-1;dirty=true});
+$('vvoice').addEventListener('click',e=>{voice=!voice;e.currentTarget.setAttribute('aria-pressed',voice);e.currentTarget.textContent=voice?'🔊 Voz: sí':'🔈 Voz: no';if(!('speechSynthesis' in window)){e.currentTarget.textContent='Voz no disponible';voice=false}
+  else if(voice&&playing)speak(VIDEOS[VI].s[sceneAt(vt)].c);else try{speechSynthesis.cancel()}catch(x){}});
+$('vspeed').addEventListener('change',e=>{speed=+e.target.value});
+window.__vredraw=()=>{dirty=true;drawDav&&0};loadV(0);requestAnimationFrame(t=>{last=t;loop(t)});
+
+/* ---------- Simulador ---------- */
+let LV=1,C=null,si=0,res=[];
+const HINT={ph:'Acidemia < 7,35 · normal · 7,45 < alcalemia.',prim:'¿Qué valor —HCO₃⁻ o PaCO₂— se ha movido en la dirección que explica el pH?',
+ comp:'Metabólico: Winter 1,5 × HCO₃⁻ + 8 ± 2, o 40 + 0,7 × ΔHCO₃⁻. Respiratorio: el HCO₃⁻ cambia 1 o 4 (acidosis) y 2 o 5 (alcalosis) por cada 10 mmHg.',
+ ag:'Na⁺ − (Cl⁻ + HCO₃⁻); súmale 2,5 por cada g/dl de albúmina por debajo de 4.',delta:'(AG − 12) − (24 − HCO₃⁻): entre −6 y +6 es puro.',aa:'PAO₂ = FiO₂ × 713 − PaCO₂/0,8. Esperado ≈ edad/4 + 4.',dx:'Integra la historia con todo lo que has calculado.'};
+function sc(){const s=store[LV]||{ok:0,n:0,cases:0,streak:0};return s}
+function showScore(){const s=sc();$('score').innerHTML=`Nivel ${LV} <span>· aciertos</span> ${s.ok}/${s.n}${s.n?` (${Math.round(s.ok/s.n*100)} %)`:''} <span>· casos</span> ${s.cases} <span>· racha de casos perfectos</span> ${s.streak}`}
+function newCase(){C=makeCase(LV);si=0;res=[];const v=C.v,g=C.g;
+  $('caseL').innerHTML=`<p class="vig">${g.vig}</p><div class="ticket"><h4>GASOMETRÍA ARTERIAL · FiO₂ ${String(v.fio2).replace('.',',')}</h4>
+  ${row('pH',f2(v.ph),cls(v.ph,7.35,7.45))}${row('PaCO₂',v.pco2+' mmHg',cls(v.pco2,35,45))}${C.showAA||g.pao2?row('PaO₂',v.pao2+' mmHg',cls(v.pao2,80,100)):''}${row('HCO₃⁻',v.hco3+' mEq/l',cls(v.hco3,22,26))}
+  ${LV>=3||C.ks.includes('ag')?row('Na⁺',v.na+' mEq/l',cls(v.na,135,145))+row('Cl⁻',v.cl+' mEq/l',cls(v.cl,98,107))+row('K⁺',v.k+' mEq/l',cls(num(v.k),3.5,5))+row('Albúmina',f1(v.alb)+' g/dl',cls(v.alb,3.5,5)):row('K⁺',v.k+' mEq/l',cls(num(v.k),3.5,5))}
+  ${(g.extra||[]).map(e=>row(e[0],e[1])).join('')}</div>`;renderSteps()}
+function keys(){return[...C.ks,'dx']}
+function stepData(k){if(k==='dx')return{q:'¿Cuál es el diagnóstico más probable?',opts:C.dxOpts,L:Object.fromEntries(C.dxOpts.map(d=>[d,d])),ans:C.t.dx,why:`Interpretación completa: <b>${summarize(C.a)}</b>. Cuadro compatible con ${C.t.dx.toLowerCase()}.`};return C.a.steps[k]}
+function renderSteps(){const K=keys();let h='';K.forEach((k,i)=>{if(i>si)return;const d=stepData(k),r=res[i];
+  h+=`<div class="step" id="st${i}"><h3>Paso ${i+1}. ${d.q}</h3><div class="opts">${d.opts.map(o=>`<button data-o="${o}" ${r?'disabled':''} class="${r?(o===d.ans?'c':o===r?'w':''):''}">${d.L[o]}</button>`).join('')}</div>
+  ${r?`<div class="why"><b class="${r===d.ans?'ok':'no'}">${r===d.ans?'Correcto.':'No del todo: '+d.L[d.ans]+'.'}</b> ${d.why}</div>`:`<button class="hb" style="margin-top:10px;min-height:36px;font-size:14px">Pista</button><div class="hint" hidden>${HINT[k]}</div>`}</div>`});
+  if(res.length===K.length){const ok=res.filter((r,i)=>r===stepData(K[i]).ans).length;h+=`<div class="step"><h3>${ok===K.length?'Caso resuelto sin errores':'Caso terminado: '+ok+' de '+K.length+' pasos correctos'}</h3><p>${summarize(C.a)}.</p></div>`}
+  $('steps').innerHTML=h;const cur=$('st'+si);if(cur&&res.length<K.length&&si>0&&!RM)cur.scrollIntoView({block:'nearest',behavior:'smooth'})}
+$('steps').addEventListener('click',e=>{const hb=e.target.closest('.hb');if(hb){hb.nextElementSibling.hidden=false;hb.remove();return}
+  const b=e.target.closest('button[data-o]');if(!b||b.disabled)return;const K=keys(),d=stepData(K[si]);res[si]=b.dataset.o;const s=sc();s.n++;if(res[si]===d.ans)s.ok++;
+  if(si===K.length-1){s.cases++;const perf=res.every((r,i)=>r===stepData(K[i]).ans);s.streak=perf?s.streak+1:0;s.best=Math.max(s.best||0,s.streak);try{window.goatcounter&&goatcounter.count&&goatcounter.count({path:'caso/gaso/nivel'+LV+(perf?'/perfecto':'/con-errores'),title:'Caso terminado',event:true})}catch(e){}}else si++;store[LV]=s;save();showScore();renderSteps()});
+$('newCase').addEventListener('click',newCase);
+$('toLab').addEventListener('click',()=>{if(C){setLab(C.v.pco2,C.v.hco3,'Caso del simulador');$('lab').scrollIntoView({behavior:RM?'auto':'smooth'})}});
+$('lv').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;LV=+b.dataset.l;[...$('lv').children].forEach(x=>x.setAttribute('aria-pressed',x===b));showScore();newCase()});
+showScore();newCase();
+
+/* ---------- Analizador ---------- */
+function runAn(e){if(e)e.preventDefault();const g=id=>num($(id).value);const v={ph:g('aph'),pco2:g('apco2'),hco3:g('ahco3'),na:g('ana'),cl:g('acl'),alb:g('aalb'),pao2:g('apao2'),fio2:g('afio2'),age:g('aage')};
+  if(!v.pco2||!v.hco3){$('ares').innerHTML='<div class="warn">Necesito al menos PaCO₂ y HCO₃⁻ para interpretar.</div>';return}
+  if(v.fio2&&v.fio2>1)v.fio2/=100;['na','cl','alb','pao2','fio2','age','ph'].forEach(k=>{if(v[k]==null)delete v[k]});if(v.na!=null&&v.cl!=null)v.forceAG=true;
+  const a=analyze(v);let h='';if(a.consist>.1)h+=`<div class="warn">Revisa los datos: con esa PaCO₂ y ese HCO₃⁻, el pH calculado por Henderson-Hasselbalch sería ${f2(phOf(v.hco3,v.pco2))}. La diferencia sugiere un error de transcripción o de medida.</div>`;
+  h+=`<div class="dx" style="margin:0 0 14px"><span style="font-size:14px;color:var(--mute);font-weight:700">Conclusión</span><strong>${summarize(a)}</strong></div><ol>`+a.order.map(k=>{const s=a.steps[k];return`<li><span style="color:var(--mute);font-size:14px">${s.q}</span><strong>${s.L[s.ans]}</strong>${s.why}</li>`}).join('')+'</ol>';
+  h+=`<button id="anLab">Ver en el diagrama</button>`;$('ares').innerHTML=h;$('anLab').addEventListener('click',()=>{setLab(v.pco2,v.hco3,'Gasometría del analizador');$('lab').scrollIntoView({behavior:RM?'auto':'smooth'})})}
+$('anf').addEventListener('submit',e=>{runAn(e);store.an=(store.an||0)+1;save()});runAn();
+
+}
+</script>
+<script data-goatcounter="https://mundoemergencia.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

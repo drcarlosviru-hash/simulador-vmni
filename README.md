@@ -7,11 +7,12 @@ Mundo virtual de la emergencia por capítulos, con misiones, XP, rangos, insigni
 1. **La calle** · PHTLS (trauma prehospitalario)
 2. **El parte** · AmbulancePad SUC (libro interactivo y simulador de parte asistencial)
 3. **Box de trauma** · ATLS
-4. **Parada** · Simulador PCR, algoritmo SVA ERC 2025
-5. **Respira** · VMNI (repaso, guía visual, ventiladores y simulador)
-6. **Box vital** · Hiperpotasemia aguda (taller interactivo con ECG en vivo + simulador con monitor)
-7. **Box de agudos** · CAD/EHH (taller interactivo + simulador hora a hora de 0 a 24 h)
-8. **Fin de guardia** · TurnoValor (demo con datos ficticios)
+4. **Laboratorio** · Gasometría y medio interno (diagrama de Davenport vivo, 4 vídeos narrados, simulador de casos en 4 niveles y analizador)
+5. **Parada** · Simulador PCR, algoritmo SVA ERC 2025
+6. **Respira** · VMNI (repaso, guía visual, ventiladores y simulador)
+7. **Box vital** · Hiperpotasemia aguda (taller interactivo con ECG en vivo + simulador con monitor)
+8. **Box de agudos** · CAD/EHH (taller interactivo + simulador hora a hora de 0 a 24 h)
+9. **Fin de guardia** · TurnoValor (demo con datos ficticios)
 
 **🩺 Paciente virtual (fase 1):** motor común de escenarios (`mundo/motor/`) con paciente 2,5D que respira y cambia según tus decisiones, monitor multiparamétrico (ECG, pletismografía, capnografía, PANI), auscultación sintetizada, ventilador de VMNI ajustable, modo tutor/examen y debriefing por competencias con línea temporal y repetición. Escenarios: insuficiencia respiratoria aguda (EAP hipertensivo o EPOC hipercápnico) El paciente virtual de parada cardiorrespiratoria se basa en el Simulador PCR · SVA ERC 2025 (`mundo/modulos/rcp.html?sim=1`), con paciente animado y repetición minuto a minuto en la evaluación.
 
@@ -44,3 +45,5 @@ Otros módulos:
 ## Aviso
 
 Herramienta con fines docentes. Modelo fisiológico simplificado; dosis y valores orientativos. Los nombres de los parámetros de cada equipo son aproximados y no reproducen su software. No sustituye al manual del equipo, a los protocolos del servicio ni al juicio clínico.
+
+**Visitas:** contador GoatCounter sin cookies en todas las páginas (panel en `mundoemergencia.goatcounter.com`), con eventos «caso terminado».
