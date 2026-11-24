@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulador ECG y corazón</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: clínico, preciso, sereno — un aparato de docencia de urgencias
+   IDEA: el carro de paradas: monitor de constantes + tira de ECG en papel + lámina anatómica
+   PICTURE: corazón anatómico animado sincronizado con el ECG, con corte de eje corto
+   COLOUR and TYPE: blanco papel, tinta, rojo miocardio #b3122e; monitor negro con trazo verde; Source Serif 4 + Source Sans 3
+   LAYOUT: barra de escenario arriba; corazón grande + monitor/paciente; ECG de 12 derivaciones a todo ancho; explicación debajo */
+:root{color-scheme:light dark;--bg:light-dark(#fbfaf8,#121315);--ink:light-dark(#17181b,#ecebe8);--mut:light-dark(#5d6068,#a3a6ad);--line:light-dark(#e3e0da,#2a2c30);--card:light-dark(#ffffff,#1a1b1e);--red:light-dark(#b3122e,#ff5d73);--blue:light-dark(#1f5fbf,#7fb0ff);--grn:light-dark(#11804a,#5be39a)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Source Sans 3",system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Source Serif 4",Georgia,serif;font-weight:600;line-height:1.1;margin:0;text-wrap:balance}
+h1{font-size:clamp(28px,3.4vw,42px)}h2{font-size:22px}h3{font-size:17px;font-family:"Source Sans 3",sans-serif;font-weight:700}
+.wrap{max-width:1320px;margin:0 auto;padding:0 max(3vw,14px)}
+header{padding:22px 0 10px}header p{margin:6px 0 0;color:var(--mut);max-width:80ch}
+.bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:end;padding:12px 0 14px;border-bottom:1px solid var(--line)}
+.ctl{display:flex;flex-direction:column;gap:4px}.ctl>span{font-size:13px;color:var(--mut);font-weight:600}
+select,button{font:inherit;font-size:16px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;min-height:44px;padding:0 12px}
+select{min-width:280px;max-width:100%}
+button{cursor:pointer}button:focus-visible,select:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{border:0;border-radius:0;border-inline-end:1px solid var(--line);padding:0 11px}.seg button:last-child{border:0}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--bg)}
+.tog{display:flex;flex-wrap:wrap;gap:6px}.tog label{display:flex;align-items:center;gap:6px;font-size:14px;border:1px solid var(--line);border-radius:8px;padding:0 10px;min-height:44px;background:var(--card);cursor:pointer}
+.tog input{width:18px;height:18px;accent-color:var(--red)}
+#caseBtn{background:var(--red);color:#fff;border-color:var(--red);font-weight:700}
+.main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);gap:18px;padding:16px 0}
+.stage{background:radial-gradient(120% 90% at 35% 30%,#2a1416 0%,#0e0c0d 70%);border-radius:14px;overflow:hidden;position:relative}
+.fig{position:relative;aspect-ratio:760/600}.fig>canvas{position:absolute;inset:0;width:100%;height:100%}
+.veil{position:absolute;inset:0;display:none;place-items:center;text-align:center;color:#fff;background:rgba(10,8,9,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:20px;font-size:18px}
+.veil b{display:block;font-family:"Source Serif 4",serif;font-size:26px;margin-bottom:6px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 14px 12px;color:#d9d4d0;font-size:13px;background:#0e0c0d}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-inline-end:5px;vertical-align:-1px}
+.mon{background:#050807;color:#d8ffe9;border-radius:14px;padding:12px;display:grid;gap:8px}
+.vit{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.vit div{background:#0c1411;border-radius:8px;padding:6px 8px}.vit small{display:block;font-size:13px;color:#8fb5a2}
+.vit b{font-size:clamp(20px,2.2vw,30px);font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1.1}
+.v-hr b{color:#4dff9a}.v-bp b{color:#ff8c7a}.v-sp b{color:#6fd6ff}.v-fr b{color:#ffe36e}
+.alarm{animation:bl .8s steps(2) infinite}@keyframes bl{50%{opacity:.35}}
+.monc{position:relative;height:170px}.monc canvas{position:absolute;inset:0;width:100%;height:100%}
+.pt{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:12px}
+.pt .who{font-weight:700;font-size:17px}.pt p{margin:6px 0}.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chips span{font-size:14px;background:light-dark(#f6e7e9,#3a1e23);color:light-dark(#7d0c20,#ffc2cb);border-radius:999px;padding:3px 10px}
+.lbl{font-size:13px;font-weight:700;color:var(--mut)}
+.ecg{padding:8px 0 4px}.ecghead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:baseline;margin-bottom:8px}
+.ecghead p{margin:0;color:var(--mut);font-size:14px}
+.scroll{overflow-x:auto;border-radius:10px;border:1px solid #e9c6c6}
+#ecg{display:block;width:100%;min-width:780px}
+.keys{display:flex;gap:14px;font-size:14px;color:var(--mut);flex-wrap:wrap}.keys i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-inline-end:5px;vertical-align:-1px}
+.info{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0 26px;padding:18px 0 8px}
+.info h2{grid-column:1/-1;font-size:clamp(24px,2.6vw,32px);margin-bottom:4px}.info .sub{grid-column:1/-1;color:var(--mut);margin:0 0 14px}
+.info section{border-top:2px solid var(--ink);padding-top:10px}.info ul{margin:6px 0 0;padding-inline-start:18px}.info li{margin:3px 0}
+.quiz{display:none;background:var(--card);border:2px solid var(--red);border-radius:14px;padding:16px;margin:14px 0}
+.quiz h2{margin-bottom:8px}.opts{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}.opts button{text-align:start}
+.opts button.ok{background:var(--grn);color:#fff;border-color:var(--grn)}.opts button.bad{background:var(--red);color:#fff;border-color:var(--red)}
+.fb{font-weight:600}
+
+.eco{padding:6px 0 10px}.ecohead{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px}
+.ecohead p{margin:2px 0 0;color:var(--mut);font-size:14px}
+.ecogrid{display:grid;grid-template-columns:minmax(0,2.6fr) minmax(240px,1fr);gap:18px;align-items:start}
+.ecowrap{background:#000;border-radius:14px;overflow-x:auto}.ecofig{position:relative;aspect-ratio:3/1.09;min-width:720px}.ecofig canvas{position:absolute;inset:0;width:100%;height:100%}
+#ecoTxt ul{margin:6px 0 0;padding-inline-start:18px}#ecoTxt li{margin:4px 0}
+@media(max-width:1000px){.ecogrid{grid-template-columns:minmax(0,1fr)}}
+footer{color:var(--mut);font-size:14px;padding:18px 0 40px;border-top:1px solid var(--line);margin-top:20px}
+@media(max-width:1000px){.main{grid-template-columns:minmax(0,1fr)}.info{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 22px}}
+@media(max-width:600px){.info{grid-template-columns:minmax(0,1fr)}select{min-width:0;width:100%}.ctl{width:100%}.vit b{font-size:22px}}
+@media(prefers-reduced-motion:reduce){.alarm{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+<h1>Simulador de ECG: qué zona del corazón se afecta y cómo nace la arritmia</h1>
+<p>Cada latido del ECG se genera a la vez que la activación eléctrica del corazón. Elige un escenario, ralentiza a cámara lenta y observa el territorio isquémico, la arteria culpable o el circuito de la arritmia.</p>
+</header>
+<div class="bar">
+<label class="ctl"><span>Escenario</span><select id="scSel"></select></label>
+<div class="ctl" id="phaseCtl"><span>Fase evolutiva del IAM</span><div class="seg" id="phase"></div></div>
+<div class="ctl"><span>Velocidad</span><div class="seg" id="speed"></div></div>
+<div class="ctl"><span>Capas</span><div class="tog">
+<label><input type="checkbox" id="tCond" checked>Sistema de conducción</label>
+<label><input type="checkbox" id="tCor" checked>Coronarias</label>
+<label><input type="checkbox" id="tHi" checked>Resaltar derivaciones</label>
+<label><input type="checkbox" id="tExt" checked>V4R y V7–V9</label></div></div>
+<div class="ctl"><span>Paciente virtual</span><button id="caseBtn">Caso clínico aleatorio</button></div>
+</div>
+
+<div class="quiz" id="quiz" aria-live="polite"></div>
+
+<div class="main">
+<div><div class="stage"><div class="fig"><canvas id="heart" aria-label="Corazón animado"></canvas><div class="veil" id="veil"><div><b>Caso clínico en curso</b>Interpreta el ECG y la clínica del paciente; el corazón se revela al responder.</div></div></div>
+<div class="legend"><span><i style="background:#ffd75a"></i>Frente de despolarización</span><span><i style="background:#ff8a3d"></i>Miocardio despolarizado</span><span><i style="background:#6a78ff"></i>Isquemia</span><span><i style="background:#e0124a"></i>Lesión</span><span><i style="background:#4a2a33"></i>Necrosis</span><span><i style="background:#e8dfd6"></i>Cicatriz</span><span><i style="background:#ff3b3b"></i>Bloqueo</span></div></div></div>
+<aside>
+<div class="mon">
+<div class="vit"><div class="v-hr"><small>FC lpm</small><b id="vHr">--</b></div><div class="v-bp"><small>PA mmHg</small><b id="vBp">--</b></div><div class="v-sp"><small>SpO₂ %</small><b id="vSp">--</b></div><div class="v-fr"><small>FR rpm</small><b id="vFr">--</b></div></div>
+<div class="monc"><canvas id="mon"></canvas></div>
+</div>
+<div class="pt" id="pt"></div>
+</aside>
+</div>
+
+<section class="eco">
+<div class="ecohead"><div><h2>Ecocardiograma simulado</h2><p>Mismo latido que el ECG: contractilidad segmentaria, válvulas y aurículas en tres planos.</p></div>
+<div class="tog"><label><input type="checkbox" id="tMark" checked>Marcar segmentos alterados</label></div></div>
+<div class="ecogrid"><div class="ecowrap"><div class="ecofig"><canvas id="echo" aria-label="Ecocardiograma animado"></canvas></div></div><div id="ecoTxt"></div></div>
+</section>
+<section class="ecg">
+<div class="ecghead"><h2>ECG de 12 derivaciones</h2><p>25 mm/s · 10 mm/mV · el registro se imprime en tiempo real</p></div>
+<div class="keys" id="keys"></div>
+<div class="scroll" style="margin-top:8px"><canvas id="ecg"></canvas></div>
+</section>
+
+<div class="info" id="info"></div>
+
+<footer>Contenido docente basado en Jiménez Murillo, <i>Medicina de Urgencias y Emergencias</i> 7.ª ed. (cuadro 26.4 y tabla de localización del cap. 9; IAM de VD; WPW, cap. 24), <i>Harrison. Manual de Medicina Interna</i> (cap. 118, cuadro 118‑1) y <i>Manual de Diagnóstico y Terapéutica Médica</i> del H. 12 de Octubre. Los trazados y pacientes son simulados: no sustituyen el juicio clínico ni los protocolos locales.</footer>
+</div>
+
+<script>
+{
+/* ---------- utilidades ---------- */
+const $=s=>document.querySelector(s);
+const g=(x,m,s)=>Math.exp(-0.5*((x-m)/s)**2);
+const sg=x=>1/(1+Math.exp(-x));
+let seed=7;const rnd=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LEADS=['I','II','III','aVR','aVL','aVF','V1','V2','V3','V4','V5','V6','V4R','V7','V8','V9'];
+/* plantilla normal por derivación: P, q, R, S, T (mV) */
+const N={I:[.10,-.05,.75,-.12,.25],II:[.15,-.07,1.15,-.15,.35],III:[.06,-.05,.55,-.2,.12],aVR:[-.12,0,.12,-.85,-.3],aVL:[.04,-.05,.45,-.25,.1],aVF:[.1,-.06,.85,-.15,.24],
+V1:[.07,0,.25,-1,.06],V2:[.08,0,.45,-1.4,.45],V3:[.08,0,.8,-.9,.5],V4:[.08,-.03,1.3,-.5,.45],V5:[.08,-.08,1.4,-.25,.35],V6:[.08,-.08,1.1,-.12,.3],
+V4R:[.05,0,.2,-.6,.06],V7:[.06,-.06,.7,-.1,.2],V8:[.05,-.05,.55,-.1,.16],V9:[.04,-.04,.45,-.1,.14]};
+const LAT=['I','aVL','V5','V6','V7','V8','V9'],RIGHT=['V1','V2','V3','V4R'];
+/* morfologías anchas: [mu,sigma,amp]... ; T */
+const LB=L=>LAT.includes(L)?[[[.05,.022,.7],[.1,.02,.65]],-.3]:RIGHT.includes(L)?[[[.025,.01,.1],[.08,.035,-1.3]],.45]:({V4:[[[.07,.03,-.6],[.11,.02,.4]],.2],II:[[[.06,.03,.5],[.1,.02,.3]],-.1],III:[[[.07,.03,-.3]],.1],aVF:[[[.07,.03,.25]],0],aVR:[[[.07,.03,-.6]],.2]})[L];
+const RB=L=>['V1','V2','V4R'].includes(L)?[[[.02,.008,.25],[.05,.01,-.35],[.1,.016,.75]],-.2]:L==='V3'?[[[.025,.01,.5],[.055,.01,-.6],[.1,.016,.3]],.2]:L==='aVR'?[[[.04,.01,-.6],[.1,.02,.35]],-.2]:LAT.includes(L)?[[[.015,.006,N[L][1]],[.04,.01,N[L][2]],[.1,.022,-.35]],N[L][4]]:[[[.015,.006,N[L][1]],[.04,.01,N[L][2]],[.1,.02,-.18]],N[L][4]];
+const VTA={I:.3,II:-.9,III:-1.1,aVR:.6,aVL:.7,aVF:-1,V1:1.2,V2:1,V3:.6,V4:-.2,V5:-.6,V6:-.8,V4R:.8,V7:-.6,V8:-.5,V9:-.4};
+const PVA={I:.2,II:1.3,III:1.2,aVR:-.8,aVL:-.5,aVF:1.3,V1:-1,V2:-1.2,V3:-.6,V4:.4,V5:.9,V6:1,V4R:-.7,V7:.6,V8:.5,V9:.4};
+const ESA={I:.5,II:-.4,III:-.7,aVR:-.1,aVL:.7,aVF:-.6,V1:-.9,V2:-1,V3:-.7,V4:-.3,V5:.4,V6:.6,V4R:-.6,V7:.5,V8:.4,V9:.3};
+const DEL={I:.25,II:.2,III:-.05,aVR:-.25,aVL:.2,aVF:.05,V1:.25,V2:.3,V3:.3,V4:.35,V5:.35,V6:.3,V4R:.15,V7:.25,V8:.2,V9:.2};
+
+/* ---------- escenarios ---------- */
+const ARTS=['DA proximal','DA media','1.ª diagonal / OM','Circunfleja','Coronaria derecha proximal','Coronaria derecha media','Circunfleja distal / CD posterolateral','Tronco común / 3 vasos'];
+const SC=[
+{id:'iam-as',g:'Cardiopatía isquémica',n:'IAMCEST anteroseptal',r:{k:'sinus',rate:96,pr:.15},art:'DA media',vl:['V2','V3','II'],
+ inf:{st:{V1:.25,V2:.35,V3:.3,V4:.15},walls:['sept'],sa:['as','ant'],occ:[360,345],dim:['ladm','d2']},
+ ecg:['Elevación del ST en V1–V4 (dos o más derivaciones contiguas)','Fase evolucionada: Q patológica (>0,04 s y >25 % de la R) en V1–V3 y T negativa simétrica','Pérdida de progresión de la R en precordiales'],
+ mech:'Rotura de placa y trombosis de la descendente anterior (DA) media, tras la 1.ª diagonal. Isquemia transmural del tabique anterior y de la cara anterior del VI; el tabique no se engrosa en sístole.',
+ clin:['Dolor opresivo retroesternal con cortejo vegetativo','Taquicardia por descarga adrenérgica','Riesgo de BRDHH, BAV infrahisiano y FV precoz'],
+ act:['ECG en <10 min y activación de código infarto (angioplastia primaria)','Antiagregación según protocolo, analgesia, O₂ solo si SpO₂ <90 %','Monitorización con desfibrilador disponible'],
+ p:{who:'Varón, 58 años',hx:'Fumador, HTA y dislipemia',mc:'Dolor torácico opresivo de 50 minutos',sx:['Dolor retroesternal opresivo','Irradiación a brazo izquierdo','Sudoración fría','Náuseas'],bp:'138/86',sp:96,fr:20,ex:'Pálido y sudoroso. Ruidos rítmicos sin soplos. Murmullo vesicular conservado. Killip I.'}},
+{id:'iam-ae',g:'Cardiopatía isquémica',n:'IAMCEST anterior extenso',r:{k:'sinus',rate:108,pr:.15},art:'DA proximal',vl:['V3','aVL','III'],
+ inf:{st:{V1:.2,V2:.4,V3:.42,V4:.38,V5:.26,V6:.16,I:.15,aVL:.16,II:-.08,III:-.15,aVF:-.12},walls:['ant'],sa:['as','ant','al'],occ:[350,282],dim:['ladp2','ladm','d1','d2']},
+ ecg:['Elevación del ST en V1–V6, I y aVL','Descenso especular del ST en II, III y aVF','Posible BRDHH o hemibloqueo nuevo (afectación del tabique proximal)'],
+ mech:'Oclusión de la DA proximal, antes de la 1.ª diagonal: queda sin flujo el tabique, la cara anterior, el ápex y parte de la cara lateral. Es la mayor masa de miocardio en riesgo.',
+ clin:['Insuficiencia cardiaca aguda y shock cardiogénico','TV/FV en las primeras horas','Complicaciones tardías: aneurisma, trombo apical, rotura septal'],
+ act:['Reperfusión inmediata (angioplastia primaria)','Si shock: soporte hemodinámico y valorar asistencia','FV: desfibrilación inmediata'],
+ p:{who:'Mujer, 67 años',hx:'Diabetes tipo 2 e HTA',mc:'Dolor torácico y disnea de 2 horas',sx:['Dolor retroesternal intenso','Disnea','Sudoración profusa','Sensación de muerte inminente'],bp:'92/60',sp:89,fr:28,ex:'Crepitantes hasta campos medios, tercer ruido, frialdad acra. Killip III.'}},
+{id:'iam-lat',g:'Cardiopatía isquémica',n:'IAMCEST lateral',r:{k:'sinus',rate:88,pr:.16},art:'Circunfleja',vl:['V6','aVL','III'],
+ inf:{st:{I:.2,aVL:.24,V5:.24,V6:.26,V7:.1,III:-.15,aVF:-.1,II:-.04},walls:['lat'],sa:['al','il'],occ:[404,255],dim:['lcx2','om','lcxb']},
+ ecg:['Elevación del ST en I, aVL, V5 y V6','Descenso especular en III y aVF','La circunfleja es la arteria más "silente": pedir V7–V9 si hay dudas'],
+ mech:'Oclusión de la circunfleja proximal o de una obtusa marginal: isquemia de la pared lateral del VI.',
+ clin:['Dolor torácico, a veces irradiado a espalda','Insuficiencia mitral si se afecta el músculo papilar'],act:['Código infarto y angioplastia primaria','Auscultar soplo mitral nuevo'],
+ p:{who:'Varón, 61 años',hx:'Obesidad y dislipemia',mc:'Dolor torácico irradiado a espalda de 1 hora',sx:['Dolor opresivo','Irradiación interescapular','Sudoración'],bp:'128/80',sp:96,fr:18,ex:'Sudoroso, sin soplos. Pulmones limpios. Killip I.'}},
+{id:'iam-la',g:'Cardiopatía isquémica',n:'IAMCEST lateral alto',r:{k:'sinus',rate:84,pr:.16},art:'1.ª diagonal / OM',vl:['aVL','I','III'],
+ inf:{st:{I:.15,aVL:.2,III:-.22,aVF:-.1,II:-.05},walls:['hlat'],sa:['al'],occ:[372,327],dim:['d1']},
+ ecg:['Elevación del ST limitada a I y aVL','Descenso especular en III: a menudo el signo más llamativo','Cambios sutiles: comparar con ECG previos'],
+ mech:'Oclusión de la 1.ª diagonal (rama de la DA) o de la 1.ª obtusa marginal: necrosis de la porción alta de la pared lateral.',
+ clin:['Dolor típico con ECG poco expresivo','Fácil de pasar por alto'],act:['Seriar ECG y troponinas','Activar código infarto si se confirma elevación'],
+ p:{who:'Mujer, 55 años',hx:'Fumadora',mc:'Dolor torácico y en mandíbula de 40 minutos',sx:['Opresión torácica','Dolor mandibular','Náuseas'],bp:'134/82',sp:97,fr:17,ex:'Exploración anodina. Killip I.'}},
+{id:'iam-inf',g:'Cardiopatía isquémica',n:'IAMCEST inferior',r:{k:'sinus',rate:52,pr:.18},art:'Coronaria derecha media',vl:['III','aVL','II'],
+ inf:{st:{II:.2,III:.3,aVF:.25,I:-.1,aVL:-.22,V2:-.05},walls:['inf'],sa:['inf','is'],occ:[188,382],dim:['rcam2','rcad']},
+ ecg:['Elevación del ST en II, III y aVF','ST en III > II: orienta a coronaria derecha (si II ≥ III con ST↑ lateral, circunfleja)','Descenso especular en I y aVL','Bradicardia sinusal o BAV nodal frecuentes'],
+ mech:'Oclusión de la coronaria derecha media (80–90 % de los inferiores; la circunfleja en dominancia izquierda). Isquemia de la cara inferior (diafragmática) y del septo inferior.',
+ clin:['Dolor epigástrico, náuseas y vómitos (puede simular cuadro digestivo)','Bradicardia e hipotensión por reflejo vagal','BAV de 2.º grado Mobitz I o completo, transitorios'],
+ act:['Código infarto','Registrar V4R y V7–V9 siempre','Atropina si bradicardia sintomática'],
+ p:{who:'Varón, 71 años',hx:'HTA, ex-fumador',mc:'Dolor epigástrico y vómitos de 1 hora',sx:['Dolor epigástrico opresivo','Vómitos','Sudoración','Mareo'],bp:'102/64',sp:95,fr:18,ex:'Bradicárdico y sudoroso. Abdomen blando. Pulmones limpios. Killip I.'}},
+{id:'iam-infvd',g:'Cardiopatía isquémica',n:'IAMCEST inferior con extensión a VD',r:{k:'sinus',rate:46,pr:.2},art:'Coronaria derecha proximal',vl:['V4R','III','aVL'],
+ inf:{st:{II:.2,III:.3,aVF:.26,V1:.12,V4R:.2,I:-.1,aVL:-.22},walls:['inf','rv'],sa:['inf','is','rv'],occ:[262,282],dim:['rcap2','rcam1','rcam2','rcad','am']},
+ ecg:['ST↑ inferior (III > II)','ST↑ en V4R ≥1 mm (también puede verse en V1)','V3R, V4R y V7–V9 deben registrarse en todo IAM inferior'],
+ mech:'Oclusión de la coronaria derecha proximal, antes de las ramas del ventrículo derecho: isquemia inferior más la pared libre del VD, que deja de impulsar sangre a los pulmones.',
+ clin:['Tríada: hipotensión, ingurgitación yugular y campos pulmonares limpios','Bradiarritmias y BAV','Muy sensible a la precarga'],
+ act:['Evitar nitratos, diuréticos e IECA; precaución con mórficos (Jiménez Murillo)','Volumen IV si hipotensión','Reperfusión urgente'],
+ p:{who:'Varón, 64 años',hx:'Diabetes y dislipemia',mc:'Dolor torácico y mareo de 90 minutos',sx:['Dolor retroesternal','Mareo','Sudoración','Debilidad'],bp:'82/50',sp:96,fr:20,ex:'Ingurgitación yugular con pulmones limpios. Hipotenso y bradicárdico. Signo de Kussmaul.'}},
+{id:'iam-post',g:'Cardiopatía isquémica',n:'IAMCEST posterior (inferobasal)',r:{k:'sinus',rate:80,pr:.16},art:'Circunfleja distal / CD posterolateral',vl:['V2','V8','II'],
+ inf:{st:{V1:-.15,V2:-.25,V3:-.2,V7:.12,V8:.15,V9:.12},mirror:['V1','V2','V3'],walls:['post'],sa:['il'],occ:[458,292],dim:['lcxb']},
+ ecg:['Descenso del ST en V1–V3: imagen en espejo de la pared posterior','Fase evolucionada: R alta (R/S > 1) y T alta en V1–V2','ST↑ en V7–V9 (≥0,5 mm, criterio ESC) lo confirma'],
+ mech:'La pared posterobasal no tiene electrodo enfrente en el ECG estándar: V1–V3 la "ven" por detrás, en espejo. Suele deberse a la circunfleja distal o a una rama posterolateral de la CD.',
+ clin:['Dolor torácico con "descenso del ST anterior" que puede confundirse con SCASEST','Cambia la indicación: es un IAMCEST'],act:['Registrar V7–V9 ante descenso del ST en V1–V3','Código infarto si se confirma'],
+ p:{who:'Varón, 59 años',hx:'Hipercolesterolemia familiar',mc:'Dolor torácico de 70 minutos',sx:['Opresión torácica','Dolor en espalda','Sudoración'],bp:'124/78',sp:96,fr:18,ex:'Sin hallazgos relevantes. Killip I.'}},
+{id:'scasest',g:'Cardiopatía isquémica',n:'SCASEST: descenso difuso del ST con ST↑ en aVR',r:{k:'sinus',rate:104,pr:.15},art:'Tronco común / 3 vasos',vl:['aVR','V5','II'],noEvo:true,
+ inf:{st:{aVR:.2,V1:.08,I:-.12,II:-.18,III:-.08,aVF:-.14,aVL:-.05,V3:-.1,V4:-.2,V5:-.25,V6:-.2,V7:-.1},walls:['sub'],sa:['sub'],sten:[330,250]},
+ ecg:['Descenso del ST en 6 o más derivaciones, máximo en V4–V6','Elevación del ST en aVR (± V1)','No es un IAMCEST clásico: isquemia subendocárdica circunferencial'],
+ mech:'Estenosis crítica del tronco común o enfermedad de tres vasos: el subendocardio de todo el VI, la capa más alejada de las coronarias epicárdicas, queda isquémico a la vez.',
+ clin:['Angina con disnea, hipotensión o edema pulmonar','Alto riesgo de muerte'],act:['Muy alto riesgo: coronariografía inmediata si inestable','Antiisquémicos y antitrombóticos según protocolo SCASEST'],
+ p:{who:'Varón, 74 años',hx:'Diabetes, insuficiencia renal crónica, angina previa',mc:'Dolor torácico y disnea de 3 horas',sx:['Opresión torácica','Disnea','Mareo'],bp:'100/60',sp:92,fr:24,ex:'Crepitantes bibasales, frialdad periférica. Killip II.'}},
+{id:'sinus',g:'Arritmias',n:'Ritmo sinusal normal',r:{k:'sinus',rate:72,pr:.16},vl:['II','V1','V5'],key:['II'],
+ ecg:['Onda P positiva en I, II y aVF antes de cada QRS','PR 0,12–0,20 s; QRS <0,12 s','FC 60–100 lpm'],
+ mech:'El nodo sinusal se despolariza de forma espontánea y activa las aurículas (onda P). El nodo AV retrasa el impulso (segmento PR) y el sistema His–Purkinje activa los ventrículos desde el tabique hacia el ápex y la base (QRS).',
+ clin:['Referencia para comparar el resto de escenarios'],act:['Usa la cámara lenta para seguir la secuencia P–PR–QRS–T'],
+ p:{who:'Mujer, 35 años',hx:'Sin antecedentes',mc:'Revisión laboral',sx:['Asintomática'],bp:'118/74',sp:99,fr:14,ex:'Normal.'}},
+{id:'bradi',g:'Arritmias',n:'Bradicardia sinusal',r:{k:'sinus',rate:44,pr:.18},vl:['II','V1','V5'],key:['II'],
+ ecg:['Ritmo sinusal con FC <60 lpm','Cada P conduce con PR normal'],mech:'Menor automatismo del nodo sinusal: tono vagal, betabloqueantes, hipotiroidismo, hipotermia o IAM inferior.',
+ clin:['Mareo, astenia o presíncope si hay bajo gasto'],act:['Buscar causa y fármacos','Atropina si sintomática e inestable'],
+ p:{who:'Mujer, 69 años',hx:'HTA en tratamiento con betabloqueante',mc:'Mareo al levantarse',sx:['Mareo ortostático','Cansancio'],bp:'108/66',sp:97,fr:15,ex:'Pulso lento y regular.'}},
+{id:'taqui',g:'Arritmias',n:'Taquicardia sinusal',r:{k:'sinus',rate:125,pr:.14},vl:['II','V1','V5'],key:['II'],
+ ecg:['Ritmo sinusal >100 lpm','La P puede acercarse a la T previa'],mech:'Aumento del automatismo sinusal por descarga simpática: fiebre, dolor, hipovolemia, anemia, TEP, hipertiroidismo.',
+ clin:['Es una respuesta, no una enfermedad: tratar la causa'],act:['Buscar la causa: fiebre, sangrado, TEP, sepsis'],
+ p:{who:'Varón, 34 años',hx:'Sin antecedentes',mc:'Fiebre y tos de 3 días',sx:['Fiebre 39,2 °C','Tos productiva','Escalofríos'],bp:'112/68',sp:94,fr:22,ex:'Crepitantes en base derecha.'}},
+{id:'fa',g:'Arritmias',n:'Fibrilación auricular',r:{k:'af'},vl:['II','V1','V5'],key:['II','V1'],
+ ecg:['RR irregularmente irregular','Ausencia de ondas P; ondas f finas (mejor en V1 y II)','QRS estrecho'],
+ mech:'Múltiples frentes de reentrada caóticos en las aurículas (350–600/min), con frecuencia iniciados por focos en las venas pulmonares. Las aurículas no se contraen y el nodo AV deja pasar impulsos de forma irregular.',
+ clin:['Palpitaciones, disnea, insuficiencia cardiaca','Riesgo de ictus por trombo en la orejuela izquierda'],act:['Valorar estabilidad hemodinámica','Control de frecuencia o de ritmo','Anticoagulación según riesgo embólico (CHA₂DS₂-VA) y tiempo de evolución'],
+ p:{who:'Mujer, 76 años',hx:'HTA e insuficiencia cardiaca',mc:'Palpitaciones de 6 horas',sx:['Palpitaciones irregulares','Disnea de esfuerzo','Cansancio'],bp:'132/84',sp:95,fr:20,ex:'Pulso arrítmico con déficit de pulso.'}},
+{id:'flutter21',g:'Arritmias',n:'Flutter auricular típico 2:1',r:{k:'flutter',cond:2},vl:['II','V1','aVF'],key:['II','III','aVF','V1'],
+ ecg:['Taquicardia regular a ~150 lpm: sospechar flutter 2:1','Ondas F en dientes de sierra negativas en II, III y aVF, positivas en V1, a ~300/min','Una F queda oculta en el QRS o la T'],
+ mech:'Macroreentrada en la aurícula derecha alrededor del anillo tricuspídeo, en sentido antihorario, pasando por el istmo cavotricuspídeo (diana de la ablación). El nodo AV solo conduce una de cada dos F.',
+ clin:['Palpitaciones regulares, disnea'],act:['Maniobras vagales o adenosina desenmascaran las ondas F','Control de frecuencia, cardioversión; ablación del istmo'],
+ p:{who:'Varón, 68 años',hx:'EPOC',mc:'Palpitaciones y disnea de 1 día',sx:['Palpitaciones regulares','Disnea'],bp:'118/76',sp:92,fr:22,ex:'Pulso regular a 150 lpm.'}},
+{id:'flutter41',g:'Arritmias',n:'Flutter auricular típico 4:1',r:{k:'flutter',cond:4},vl:['II','V1','aVF'],key:['II','III','aVF','V1'],
+ ecg:['Ondas F en dientes de sierra muy visibles a 300/min','Conducción 4:1: FC ventricular ~75 lpm'],mech:'El mismo circuito alrededor del anillo tricuspídeo; el nodo AV bloquea tres de cada cuatro F (por fármacos frenadores o enfermedad nodal).',
+ clin:['Puede ser bien tolerado'],act:['Anticoagulación con los mismos criterios que la FA'],
+ p:{who:'Varón, 72 años',hx:'Cardiopatía hipertensiva, en tratamiento con betabloqueante',mc:'Cansancio de 1 semana',sx:['Astenia','Palpitaciones leves'],bp:'126/78',sp:95,fr:17,ex:'Pulso regular a 75 lpm.'}},
+{id:'trin',g:'Arritmias',n:'Taquicardia por reentrada intranodal (TRIN)',r:{k:'avnrt',rate:182},vl:['V1','II','III'],key:['V1','II','III','aVF'],
+ ecg:['Taquicardia regular de QRS estrecho (150–220 lpm)','P retrógrada oculta: pseudo-r′ en V1 y pseudo-S en II, III y aVF','Inicio y fin bruscos'],
+ mech:'Doble vía en el nodo AV: el impulso baja por la vía lenta y sube por la rápida (forma común), girando en un circuito diminuto. Aurículas y ventrículos se activan casi a la vez.',
+ clin:['Palpitaciones bruscas, "pulsaciones en el cuello" (ondas a cañón)'],act:['Maniobras vagales (Valsalva modificada)','Adenosina IV en bolo rápido','Cardioversión eléctrica si inestable'],
+ p:{who:'Mujer, 29 años',hx:'Episodios previos autolimitados',mc:'Palpitaciones de inicio súbito hace 40 minutos',sx:['Palpitaciones rápidas','Latido en el cuello','Ansiedad'],bp:'110/70',sp:98,fr:18,ex:'Pulso regular rapidísimo. Ondas a cañón yugulares.'}},
+{id:'wpw',g:'Arritmias',n:'Preexcitación (Wolff-Parkinson-White)',r:{k:'sinus',rate:70,pr:.105,vt:'pre'},vl:['V3','II','I'],key:['I','V3','V4','V5'],
+ ecg:['PR corto (<0,12 s)','Onda delta y QRS ensanchado','Alteraciones secundarias de ST–T'],
+ mech:'Una vía accesoria (haz de Kent), aquí lateral izquierda, une aurícula y ventrículo saltándose el nodo AV: el ventrículo empieza a activarse antes desde la vía (onda delta) y se fusiona con la activación normal.',
+ clin:['Taquicardias por reentrada AV','FA preexcitada: riesgo de FV'],act:['En FA preexcitada evitar frenadores del nodo AV (adenosina, β-bloqueantes, calcioantagonistas, digoxina)','Procainamida o cardioversión; ablación de la vía'],
+ p:{who:'Varón, 22 años',hx:'Palpitaciones ocasionales',mc:'ECG de reconocimiento deportivo',sx:['Asintomático ahora'],bp:'122/72',sp:99,fr:14,ex:'Normal.'}},
+{id:'bige',g:'Arritmias',n:'Bigeminismo ventricular (EV del tracto de salida del VD)',r:{k:'sinus',rate:76,pr:.16,bige:1},vl:['II','V1','V6'],key:['II','V1'],
+ ecg:['Cada latido sinusal va seguido de un QRS ancho prematuro sin P','Pausa compensadora completa','EV con morfología de BRIHH y eje inferior: origen en el tracto de salida del VD'],
+ mech:'Un foco ectópico en el tracto de salida del VD dispara antes de tiempo (automatismo o actividad desencadenada). El impulso viaja de célula a célula, sin usar el His–Purkinje, por eso el QRS es ancho.',
+ clin:['Palpitaciones, "vuelcos"','Si son muy frecuentes, posible miocardiopatía'],act:['Corregir potasio y magnesio','Valorar cardiopatía estructural'],
+ p:{who:'Mujer, 45 años',hx:'Ansiedad, consumo alto de cafeína',mc:'Sensación de "vuelcos" en el pecho',sx:['Palpitaciones','Latidos fallidos'],bp:'124/80',sp:99,fr:15,ex:'Pulso irregular con pausas.'}},
+{id:'tv',g:'Arritmias',n:'Taquicardia ventricular monomorfa',r:{k:'vt',rate:168},vl:['V1','II','I'],key:['V1','II','aVF'],scar:{walls:['ant'],sa:['ant','as']},
+ ecg:['Taquicardia regular de QRS ancho (≥0,12 s)','Disociación AV: P independientes; latidos de captura o fusión','Morfología atípica de bloqueo de rama'],
+ mech:'Reentrada alrededor de la cicatriz de un infarto anterior antiguo: el impulso circula por un istmo de conducción lenta dentro de la cicatriz y sale activando el ventrículo célula a célula, sin His–Purkinje.',
+ clin:['Palpitaciones, mareo, síncope, dolor torácico','Puede degenerar en FV'],act:['Inestable: cardioversión eléctrica sincronizada','Estable: amiodarona o procainamida','Sin pulso: algoritmo de FV'],
+ p:{who:'Varón, 66 años',hx:'IAM anterior hace 4 años, FEVI 30 %',mc:'Palpitaciones y mareo de 20 minutos',sx:['Palpitaciones','Mareo','Dolor torácico','Disnea'],bp:'86/54',sp:93,fr:24,ex:'Pálido, sudoroso. Ondas a cañón irregulares en yugular.'}},
+{id:'fv',g:'Arritmias',n:'Fibrilación ventricular',r:{k:'vf'},vl:['II','V1','V4'],key:['II'],noPulse:true,
+ ecg:['Ondulaciones caóticas de amplitud y frecuencia variables','Sin QRS identificable'],
+ mech:'Múltiples frentes de reentrada desorganizados en los ventrículos: no hay contracción coordinada y el gasto cardiaco es nulo.',
+ clin:['Parada cardiaca: inconsciencia, sin respiración ni pulso'],act:['RCP de alta calidad y desfibrilación inmediata','Adrenalina y amiodarona según algoritmo de SVA','Buscar causas reversibles'],
+ p:{who:'Varón, 57 años',hx:'Desconocidos',mc:'Se desploma en la sala de espera',sx:['Inconsciente','No respira','Sin pulso'],bp:'---',sp:null,fr:0,ex:'Sin pulso carotídeo. Pupilas medias.'}},
+{id:'bav1',g:'Trastornos de la conducción',n:'BAV de 1.er grado',r:{k:'sinus',rate:68,pr:.32},vl:['II','V1','V5'],key:['II'],
+ ecg:['PR >0,20 s constante','Todas las P conducen'],mech:'Retraso de la conducción en el nodo AV (casi siempre nodal). El impulso llega, pero tarde.',
+ clin:['Asintomático'],act:['Revisar fármacos frenadores'],p:{who:'Varón, 74 años',hx:'Tratamiento con diltiazem',mc:'Control rutinario',sx:['Asintomático'],bp:'136/82',sp:97,fr:15,ex:'Normal.'}},
+{id:'mob1',g:'Trastornos de la conducción',n:'BAV 2.º grado Mobitz I (Wenckebach)',r:{k:'sinus',rate:80,prs:[.18,.27,.32,null]},vl:['II','V1','V5'],key:['II'],
+ ecg:['Alargamiento progresivo del PR hasta una P no conducida','El RR se acorta antes de la pausa','Agrupación de latidos'],
+ mech:'Fatiga progresiva del nodo AV: cada impulso encuentra el nodo menos recuperado hasta que uno no pasa. Nivel nodal, generalmente benigno.',
+ clin:['Frecuente en IAM inferior y vagotonía','Suele ser asintomático'],act:['Observación; atropina si sintomático'],
+ p:{who:'Varón, 70 años',hx:'IAM inferior hace 12 horas',mc:'Pausas en el monitor',sx:['Asintomático','Leve mareo ocasional'],bp:'118/72',sp:96,fr:16,ex:'Pulso irregular agrupado.'}},
+{id:'mob2',g:'Trastornos de la conducción',n:'BAV 2.º grado Mobitz II',r:{k:'sinus',rate:84,pr:.18,pat:[1,1,0],vt:'rbbb'},vl:['II','V1','V6'],key:['II','V1'],
+ ecg:['PR constante con una P bloqueada de forma súbita','QRS ancho con frecuencia (enfermedad del sistema His–Purkinje)'],
+ mech:'Bloqueo por debajo del nodo AV, en el His o en las ramas: el impulso pasa o no pasa, sin aviso previo.',
+ clin:['Mareo, síncope','Alto riesgo de progresar a BAV completo'],act:['Marcapasos transcutáneo preparado','Marcapasos definitivo'],
+ p:{who:'Mujer, 78 años',hx:'Bloqueo de rama derecha conocido',mc:'Presíncope',sx:['Mareo','Debilidad'],bp:'112/70',sp:96,fr:16,ex:'Pulso lento e irregular.'}},
+{id:'bav3',g:'Trastornos de la conducción',n:'BAV completo (3.er grado)',r:{k:'chb',rateA:82,rateV:36},vl:['II','V1','V5'],key:['II','V1'],
+ ecg:['Disociación AV: P (~80) y QRS (~36) independientes','Escape ventricular de QRS ancho'],
+ mech:'Ningún impulso auricular atraviesa el sistema de conducción; un marcapasos subsidiario del ventrículo mantiene un ritmo de escape lento.',
+ clin:['Síncope (Stokes-Adams), bajo gasto','Ondas a cañón'],act:['Atropina poco eficaz si el bloqueo es infranodal','Marcapasos transcutáneo; perfusión de adrenalina o isoprenalina como puente','Marcapasos definitivo'],
+ p:{who:'Mujer, 81 años',hx:'HTA',mc:'Síncope en domicilio',sx:['Pérdida de conocimiento breve','Mareo','Debilidad'],bp:'96/52',sp:95,fr:18,ex:'Bradicardia extrema. Ondas a cañón en yugular.'}},
+{id:'brihh',g:'Trastornos de la conducción',n:'Bloqueo de rama izquierda (BRIHH)',r:{k:'sinus',rate:76,pr:.17,vt:'lbbb'},vl:['V1','V6','I'],key:['I','aVL','V1','V5','V6'],
+ ecg:['QRS ≥0,12 s','R ancha y mellada en I, aVL, V5–V6 sin q septal','QS o rS en V1–V3; ST–T discordante'],
+ mech:'La rama izquierda no conduce: el VI se activa tarde y de forma lenta desde el VD, a través del tabique y del miocardio.',
+ clin:['Con dolor torácico isquémico, valorar como posible equivalente de IAMCEST (criterios de Sgarbossa)'],act:['Comparar con ECG previo','Código infarto si dolor típico con inestabilidad o Sgarbossa positivo'],
+ p:{who:'Varón, 76 años',hx:'Miocardiopatía dilatada',mc:'Disnea de esfuerzo progresiva',sx:['Disnea','Edemas maleolares'],bp:'124/72',sp:94,fr:20,ex:'Desdoblamiento paradójico del 2.º ruido.'}},
+{id:'brdhh',g:'Trastornos de la conducción',n:'Bloqueo de rama derecha (BRDHH)',r:{k:'sinus',rate:74,pr:.16,vt:'rbbb'},vl:['V1','V6','I'],key:['V1','V2','I','V6'],
+ ecg:['QRS ≥0,12 s','rsR′ en V1–V2','S ancha y empastada en I, aVL y V6'],
+ mech:'La rama derecha no conduce: el VD se activa tarde desde el VI. La activación tardía del VD produce la R′ de V1.',
+ clin:['Puede ser normal; si es nuevo, pensar en TEP, IAM anterior o cardiopatía'],act:['Buscar causa si es de nueva aparición'],
+ p:{who:'Mujer, 52 años',hx:'Sin antecedentes',mc:'Preoperatorio',sx:['Asintomática'],bp:'120/76',sp:98,fr:14,ex:'Desdoblamiento amplio del 2.º ruido.'}}
+];
+const BYID=Object.fromEntries(SC.map(s=>[s.id,s]));
+
+/* ---------- estado ---------- */
+const st={sc:SC[0],phase:1,speed:1,S:0,aE:[],vE:[],gen:null,tCond:true,tCor:true,tHi:true,tExt:true,tMark:true,caseOn:false,reveal:true,run:true};
+let MOD={};
+function buildMods(){MOD={};const inf=st.sc.inf;if(!inf)return;const ph=st.sc.noEvo?1:st.phase;
+ for(const L of LEADS){const s=inf.st[L]||0;const m={st:0,q:0,rS:1,tS:1,tw:1,rAdd:0,sS:1};const mir=inf.mirror&&inf.mirror.includes(L);
+  if(s>0){if(ph===0){m.st=.22*s;m.tS=1+5*s;m.tw=1.3}else if(ph===1){m.st=s;m.tS=1+1.5*s}else if(ph===2){m.st=.4*s;m.q=-Math.min(.45,.18+.8*s);m.rS=Math.max(.25,1-1.7*s);m.tS=-.9}else{m.st=.04*s;m.q=-Math.min(.45,.18+.8*s);m.rS=Math.max(.25,1-1.7*s);m.tS=-.55}}
+  else if(s<0){if(mir){m.st=ph===0?.4*s:ph===1?s:ph===2?.4*s:0;m.tS=ph>=2?1.8:1.2;if(ph>=2){m.rAdd=L==='V1'?.55:L==='V2'?.6:.3;m.sS=.45}}
+   else{m.st=ph===0?.4*s:ph===1?s:ph===2?.4*s:0;m.tS=ph>=2?1.15:1}}
+  MOD[L]=m}}
+
+/* ---------- generador del ritmo ---------- */
+function reset(){seed=7+SC.indexOf(st.sc)*13;st.S=0;st.aE=[];st.vE=[];const r=st.sc.r;st.gen={tA:-12,tV:-12,k:0,r};fill(4);buildMods()}
+function fill(h){const G=st.gen,r=G.r,A=st.aE,V=st.vE;
+ if(r.k==='sinus'){while(G.tA<h){const i=G.k++;let pr=r.pr,c=true;if(r.prs){pr=r.prs[i%r.prs.length];c=pr!=null}if(r.pat)c=r.pat[i%r.pat.length]===1;
+   if(r.bige&&i%2===1)c=false;A.push({t:G.tA,k:'s',blk:!c&&!r.bige,ref:r.bige&&!c,pr});if(c)V.push({t:G.tA+pr,ty:r.vt||'n',a:G.tA});
+   if(r.bige&&i%2===0)V.push({t:G.tA+pr+.44,ty:'pvc'});G.tA+=60/r.rate*(1+(rnd()-.5)*.03)}}
+ else if(r.k==='af'){while(G.tV<h){V.push({t:G.tV,ty:'n'});G.tV+=.38+rnd()*.55}}
+ else if(r.k==='flutter'){while(G.tA<h){const i=G.k++;const c=i%r.cond===0;A.push({t:G.tA,k:'f',hid:1,blk:false});if(c)V.push({t:G.tA+.27,ty:'n',a:G.tA,fl:1});G.tA+=.2}}
+ else if(r.k==='avnrt'){while(G.tV<h){V.push({t:G.tV,ty:'avnrt',re:1});A.push({t:G.tV+.015,k:'r',hid:1});G.tV+=60/r.rate}}
+ else if(r.k==='vt'){while(G.tV<h){V.push({t:G.tV,ty:'vt'});G.tV+=60/r.rate}while(G.tA<h){A.push({t:G.tA,k:'s',diss:1});G.tA+=60/74}}
+ else if(r.k==='chb'){while(G.tA<h){A.push({t:G.tA,k:'s',blk:true});G.tA+=60/r.rateA}while(G.tV<h){V.push({t:G.tV,ty:'esc'});G.tV+=60/r.rateV}}
+ const lo=st.S-24;while(A.length&&A[0].t<lo)A.shift();while(V.length&&V[0].t<lo)V.shift()}
+
+/* ---------- síntesis de la señal ---------- */
+const LI=Object.fromEntries(LEADS.map((L,i)=>[L,i]));
+function vc(L,x,ty){const n=N[L];let y=0;
+ if(ty==='n'||ty==='avnrt'||ty==='pre'){const m=MOD[L]||{st:0,q:0,rS:1,tS:1,tw:1,rAdd:0,sS:1};
+  const rw=ty==='pre'?.014:.010;
+  y+=(m.q?m.q*g(x,.022,.012):n[1]*g(x,.015,.006))+(n[2]*m.rS+m.rAdd)*g(x,.042,rw)+n[3]*m.sS*g(x,.068,.010);
+  const tw=.055*m.tw,tT=x<.3?g(x,.3,tw):g(x,.3,.035*m.tw);y+=n[4]*(ty==='pre'?.5:1)*m.tS*tT;
+  if(m.st)y+=m.st*(sg((x-.075)/.007)*(1-sg((x-.34)/.04))+.3*g(x,.2,.07));
+  if(ty==='pre')y+=DEL[L]*g(x,-.012,.02);
+  if(ty==='avnrt'){if(L==='V1')y+=.14*g(x,.085,.008);if(L==='II'||L==='III'||L==='aVF')y-=.12*g(x,.085,.008)}
+  return y}
+ if(ty==='lbbb'||ty==='rbbb'){const [c,T]=(ty==='lbbb'?LB:RB)(L);for(const k of c)y+=k[2]*g(x,k[0],k[1]);return y+T*(x<.34?g(x,.34,.06):g(x,.34,.04))}
+ const a=(ty==='vt'?VTA:ty==='pvc'?PVA:ESA)[L],w=ty==='vt'?.04:.045;
+ return a*g(x,.07,w)+.35*a*g(x,.12,.03)-.45*a*(x<.3?g(x,.3,.06):g(x,.3,.045))}
+function sig(L,t){let y=0;const k=st.gen.r.k,li=LI[L];
+ for(const a of st.aE){const d=t-a.t;if(d<-.02)break;if(d<.14&&a.k==='s')y+=N[L][0]*g(d,.05,.022)}
+ for(const v of st.vE){const d=t-v.t;if(d<-.06)break;if(d<.6)y+=vc(L,d,v.ty)}
+ if(k==='af'){const kk=L==='V1'?1.2:(L==='II'||L==='III'||L==='aVF')?.85:.4;y+=kk*(.045*Math.sin(2*Math.PI*6.3*t+li)+.03*Math.sin(2*Math.PI*8.1*t+li*2)+.02*Math.sin(2*Math.PI*4.7*t+1))}
+ if(k==='flutter'){const p=((t+.04)/.2)%1,s=(p<.3?-p/.3:-1+(p-.3)/.7)+.5;const kk={II:.24,III:.27,aVF:.26,aVR:-.12,I:.03,aVL:-.1,V1:-.16,V2:-.08,V4R:-.12}[L]??.04;y+=kk*s}
+ if(k==='vf'){const A=.35+.15*Math.sin(2*Math.PI*.3*t)+.08*Math.sin(2*Math.PI*.71*t);const gg=.6+.5*Math.abs(Math.sin(li*1.7));y+=gg*A*(Math.sin(2*Math.PI*5.1*t+li)+.6*Math.sin(2*Math.PI*6.7*t+li*2.3)+.4*Math.sin(2*Math.PI*3.9*t+li*.7))}
+ return y+.012*Math.sin(2*Math.PI*.33*t+li)+.004*Math.sin(2*Math.PI*47*t+li)}
+
+/* ---------- geometría del corazón (espacio 760×600) ---------- */
+const P2=s=>new Path2D(s);
+const H={vent:P2('M168 300 C150 380 205 468 300 525 C330 545 352 560 372 556 C420 548 462 500 476 430 C490 360 470 296 440 262 C400 244 330 246 300 252 C250 260 200 276 168 300 Z'),
+ lv:P2('M346 252 C380 248 420 252 440 262 C470 296 490 360 476 430 C462 500 420 548 372 556 L366 552 C366 440 356 330 346 252 Z'),
+ ra:P2('M118 205 C92 245 100 318 172 322 C196 312 214 280 210 240 C206 214 190 196 168 192 C146 190 128 196 118 205 Z'),
+ raa:P2('M196 214 C220 200 262 206 282 232 C270 254 240 264 212 256 Z'),
+ la:P2('M360 210 C390 192 432 196 450 220 C458 240 448 258 430 262 C400 262 370 254 356 236 Z'),
+ laa:P2('M432 228 C452 214 482 222 482 246 C478 264 452 270 436 258 C444 248 440 236 432 228 Z')};
+const ATR=new Path2D();['ra','raa','la','laa'].forEach(k=>ATR.addPath(H[k]));
+const WALL={sept:P2('M326 254 L374 252 C382 330 386 420 378 500 C372 530 362 548 354 552 C344 520 344 470 344 420 C342 350 336 300 326 254 Z'),
+ ant:P2('M330 254 C360 250 400 252 420 258 C440 300 452 380 448 450 C440 510 410 548 372 556 C350 552 336 530 338 490 C340 420 334 330 330 254 Z'),
+ lat:P2('M420 256 C450 266 474 300 484 360 C490 420 476 480 450 510 C440 470 438 400 432 330 C430 300 426 275 420 256 Z'),
+ hlat:P2('M418 255 C448 262 470 282 480 322 C462 328 444 328 432 324 C428 296 424 272 418 255 Z'),
+ inf:P2('M168 304 C178 400 236 466 302 512 C334 534 356 548 374 556 C354 562 330 552 304 538 C228 494 172 430 156 360 C154 336 158 318 168 304 Z'),
+ rv:P2('M176 300 C220 276 270 262 312 256 C318 330 326 420 334 520 C300 506 240 470 205 420 C180 380 168 340 176 300 Z')};
+const POST=P2('M380 262 C420 262 462 280 476 330 C470 352 440 354 420 346 C400 322 390 292 380 262 Z');
+const COR={lm:'M318 248 C328 249 337 250 345 252',ladp1:'M345 252 C348 266 350 278 351 288',ladp2:'M351 288 C354 304 356 318 358 332',ladm:'M358 332 C364 400 370 470 366 548',
+ d1:'M356 318 C384 330 412 352 432 384',d2:'M362 404 C390 418 420 442 440 474',lcx1:'M345 252 C365 250 388 251 410 256',lcx2:'M410 256 C428 260 446 270 458 290',lcxb:'M458 290 C468 312 472 336 470 360',
+ om:'M446 276 C462 320 466 380 452 440',rcap1:'M300 262 C286 270 268 279 250 286',rcap2:'M250 286 C232 293 212 299 196 306',rcam1:'M196 306 C184 322 182 346 186 370',
+ rcam2:'M186 370 C192 405 200 430 215 452',rcad:'M215 452 C250 492 292 522 332 546',am:'M188 350 C214 372 246 396 276 430'};
+const CORP=Object.fromEntries(Object.entries(COR).map(([k,v])=>[k,P2(v)]));
+const CONDP={inter:[P2('M172 206 C200 240 230 270 262 296'),P2('M172 206 C160 250 210 300 262 296'),P2('M172 206 C230 210 250 260 262 296')],bach:P2('M172 206 C250 190 330 200 432 228'),
+ his:P2('M262 296 L318 312'),rbb:P2('M318 312 C320 380 330 450 352 538'),mod:P2('M326 432 C300 442 270 452 238 452'),lbbA:P2('M318 312 C350 320 400 350 432 392'),lbbP:P2('M326 318 C360 360 380 450 382 532'),
+ purk:P2('M352 538 l-18 -14 M352 538 l6 -20 M382 532 l20 -16 M382 532 l-4 -22 M432 392 l18 4 M432 392 l6 18 M238 452 l-14 -10 M238 452 l-6 14 M300 500 l-14 4 M410 480 l16 6')};
+const ORG={n:[340,360],avnrt:[340,360],pre:[452,272],lbbb:[300,420],rbbb:[390,380],pvc:[318,268],esc:[350,470],vt:[396,470]};
+const DUR={n:.08,avnrt:.08,pre:.12,lbbb:.14,rbbb:.12,pvc:.15,esc:.17,vt:.15};
+const SAD={n:{as:0,is:.01,ant:.02,inf:.03,al:.045,il:.055,rv:.03},lbbb:{rv:0,as:.04,is:.05,ant:.08,inf:.09,al:.12,il:.13},rbbb:{as:0,is:.01,ant:.02,inf:.03,al:.045,il:.05,rv:.09},
+ vt:{ant:0,al:.03,as:.04,il:.08,inf:.09,is:.1,rv:.12},pvc:{rv:0,as:.03,ant:.05,is:.07,al:.09,inf:.1,il:.12},esc:{is:0,inf:.03,as:.04,rv:.06,ant:.08,il:.1,al:.12},pre:{il:0,al:.02,inf:.05,ant:.06,is:.07,as:.07,rv:.09}};
+SAD.avnrt=SAD.n;
+const SEGS=[['ant',-120,-60,'Anterior'],['al',-60,0,'Lat. ant.'],['il',0,60,'Lat. inf.'],['inf',60,120,'Inferior'],['is',120,180,'Inferosept.'],['as',180,240,'Anterosept.']];
+
+/* estado eléctrico del corazón en el instante t */
+function hstate(t){const s={a:null,v:null,cap:'Diástole: el nodo sinusal se prepara para el siguiente impulso',avG:0,avB:0,his:0,vSys:0,aSys:0};const k=st.gen.r.k;
+ for(const a of st.aE){if(a.t>t)break;s.a=a}for(const v of st.vE){if(v.t>t+.06)break;if(v.t<=t)s.v=v;
+  if(v.a!=null&&t>=v.a+.06&&t<v.t-.03)s.avG=1;if(v.ty!=='lbbb'&&v.ty!=='rbbb'&&v.ty!=='vt'&&v.ty!=='pvc'&&v.ty!=='esc'&&t>=v.t-.035&&t<v.t+.01)s.his=v.ty}
+ const a=s.a,v=s.v;
+ if(a&&a.blk&&t>=a.t+.09&&t<a.t+.32){s.avB=1}
+ if(a&&!a.hid&&t-a.t<.3)s.aSys=Math.max(0,Math.sin(Math.PI*Math.min(1,Math.max(0,(t-a.t-.06)/.16))));
+ if(v){const d=t-v.t;if(d<.42&&k!=='vf')s.vSys=d<.05?0:Math.pow(Math.max(0,Math.sin(Math.PI*Math.min(1,(d-.05)/.36))),1.2)*(v.ty==='vt'?.6:1)}
+ const ad=a?t-a.t:9,vd=v?t-v.t:9;
+ if(k==='vf')s.cap='Fibrilación ventricular: reentradas caóticas, sin contracción eficaz';
+ else if(v&&vd<DUR[v.ty])s.cap={vt:'Salida del circuito de reentrada: el ventrículo se activa célula a célula (QRS ancho)',pvc:'Extrasístole: foco ectópico en el tracto de salida del VD (QRS ancho)',esc:'Escape ventricular: marcapasos subsidiario lento (QRS ancho)',lbbb:'Rama izquierda bloqueada: el VI se activa tarde desde el VD',rbbb:'Rama derecha bloqueada: el VD se activa tarde desde el VI',pre:'Preexcitación por la vía accesoria (onda delta) + conducción normal'}[v.ty]||'Despolarización ventricular (QRS)';
+ else if(s.avB)s.cap=a.blk&&st.gen.r.k==='chb'?'Bloqueo completo: la onda P no atraviesa el sistema de conducción':'Onda P bloqueada: el impulso no pasa al ventrículo';
+ else if(s.avG)s.cap=st.gen.r.k==='flutter'?'El nodo AV deja pasar una onda F':(v&&v.a!=null&&false)?'':'Retraso en el nodo AV (segmento PR)';
+ else if(vd<.42)s.cap=st.sc.inf&&st.sc.id!=='scasest'?'Repolarización: la corriente de lesión desplaza el segmento ST':'Repolarización ventricular (segmento ST y onda T)';
+ else if(ad<.1&&!a.hid)s.cap=a.diss?'Onda P disociada: las aurículas laten por su cuenta':'Despolarización auricular desde el nodo sinusal (onda P)';
+ if(k==='af'&&vd>=DUR.n&&!(vd<.42))s.cap='Fibrilación auricular: múltiples ondas caóticas en las aurículas';
+ if(k==='flutter'&&!s.avG&&!(vd<.42))s.cap='Flutter: el frente gira alrededor del anillo tricuspídeo (~300/min)';
+ if(k==='vt'&&!(v&&vd<DUR.vt))s.cap='TV: el impulso gira por el istmo de la cicatriz y vuelve a salir en cada ciclo';
+ if(k==='avnrt'&&!(vd<DUR.n))s.cap='Reentrada en el nodo AV: baja por la vía lenta y sube por la rápida';
+ if(k==='sinus'&&st.gen.r.vt==='pre'&&s.avG)s.cap='El impulso cruza antes por la vía accesoria (PR corto)';
+ return s}
+
+/* ---------- dibujo del corazón ---------- */
+function tube(c,d,w,c1,c2){const p=typeof d==='string'?P2(d):d;c.lineCap='round';c.strokeStyle=c2;c.lineWidth=w;c.stroke(p);c.strokeStyle=c1;c.lineWidth=w*.64;c.stroke(p);c.save();c.translate(-w*.14,-w*.1);c.strokeStyle='rgba(255,255,255,.22)';c.lineWidth=w*.16;c.stroke(p);c.restore()}
+function muscle(c,p,x,y,r,a,b,d){const gr=c.createRadialGradient(x-r*.35,y-r*.45,r*.05,x,y,r);gr.addColorStop(0,a);gr.addColorStop(.55,b);gr.addColorStop(1,d);c.fillStyle=gr;c.fill(p)}
+function striae(c,p,n,x0,y0,x1,y1,seedv){c.save();c.clip(p);c.strokeStyle='rgba(60,0,10,.13)';c.lineWidth=1.2;for(let i=0;i<n;i++){const f=i/n;c.beginPath();const ax=x0+(x1-x0)*f;c.moveTo(ax,y0);c.bezierCurveTo(ax+40+Math.sin(i*seedv)*20,y0+(y1-y0)*.35,ax+80,y0+(y1-y0)*.7,ax+60+Math.cos(i)*15,y1);c.stroke()}c.restore()}
+function scale(c,ox,oy,k){c.translate(ox,oy);c.scale(k,k);c.translate(-ox,-oy)}
+function label(c,txt,x,y,al){c.font='600 13px "Source Sans 3",sans-serif';c.textAlign=al||'center';c.lineWidth=3.5;c.strokeStyle='rgba(10,6,7,.85)';c.strokeText(txt,x,y);c.fillStyle='#f6eeea';c.fillText(txt,x,y)}
+function zone(c,p,ph,t,isScar){c.save();c.filter='blur(2.5px)';const pul=.5+.5*Math.sin(t*5);
+ if(isScar||ph===3){c.fillStyle='rgba(236,226,214,.78)';c.fill(p);c.filter='none';c.strokeStyle='rgba(255,255,255,.35)';c.lineWidth=1.5;c.stroke(p)}
+ else if(ph===0){c.fillStyle=`rgba(98,112,255,${.32+.12*pul})`;c.fill(p)}
+ else if(ph===1){c.fillStyle=`rgba(200,10,70,${.55+.15*pul})`;c.fill(p);c.filter='none';c.shadowColor='rgba(255,40,90,.9)';c.shadowBlur=14*pul+4;c.strokeStyle=`rgba(255,80,120,${.6+.3*pul})`;c.lineWidth=2.5;c.stroke(p)}
+ else{c.fillStyle='rgba(70,35,48,.82)';c.fill(p);c.filter='none';c.strokeStyle=`rgba(220,30,80,${.55+.25*pul})`;c.lineWidth=4;c.stroke(p)}
+ c.restore()}
+function wave(c,clip,ox,oy,p,R){c.save();c.clip(clip);const r=Math.max(1,p*R);
+ c.fillStyle='rgba(255,140,50,.26)';c.beginPath();c.arc(ox,oy,Math.max(0,r-30),0,7);c.fill();
+ const gr=c.createRadialGradient(ox,oy,Math.max(0,r-34),ox,oy,r+4);gr.addColorStop(0,'rgba(255,210,90,0)');gr.addColorStop(.75,'rgba(255,222,100,.9)');gr.addColorStop(1,'rgba(255,230,120,0)');
+ c.fillStyle=gr;c.beginPath();c.arc(ox,oy,r+4,0,7);c.fill();c.restore()}
+function tint(c,clip,a){if(a<=0)return;c.save();c.fillStyle=`rgba(255,140,50,${.26*a})`;c.fill(clip);c.restore()}
+function blob(c,x,y,r,a){const gr=c.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(255,230,120,${a})`);gr.addColorStop(1,'rgba(255,200,80,0)');c.fillStyle=gr;c.beginPath();c.arc(x,y,r,0,7);c.fill()}
+
+function drawHeart(c,W,Hh,t){const k=Math.min(W/760,Hh/600);c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,W,Hh);c.save();c.translate((W-760*k)/2,(Hh-600*k)/2);c.scale(k,k);
+ const s=hstate(t),sc=st.sc,inf=st.reveal?sc.inf:null,ph=sc.noEvo?1:st.phase,kind=st.gen.r.k,rev=st.reveal;
+ const kv=1-.035*s.vSys+(kind==='vf'?.004*Math.sin(t*60):0),ka=1-.05*s.aSys;
+ // sombra
+ c.save();c.fillStyle='rgba(0,0,0,.45)';c.filter='blur(18px)';c.beginPath();c.ellipse(330,560,170,26,-.1,0,7);c.fill();c.restore();
+ // vasos posteriores
+ tube(c,'M352 186 C320 176 280 172 236 178',30,'#6f86c0','#3b4e85');tube(c,'M178 318 L184 378',40,'#6f86c0','#3b4e85');
+ c.save();scale(c,420,235,ka);muscle(c,H.la,410,220,70,'#c7676a','#8f2f38','#5a1520');c.restore();
+ tube(c,'M318 88 L310 30',17,'#e06a5f','#8e2420');tube(c,'M348 76 L350 22',17,'#e06a5f','#8e2420');tube(c,'M378 76 L390 26',17,'#e06a5f','#8e2420');
+ tube(c,'M296 262 C290 210 286 160 300 120 C318 78 380 66 418 96 C440 116 446 150 444 214',56,'#dd5a4f','#8a221f');
+ tube(c,'M330 262 C334 228 344 196 372 170 C392 150 420 146 448 150',46,'#7f97cc','#41558f');
+ tube(c,'M164 34 L166 206',46,'#7088c4','#3b4e85');
+ c.save();scale(c,170,255,ka);muscle(c,H.ra,150,240,95,'#c86a6c','#94343b','#5c1822');striae(c,H.ra,8,100,195,210,320,2.1);c.restore();
+ // ventrículos
+ c.save();scale(c,320,262,kv);
+ c.save();c.shadowColor='rgba(0,0,0,.5)';c.shadowBlur=30;c.shadowOffsetY=10;muscle(c,H.vent,300,360,290,'#d96b62','#a82f33','#5a1219');c.restore();
+ muscle(c,H.lv,420,380,200,'rgba(210,95,90,.35)','rgba(150,40,45,.25)','rgba(70,10,20,.45)');
+ striae(c,H.vent,26,150,250,470,560,1.3);
+ c.save();c.clip(H.vent);const sp=c.createRadialGradient(250,320,10,250,320,170);sp.addColorStop(0,'rgba(255,225,215,.28)');sp.addColorStop(1,'rgba(255,225,215,0)');c.fillStyle=sp;c.fillRect(100,200,400,400);c.restore();
+ // grasa epicárdica y venas
+ c.save();c.filter='blur(3px)';c.strokeStyle='rgba(236,200,112,.55)';c.lineWidth=18;c.lineCap='round';['M300 262 C250 288 205 300 196 306 C182 340 186 400 215 452 C250 492 292 522 332 546','M345 252 C356 330 368 440 366 548','M345 252 C390 250 440 262 458 290'].forEach(d=>c.stroke(P2(d)));c.restore();
+ c.strokeStyle='rgba(80,90,160,.55)';c.lineWidth=3;c.stroke(P2('M352 262 C366 340 378 440 374 540'));
+ // territorio
+ if(inf){if(inf.walls.includes('sub')){c.save();c.clip(H.vent);c.filter='blur(6px)';c.fillStyle=`rgba(98,112,255,${.22+.08*Math.sin(t*4)})`;c.fill(H.vent);c.restore()}
+  for(const w of inf.walls)if(WALL[w])zone(c,WALL[w],ph,t);
+  if(inf.walls.includes('post')){c.save();c.setLineDash([6,5]);c.strokeStyle='rgba(255,120,150,.95)';c.lineWidth=2.2;c.stroke(POST);c.fillStyle='rgba(200,10,70,.18)';c.fill(POST);c.restore()}}
+ if(rev&&sc.scar)for(const w of sc.scar.walls)zone(c,WALL[w],3,t,1);
+ // activación ventricular
+ const v=s.v;if(v&&kind!=='vf'){const d=t-v.t,du=DUR[v.ty]*(v.ty==='pre'?1:1);const o=v.ty==='vt'?vtExit(t,v):ORG[v.ty];
+  if(d<du)wave(c,H.vent,o[0],o[1],d/du,300);else if(d<.44)tint(c,H.vent,d<.34?1:1-(d-.34)/.1);
+  if(v.ty==='pre'&&d<0)wave(c,H.vent,452,272,(d+.05)/.12,300)}
+ if(kind==='vf'){c.save();c.clip(H.vent);for(let i=0;i<14;i++){const x=300+130*Math.sin(t*(1.3+i*.17)+i*2.1),y=400+120*Math.sin(t*(1.1+i*.13)+i*1.3);blob(c,x,y,34,.55+.3*Math.sin(t*9+i))}c.restore()}
+ // coronarias
+ if(st.tCor){const dim=new Set(inf?inf.dim||[]:[]),occ=inf&&inf.occ;
+  for(const [kk,p] of Object.entries(CORP)){const back=kk==='lcxb';c.save();c.lineCap='round';
+   if(dim.has(kk)){c.strokeStyle='rgba(40,12,18,.9)';c.lineWidth=4.5;c.stroke(p);c.setLineDash([3,6]);c.strokeStyle='rgba(150,110,120,.7)';c.lineWidth=1.6;c.stroke(p)}
+   else{c.globalAlpha=back?.45:1;if(back)c.setLineDash([5,5]);c.strokeStyle='#5c0f16';c.lineWidth=5.5;c.stroke(p);c.strokeStyle='#ef5248';c.lineWidth=3.2;c.stroke(p);
+    if(!back){c.setLineDash([3,11]);c.lineDashOffset=-t*(inf&&inf.sten?14:46);c.strokeStyle='rgba(255,220,210,.9)';c.lineWidth=1.6;c.stroke(p)}}c.restore()}
+  if(occ){const pl=.5+.5*Math.sin(t*6);c.save();c.fillStyle='#1b0508';c.beginPath();c.arc(occ[0],occ[1],7,0,7);c.fill();c.strokeStyle=`rgba(255,240,120,${.6+.4*pl})`;c.lineWidth=2.5;c.beginPath();c.arc(occ[0],occ[1],11+5*pl,0,7);c.stroke();c.restore()}
+  if(inf&&inf.sten){const pl=.5+.5*Math.sin(t*6);c.strokeStyle=`rgba(255,240,120,${.6+.4*pl})`;c.lineWidth=2.5;c.beginPath();c.arc(inf.sten[0],inf.sten[1],10+4*pl,0,7);c.stroke()}}
+ c.restore();// fin ventrículos
+ c.save();scale(c,240,235,ka);muscle(c,H.raa,240,225,60,'#cf7272','#9a3a40','#5c1822');c.restore();
+ c.save();scale(c,455,245,ka);muscle(c,H.laa,455,240,40,'#cf7272','#9a3a40','#5c1822');c.restore();
+ // activación auricular
+ const a=s.a;if(a&&(a.k==='s'||a.k==='r')){const d=t-a.t;const o=a.k==='r'?[262,296]:[172,206];if(d<.1)wave(c,ATR,o[0],o[1],d/.1,330);else if(d<.3)tint(c,ATR,1-(d-.1)/.2)}
+ if(kind==='af'){c.save();c.clip(ATR);for(let i=0;i<10;i++){const left=i<5;const x=left?165+45*Math.sin(t*(2.1+i*.37)+i):410+40*Math.sin(t*(2.3+i*.29)+i*1.7),y=left?255+45*Math.sin(t*(1.7+i*.41)+i*2.3):228+26*Math.sin(t*(2.6+i*.33)+i);blob(c,x,y,22,.75)}c.restore()}
+ if(kind==='flutter'){const ang=-2*Math.PI*((t%.2)/.2)+Math.PI/2;c.save();c.clip(ATR);tint(c,ATR,.5+.3*Math.sin(ang));c.restore();
+  c.save();c.strokeStyle='rgba(255,230,120,.25)';c.lineWidth=2;c.setLineDash([4,4]);c.beginPath();c.ellipse(165,262,44,36,0,0,7);c.stroke();c.setLineDash([]);
+  for(let j=0;j<16;j++){const aa=ang+j*.12;c.fillStyle=`rgba(255,${220-j*6},${110-j*5},${1-j/16})`;c.beginPath();c.arc(165+44*Math.cos(aa),262+36*Math.sin(aa),7-j*.3,0,7);c.fill()}c.restore();
+  if(rev){label(c,'Istmo cavotricuspídeo',165,318);label(c,'Circuito de macroreentrada',165,214)}}
+ // sistema de conducción
+ if(st.tCond){const on=(p,a,col,w)=>{c.save();c.lineCap='round';c.strokeStyle=col;c.lineWidth=w;if(a){c.shadowColor='rgba(255,230,120,1)';c.shadowBlur=16}c.stroke(p);c.restore()};
+  const aOn=a&&a.k==='s'&&t-a.t<.1,base='rgba(255,236,170,.55)',hot='#fff2a8';
+  CONDP.inter.forEach(p=>on(p,aOn,aOn?hot:base,2));on(CONDP.bach,aOn,aOn?hot:base,2);
+  const hisOn=s.his,lOn=hisOn&&hisOn!=='lbbb',rOn=hisOn&&hisOn!=='rbbb';
+  on(CONDP.his,hisOn,hisOn?hot:base,4);on(CONDP.rbb,rOn,sc.r.vt==='rbbb'?'rgba(255,60,60,.9)':rOn?hot:base,3);on(CONDP.mod,rOn,rOn?hot:base,2);
+  on(CONDP.lbbA,lOn,sc.r.vt==='lbbb'?'rgba(255,60,60,.9)':lOn?hot:base,3);on(CONDP.lbbP,lOn,sc.r.vt==='lbbb'?'rgba(255,60,60,.9)':lOn?hot:base,3);on(CONDP.purk,v&&t-v.t<.05&&v.ty==='n',base,1.5);
+  const sa=kind==='sinus'||kind==='vt'||kind==='chb';c.save();c.fillStyle=aOn?'#fff6b0':sa?'rgba(255,236,170,.85)':'rgba(140,140,140,.6)';c.shadowColor='#ffe680';c.shadowBlur=aOn?22:0;c.beginPath();c.arc(172,206,7,0,7);c.fill();c.restore();
+  c.save();c.fillStyle=s.avG?'#fff6b0':'rgba(255,236,170,.85)';c.shadowColor='#ffe680';c.shadowBlur=s.avG?20:0;c.beginPath();c.ellipse(262,296,9,6,.3,0,7);c.fill();c.restore();
+  label(c,'Nodo sinusal',172,184);label(c,'Nodo AV',238,318);label(c,'Haz de His',300,296,'left')}
+ if(s.avB&&rev){c.save();c.strokeStyle='#ff3b3b';c.lineWidth=4;c.beginPath();c.moveTo(252,286);c.lineTo(272,306);c.moveTo(272,286);c.lineTo(252,306);c.stroke();c.restore()}
+ if(rev&&kind==='avnrt'){const ang=2*Math.PI*((t%(60/182))/(60/182));c.save();c.strokeStyle='rgba(255,240,150,.5)';c.lineWidth=2;c.beginPath();c.arc(262,296,15,0,7);c.stroke();for(let j=0;j<10;j++){const aa=ang-j*.25;c.fillStyle=`rgba(255,240,140,${1-j/10})`;c.beginPath();c.arc(262+15*Math.cos(aa),296+15*Math.sin(aa),4.5-j*.3,0,7);c.fill()}c.restore();label(c,'Vía rápida',262,272);label(c,'Vía lenta',262,330)}
+ if(sc.r.vt==='pre'){c.save();c.strokeStyle='#7ef0ff';c.lineWidth=4;c.shadowColor='#7ef0ff';c.shadowBlur=s.avG?18:4;c.stroke(P2('M444 254 L462 290'));c.restore();if(rev)label(c,'Haz de Kent',470,312,'left')}
+ if(rev&&kind==='vt'){const T=60/168,ang=2*Math.PI*((t%T)/T);c.save();c.strokeStyle='rgba(255,240,150,.4)';c.setLineDash([4,4]);c.lineWidth=2;c.beginPath();c.arc(396,470,24,0,7);c.stroke();c.setLineDash([]);for(let j=0;j<12;j++){const aa=ang-j*.22;c.fillStyle=`rgba(255,240,140,${1-j/12})`;c.beginPath();c.arc(396+24*Math.cos(aa),470+24*Math.sin(aa),5-j*.3,0,7);c.fill()}c.restore();label(c,'Reentrada en cicatriz',396,512)}
+ if(rev&&sc.r.bige){label(c,'Foco ectópico (TSVD)',318,282)}
+ // rótulos anatómicos
+ label(c,'AD',140,262);label(c,'VD',250,420);label(c,'VI',440,430);label(c,'Ao',282,140);label(c,'AP',418,138);label(c,'VCS',204,120,'left');label(c,'AI',470,206);
+ if(st.tCor){label(c,'DA',382,520,'left');label(c,'CD',176,410,'right');label(c,'Cx',420,246);}
+ if(inf&&inf.walls.includes('inf'))label(c,'Cara inferior (diafragmática)',250,546);
+ if(inf&&inf.walls.includes('post'))label(c,'Pared posterior (detrás)',430,372);
+ if(inf&&inf.occ)label(c,'Oclusión',inf.occ[0]+14,inf.occ[1]-12,'left');
+ if(inf&&inf.sten)label(c,'Estenosis crítica TCI',inf.sten[0]-14,inf.sten[1]-16,'right');
+ drawSA(c,t,s,inf,ph);
+ // rótulo de evento
+ c.font='700 16px "Source Sans 3",sans-serif';c.textAlign='left';c.fillStyle='#fff';c.fillText(rev?sc.n:'Caso clínico',22,30);
+ c.font='400 14px "Source Sans 3",sans-serif';c.fillStyle='#ffd98a';wrapText(c,s.cap,22,50,330,18);
+ c.restore();return s}
+function wrapText(c,txt,x,y,w,lh){const ws=txt.split(' ');let line='';for(const wd of ws){const tl=line?line+' '+wd:wd;if(c.measureText(tl).width>w&&line){c.fillText(line,x,y);y+=lh;line=wd}else line=tl}c.fillText(line,x,y)}
+function vtExit(t,v){return [396+24*Math.cos(-.6),470+24*Math.sin(-.6)]}
+function drawSA(c,t,s,inf,ph){const cx=598,cy=208,R=86;const v=s.v,kind=st.gen.r.k;
+ c.save();c.font='700 14px "Source Sans 3",sans-serif';c.textAlign='center';c.fillStyle='#f3e9e4';c.fillText('Corte de eje corto · nivel medio',cx,92);
+ const affected=new Set(inf?inf.sa:[]),scar=st.reveal&&st.sc.scar?new Set(st.sc.scar.sa):new Set(),sub=affected.has('sub');
+ const segT=key=>{if(!v||kind==='vf')return null;const dl=(SAD[v.ty]||SAD.n)[key]??0;return t-v.t-dl};
+ const sys=key=>{if(kind==='vf')return .15*Math.abs(Math.sin(t*20+key.length));let base=s.vSys;if(affected.has(key)&&!sub)base*=ph===0?.5:ph===3?-.25:.08;if(scar.has(key))base*=-.2;if(sub)base*=.6;return base};
+ // VD
+ const rvs=sys('rv');c.save();c.beginPath();c.ellipse(cx-40,cy,122-6*rvs,100-4*rvs,0,0,7);c.arc(cx,cy,R,0,7,true);c.fillStyle='#8f2a2f';c.fill('evenodd');
+ c.beginPath();c.ellipse(cx-40,cy,110-8*rvs,88-6*rvs,0,0,7);c.arc(cx,cy,R+7,0,7,true);c.fillStyle='#3b0b12';c.fill('evenodd');c.restore();
+ const rvT=segT('rv');if(rvT!=null&&rvT>=0&&rvT<.3){c.save();c.beginPath();c.ellipse(cx-40,cy,122,100,0,0,7);c.arc(cx,cy,R,0,7,true);c.fillStyle=`rgba(255,${rvT<.06?220:140},70,${rvT<.06?.7:.3*(1-rvT/.3)})`;c.fill('evenodd');c.restore()}
+ if(affected.has('rv'))zoneRing(c,()=>{c.ellipse(cx-40,cy,122,100,0,0,7);c.arc(cx,cy,R,0,7,true)},ph,t,true);
+ // segmentos del VI
+ c.beginPath();c.arc(cx,cy,R,0,7);c.fillStyle='#2c070c';c.fill();
+ for(const [key,a0,a1,name] of SEGS){const ri=56-17*sys(key),ro=R-2*s.vSys,A0=a0*Math.PI/180,A1=a1*Math.PI/180;
+  const path=()=>{c.beginPath();c.arc(cx,cy,ro,A0,A1);c.arc(cx,cy,ri,A1,A0,true);c.closePath()};
+  path();const gr=c.createRadialGradient(cx-20,cy-25,10,cx,cy,R);gr.addColorStop(0,'#d8675f');gr.addColorStop(1,'#7f1d23');c.fillStyle=gr;c.fill();c.strokeStyle='rgba(40,5,10,.6)';c.lineWidth=1;c.stroke();
+  const tt=segT(key);if(tt!=null&&tt>=0&&tt<.34){path();c.fillStyle=tt<.05?'rgba(255,224,110,.8)':`rgba(255,140,50,${.3*(1-tt/.34)})`;c.fill()}
+  if(kind==='vf'){path();c.fillStyle=`rgba(255,220,110,${.35+.35*Math.sin(t*13+a0)})`;c.fill()}
+  if(sub){c.save();c.beginPath();c.arc(cx,cy,(ri+ro)/2,A0,A1);c.arc(cx,cy,ri,A1,A0,true);c.closePath();c.fillStyle=`rgba(98,112,255,${.5+.15*Math.sin(t*4)})`;c.fill();c.restore()}
+  else if(affected.has(key))zoneRing(c,path,ph,t);
+  if(scar.has(key))zoneRing(c,path,3,t);
+  const am=(A0+A1)/2,lx=cx+(R+16)*Math.cos(am),ly=cy+(R+16)*Math.sin(am)+4;
+  if(!(key==='is'||key==='as')){c.font='600 12px "Source Sans 3",sans-serif';c.textAlign=Math.cos(am)>.3?'left':Math.cos(am)<-.3?'right':'center';c.fillStyle='#e8ddd8';c.fillText(name,lx,ly)}}
+ c.font='600 12px "Source Sans 3",sans-serif';c.textAlign='center';c.fillStyle='#e8ddd8';c.fillText('Septo',cx-70,cy+4);c.fillText('VD',cx-128,cy+4);c.fillText('VI',cx,cy+4);
+ c.fillStyle='#b9aaa5';c.fillText(sub?'Isquemia subendocárdica (capa interna)':affected.size?'Segmentos afectados: sin engrosamiento':'Engrosamiento sistólico normal',cx,cy+R+44);
+ c.restore()}
+function zoneRing(c,path,ph,t,eo){c.save();const pul=.5+.5*Math.sin(t*5);path();c.fillStyle=ph===0?`rgba(98,112,255,${.45+.15*pul})`:ph===1?`rgba(220,12,74,${.6+.2*pul})`:ph===2?'rgba(70,35,48,.88)':'rgba(236,226,214,.85)';c.fill(eo?'evenodd':'nonzero');c.restore()}
+
+/* ---------- papel ECG ---------- */
+const ecg=$('#ecg'),ex=ecg.getContext('2d'),grid=document.createElement('canvas');
+let EW=0,EH=0,mm=4,DPR=1;
+const ROWS=[['I','aVR','V1','V4'],['II','aVL','V2','V5'],['III','aVF','V3','V6'],['V4R','V7','V8','V9']];
+function layoutECG(){DPR=Math.min(2,window.devicePixelRatio||1);EW=ecg.clientWidth;mm=EW/256;const rows=st.tExt?4:3;EH=Math.round((rows*24+26)*mm);ecg.style.height=EH+'px';
+ ecg.width=EW*DPR;ecg.height=EH*DPR;grid.width=ecg.width;grid.height=ecg.height;const gc=grid.getContext('2d');gc.scale(DPR,DPR);gc.fillStyle='#fff7f6';gc.fillRect(0,0,EW,EH);
+ for(let i=0;i*mm<=EW;i++){gc.strokeStyle=i%5?'#f6d4d2':'#eaa7a3';gc.lineWidth=i%5?.5:1;gc.beginPath();gc.moveTo(i*mm,0);gc.lineTo(i*mm,EH);gc.stroke()}
+ for(let j=0;j*mm<=EH;j++){gc.strokeStyle=j%5?'#f6d4d2':'#eaa7a3';gc.lineWidth=j%5?.5:1;gc.beginPath();gc.moveTo(0,j*mm);gc.lineTo(EW,j*mm);gc.stroke()}}
+function trace(c,L,t0,t1,x0,y0,pxs,pmv,col,lw){if(t1<=t0)return;c.strokeStyle=col;c.lineWidth=lw;c.lineJoin='round';c.beginPath();const dt=1.4/pxs;let first=true;
+ for(let t=t0;t<=t1;t+=dt){const x=x0+(t-t0)*pxs,y=y0-sig(L,t)*pmv;first?c.moveTo(x,y):c.lineTo(x,y);first=false}c.stroke()}
+function hiCol(L){if(!st.tHi||!st.reveal)return null;const inf=st.sc.inf;if(inf){const v=inf.st[L]||0;if(v>.07)return '#c8102e';if(v<-.07)return '#1f5fbf';return null}return st.sc.key&&st.sc.key.includes(L)?'#11804a':null}
+function drawECG(S){const c=ex;c.setTransform(DPR,0,0,DPR,0,0);c.drawImage(grid,0,0,EW,EH);const W0=Math.floor(S/10)*10,tw=S-W0,pxs=25*mm,pmv=10*mm,colW=2.5*pxs,x0=6*mm;
+ const rows=st.tExt?4:3;c.font=`700 ${Math.max(12,3*mm)}px "Source Sans 3",sans-serif`;
+ const seg=(L,a,b,x,y)=>{trace(c,L,a,b,x,y,pxs,pmv,'#111',1.15)};
+ for(let r=0;r<rows+1;r++){const y=(r*24+13)*mm+(r===rows?1*mm:0);
+  c.strokeStyle='#111';c.lineWidth=1.2;c.beginPath();c.moveTo(1*mm,y);c.lineTo(2*mm,y);c.lineTo(2*mm,y-pmv);c.lineTo(4*mm,y-pmv);c.lineTo(4*mm,y);c.lineTo(5*mm,y);c.stroke();
+  if(r===rows){const cut=W0+tw;seg('II',W0,cut,x0,y);seg('II',cut+.06-10,W0-1e-3,x0+(cut+.06-W0)*pxs,y)
+   ;c.fillStyle='#111';c.fillText('II (ritmo)',x0+4,y-9*mm);c.fillStyle='rgba(200,16,46,.85)';c.fillRect(x0+tw*pxs-1,y-11*mm,2,22*mm);continue}
+  for(let col=0;col<4;col++){const L=ROWS[r][col],xs=x0+col*colW,a=W0+2.5*col,b=a+2.5,cut=W0+tw;
+   if(cut>=b)seg(L,a,b,xs,y);else if(cut<=a)seg(L,a-10,b-10,xs,y);else{seg(L,a,cut,xs,y);seg(L,cut+.06-10,b-10,xs+(cut+.06-a)*pxs,y)}
+   const hc=hiCol(L);if(hc){c.fillStyle=hc;c.globalAlpha=.14;c.fillRect(xs+2,y-11*mm,colW-4,22*mm);c.globalAlpha=1}
+   c.fillStyle=hc||'#111';c.fillText(L,xs+2*mm,y-8.5*mm);if(col>0){c.strokeStyle='#111';c.lineWidth=1;c.beginPath();c.moveTo(xs,y-2*mm);c.lineTo(xs,y+2*mm);c.stroke()}}}}
+
+/* ---------- monitor ---------- */
+const mon=$('#mon'),mx=mon.getContext('2d');let MW=0,MH=0;
+function layoutMon(){const d=Math.min(2,devicePixelRatio||1);MW=mon.clientWidth;MH=mon.clientHeight;mon.width=MW*d;mon.height=MH*d;mx.setTransform(d,0,0,d,0,0)}
+function pleth(t){if(st.sc.noPulse)return 0;let y=0;for(const v of st.vE){const d=t-v.t-.2;if(d<-.05)break;if(d>-.05&&d<1){const amp=v.ty==='vt'?.4:v.ty==='pvc'?.35:1;y+=amp*(g(d,.1,.06)+.35*g(d,.3,.07))}}return y}
+function drawMon(S){const c=mx;c.fillStyle='#050807';c.fillRect(0,0,MW,MH);const win=6,W0=Math.floor(S/win)*win,tw=S-W0,pxs=(MW-10)/win;
+ const draw=(fn,yb,sc,col)=>{c.strokeStyle=col;c.lineWidth=1.8;const seg=(a,b,xo)=>{c.beginPath();let f=1;for(let t=a;t<=b;t+=1.5/pxs){const x=xo+(t-a)*pxs,y=yb-fn(t)*sc;f?c.moveTo(x,y):c.lineTo(x,y);f=0}c.stroke()};
+  seg(W0,S,5);seg(S+.25-win,W0,5+(tw+.25)*pxs)};
+ draw(t=>sig('II',t),MH*.42,MH*.24,'#4dff9a');draw(pleth,MH*.92,MH*.22,'#6fd6ff');
+ c.font='600 13px "Source Sans 3",sans-serif';c.fillStyle='#8fb5a2';c.fillText('II',8,16);c.fillText('Pleth',8,MH*.62)}
+function hr(S){const k=st.gen.r.k;if(k==='vf')return null;const vs=st.vE.filter(v=>v.t<=S&&v.t>S-8);if(vs.length<2)return null;return Math.round(60*(vs.length-1)/(vs[vs.length-1].t-vs[0].t))}
+
+/* ---------- ecocardiograma simulado ---------- */
+const ECO={
+'iam-as':['Aquinesia del septo anterior y del ápex (apical 4C y eje corto)','Resto de segmentos hipercinéticos compensadores','FEVI levemente deprimida'],
+'iam-ae':['Aquinesia de septo, cara anterior y ápex: el ápex no se acorta','FEVI deprimida (~30–35 %)','Vigilar trombo apical y aneurisma en fase crónica'],
+'iam-lat':['Aquinesia anterolateral e inferolateral (eje corto, apical 4C)','Posible insuficiencia mitral por disfunción del músculo papilar anterolateral'],
+'iam-la':['Hipocinesia limitada a segmentos laterales anteriores basales y medios','FEVI conservada: alteración pequeña, fácil de pasar por alto'],
+'iam-inf':['Aquinesia de cara inferior e inferoseptal basal y media (apical 2C, eje corto)','Posible insuficiencia mitral por músculo papilar posteromedial'],
+'iam-infvd':['Aquinesia inferior + VD dilatado e hipocinético','TAPSE reducido (<17 mm) y vena cava inferior dilatada sin colapso','VI pequeño y poco lleno: el problema es de precarga'],
+'iam-post':['Aquinesia de la pared inferolateral (posterior) basal','Se ve en eje corto y en apical 3 cámaras; el apical 4C puede parecer normal'],
+'scasest':['Hipocinesia global leve en reposo o incluso normal','La isquemia es subendocárdica y difusa: el engrosamiento global está reducido sin un segmento aquinético claro'],
+'sinus':['Contracción normal y simétrica de todos los segmentos','Apertura mitral en dos tiempos: onda E (llenado rápido) y onda A (contracción auricular)'],
+'bradi':['Estructura normal; diástole larga con llenado completo'],'taqui':['Diástole acortada: las ondas E y A se fusionan','Contracción normal o hiperdinámica'],
+'fa':['Aurículas sin contracción eficaz: desaparece la onda A mitral','Ciclos de llenado irregulares; AI a menudo dilatada','Ecocardiograma transesofágico para descartar trombo en la orejuela izquierda'],
+'flutter21':['Pared auricular con aleteo regular (~300/min)','Ventrículos rápidos y regulares'],'flutter41':['Aleteo auricular continuo; contracción ventricular cada cuatro ondas F'],
+'trin':['Corazón estructuralmente normal','Frecuencia muy alta con llenado diastólico reducido'],
+'wpw':['Habitualmente sin cardiopatía estructural','Contracción precoz de la pared donde se inserta la vía (aquí lateral)'],
+'bige':['Latido prematuro con contracción débil seguido de pausa','Llenado escaso en la extrasístole: "pulso bigémino"'],
+'tv':['VI dilatado con cicatriz anteroapical adelgazada y brillante (aneurisma)','FEVI muy deprimida; contracción rápida y de poca amplitud'],
+'fv':['Ausencia de contracción organizada: el miocardio solo tiembla','En PCR, la eco sirve para buscar causas reversibles sin interrumpir la RCP'],
+'bav1':['Estructura y contractilidad normales; contracción auricular separada de la ventricular'],
+'mob1':['Contracción auricular sin contracción ventricular en el latido bloqueado'],'mob2':['Aurícula que se contrae sin respuesta ventricular de forma súbita'],
+'bav3':['Aurículas y ventrículos se contraen de forma independiente','A veces la aurícula se contrae con la mitral cerrada (ondas a cañón)'],
+'brihh':['"Septal flash": movimiento brusco y precoz del septo seguido de movimiento paradójico','Disincronía entre septo y pared lateral; FEVI a menudo reducida'],
+'brdhh':['Contractilidad del VI normal','Leve retraso de la contracción del VD']};
+const EV={'iam-inf':['a2c','psax'],'iam-post':['psax','a2c'],'iam-la':['psax','a4c'],'iam-lat':['psax','a4c'],'scasest':['psax','a4c'],'iam-infvd':['a4c','psax'],'iam-ae':['a4c','a2c'],'iam-as':['a4c','psax'],'brihh':['psax','a4c'],'tv':['a4c','a2c']};
+const APEX=new Set(['iam-as','iam-ae','tv']);
+function ek(key,affect){const sc=st.sc,inf=sc.inf,ph=sc.noEvo?1:st.phase;
+ if(inf&&inf.sa.includes('sub'))return{k:.6,th:1,br:0};
+ if(sc.scar&&(sc.scar.sa.includes(key)||(key==='apex'&&APEX.has(sc.id))))return{k:-.25,th:.45,br:1};
+ if(inf&&(inf.sa.includes(key)||(key==='apex'&&APEX.has(sc.id))))return[{k:.5,th:1,br:0},{k:.06,th:1,br:0},{k:0,th:.8,br:0},{k:-.15,th:.5,br:1}][ph];
+ return{k:1,th:1,br:0}}
+function ecoC(t,s,key){const v=s.v,k=st.gen.r.k;if(k==='vf')return .05*Math.sin(t*38+key.length);let c=s.vSys*(v&&v.ty==='pvc'?.55/1:1);
+ if(v&&v.ty==='lbbb'){const d=t-v.t;if(key==='is'||key==='as')return .9*g(d,.05,.025)-.25*s.vSys;return s.vSys*(d<.12?.3:1)}
+ if(v&&v.ty==='pre'&&(key==='al'||key==='il')){const d=t-v.t;return Math.min(1,c+.4*g(d,0,.04))}
+ return c}
+function ecoA(t,s){const k=st.gen.r.k;if(k==='af')return .03*Math.sin(t*41)+.02*Math.sin(t*57);if(k==='flutter')return .22*(.5+.5*Math.sin(2*Math.PI*t/.2));return s.aSys}
+const sm=(a,b,x)=>{const u=Math.min(1,Math.max(0,(x-a)/(b-a)));return u*u*(3-2*u)};
+const Gy=v=>`rgb(${v|0},${v|0},${v|0})`;
+function chest(c){c.lineWidth=7;[[20,105],[27,55],[34,130],[42,70],[50,110],[57,60]].forEach(([r,v])=>{c.strokeStyle=Gy(v);c.beginPath();c.arc(180,14,r,0,Math.PI);c.stroke()})}
+function apical(c,t,s,two){const ap=64,ca=ecoC(t,s,'al'),B=236-13*Math.max(0,ca),LX=two?180:212,RX=118,wM=two?46:40,aS=ecoA(t,s);
+ const sL=two?'inf':'is',sR=two?'ant':'al',kAp=ek('apex'),kL=ek(sL),kR=ek(sR),rvA=ek('rv'),rvD=st.sc.inf&&st.sc.inf.sa.includes('rv')?1.3:1,lvD=st.sc.id==='tv'?1.18:1;
+ const yc=B+16,len=yc-ap,prof=y=>Math.sqrt(Math.max(0,1-((yc-y)/len)**2)),jit=y=>1.6*Math.sin(y*.55)+1.1*Math.sin(y*1.37+2);
+ const mix=(a,b,y)=>{const w=sm(.22,.42,(y-ap)/(B-ap));return{k:a.k+(b.k-a.k)*w,th:a.th+(b.th-a.th)*w,br:w<.5?a.br:b.br}};
+ const cL=ecoC(t,s,sL),cR=ecoC(t,s,sR),ys=[];for(let y=ap;y<=B+.1;y+=(B-ap)/26)ys.push(y);
+ const iL=[],oL=[],iR=[],oR=[];
+ for(const y of ys){const p=prof(y)*wM*lvD,mL=mix(kAp,kL,y),mR=mix(kAp,kR,y);
+  const xl=LX-p*(1-.34*cL*mL.k)+jit(y)*prof(y),xr=LX+p*(1-.34*cR*mR.k)-jit(y+40)*prof(y);iL.push([xl,y,mL]);iR.push([xr,y,mR]);
+  oL.push([xl-10*mL.th*(1+.55*cL*Math.max(0,mL.k))-2,y]);oR.push([xr+10*mR.th*(1+.55*cR*Math.max(0,mR.k))+2,y])}
+ const apT=10*kAp.th*(1+.5*ca*Math.max(0,kAp.k)),apY=ap-apT+(kAp.k<0?6*ca*kAp.k:3*ca*kAp.k);
+ const poly=(pts,close)=>{c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));if(close)c.closePath()};
+ chest(c);
+ // aurículas (pared fina, techo en el anillo AV)
+ const lb=[iL[iL.length-1][0],iR[iR.length-1][0]];
+ const box=(x0,x1,d)=>{c.beginPath();c.moveTo(x0,B);c.lineTo(x1,B);c.bezierCurveTo(x1+7,B+d*.5,x1+2,B+d,(x0+x1)/2,B+d);c.bezierCurveTo(x0-2,B+d,x0-7,B+d*.5,x0,B);c.closePath()};
+ const dA=(two?86:80)*(1-.13*aS),pRV=30*rvD;
+ if(!two){const x0=RX-pRV-4,mid=(RX+pRV*.9+lb[0])/2;box(x0-6,lb[1]+8,dA+7);c.fillStyle=Gy(92);c.fill();c.fillStyle=Gy(0);box(x0,mid-3,dA*(rvD>1?1.08:.95));c.fill();box(mid+3,lb[1]+2,dA);c.fill();
+  c.fillStyle=Gy(40);c.fillRect(mid-3,B+dA*.45,6,dA*.25)}
+ else{box(lb[0]-6,lb[1]+8,dA+7);c.fillStyle=Gy(92);c.fill();c.fillStyle=Gy(0);box(lb[0],lb[1]+2,dA);c.fill();c.lineWidth=6;c.strokeStyle=Gy(95);c.beginPath();c.ellipse(lb[1]+16,B+18,9,14,-.5,0,7);c.stroke()}
+ const pvx=two?(lb[0]+lb[1])/2:(lb[0]+lb[1])/2+8;c.fillStyle=Gy(0);c.beginPath();c.ellipse(pvx-14,B+dA+4,5,8,0,0,7);c.ellipse(pvx+16,B+dA+3,5,8,0,0,7);c.fill();
+ if(!two){c.fillStyle=Gy(0);c.strokeStyle=Gy(200);c.lineWidth=5;c.beginPath();c.arc(LX+60,B+dA+28,15,0,7);c.fill();c.stroke()}
+ // VD
+ if(!two){const rp=y=>30*rvD*Math.sqrt(Math.max(0,1-((B+12-y)/(B+12-ap-24))**2)),cr=ecoC(t,s,'rv')*(rvA.k);
+  const fI=[],fO=[],sI=[];for(const y of ys){if(y<ap+24)continue;const p=rp(y);fI.push([RX-p*(1-.28*cr),y]);fO.push([RX-p*(1-.28*cr)-6*rvA.th,y]);sI.push([RX+p*(1-.08*cr),y])}
+  c.fillStyle=Gy(112);poly([...fO,...sI.slice().reverse().map(p=>[p[0]+16,p[1]]),[RX,ap+16]],true);c.fill();
+  c.fillStyle=Gy(0);poly([...fI,...sI.slice().reverse()],true);c.fill();
+  c.fillStyle=Gy(70);c.beginPath();c.ellipse(RX-4,ap+44,12,14,0,0,7);c.fill();
+  const mb=Math.floor(fI.length*.42);c.strokeStyle=Gy(140);c.lineWidth=4;c.beginPath();c.moveTo(fI[mb][0],fI[mb][1]);c.quadraticCurveTo(RX,fI[mb][1]-6,sI[mb][0],sI[mb][1]+6);c.stroke();
+  st._fO=fO}
+ // VI
+ c.fillStyle=Gy(118);poly([...oL,...oR.slice().reverse(),[LX,apY]],true);c.fill();
+ c.fillStyle=Gy(232);for(const [arr,o] of [[iL,oL],[iR,oR]]){for(let i=0;i<arr.length-1;i++)if(arr[i][2].br){poly([[arr[i][0],arr[i][1]],[arr[i+1][0],arr[i+1][1]],[o[i+1][0],o[i+1][1]],[o[i][0],o[i][1]]],true);c.fill()}}
+ if(kAp.br){c.beginPath();c.ellipse(LX,ap-apT/2,15,apT/2+2,0,0,7);c.fill()}
+ c.fillStyle=Gy(0);poly([...iL,...iR.slice().reverse()],true);c.fill();
+ c.strokeStyle=Gy(150);c.lineWidth=2;poly([...iL.slice().reverse(),...iR]);c.stroke();
+ // músculo papilar y cuerdas
+ const pi=Math.floor(iR.length*.55),pp=iR[pi];const px=pp[0]-11,py=pp[1];c.fillStyle=Gy(128);c.beginPath();c.ellipse(px,py,8,17,.15,0,7);c.fill();
+ // pericardio
+ c.strokeStyle=Gy(235);c.lineWidth=6;const per=[...(two?oL.slice().reverse().map(p=>[p[0]-5,p[1]]):oL.filter(p=>p[1]<ap+40).reverse().map(p=>[p[0]-4,p[1]])),[LX,apY-6],...oR.map(p=>[p[0]+5,p[1]])];poly(per);c.stroke();if(!two&&st._fO){c.lineWidth=5;poly(st._fO.map(p=>[p[0]-5,p[1]]));c.stroke()}
+ // válvulas
+ const open=st.gen.r.k==='vf'?.2:Math.max(0,1-Math.max(0,ca)*4)*(.55+.45*Math.min(1,aS+.6));
+ const leaf=(x,y,dir,len)=>{const ang=dir>0?(-.12-open*1.25):(Math.PI+.12+open*1.25);const ex=x+Math.cos(ang)*len,ey=y+Math.sin(ang)*len;c.beginPath();c.moveTo(x,y);c.quadraticCurveTo((x+ex)/2+dir*3,(y+ey)/2+2,ex,ey);c.stroke();return[ex,ey]};
+ c.strokeStyle=Gy(235);c.lineWidth=3;const tip=leaf(lb[0],B,1,wM*.7);leaf(lb[1],B,-1,wM*.48);
+ c.strokeStyle=Gy(120);c.lineWidth=1;c.beginPath();c.moveTo(px,py-14);c.lineTo(tip[0],tip[1]);c.moveTo(px-3,py-14);c.lineTo(lb[1]-wM*.3,B-8);c.stroke();
+ c.fillStyle=Gy(210);c.beginPath();c.arc(lb[0],B,3.5,0,7);c.arc(lb[1],B,3.5,0,7);c.fill();
+ if(!two){const p=30*rvD;c.strokeStyle=Gy(230);c.lineWidth=2.5;leaf(RX-p,B,1,p*.62);leaf(RX+p*.9,B,-1,p*.45)}
+ return{iL,iR,B,ap,LX,RX,sL,sR}}
+function psax(c,t,s){const cx=180,cy=196,keys=[['ant',-90],['al',-30],['il',30],['inf',90],['is',150],['as',210]];
+ const K=Object.fromEntries(keys.map(([k])=>[k,ek(k)])),C=Object.fromEntries(keys.map(([k])=>[k,ecoC(t,s,k)])),rvA=ek('rv'),rvD=st.sc.inf&&st.sc.inf.sa.includes('rv')?1.3:1,lvD=st.sc.id==='tv'?1.15:1;
+ const at=th=>{let d=((th*180/Math.PI)+90+720)%360;const i=Math.floor(d/60),f=(d%60)/60,a=keys[i][0],b=keys[(i+1)%6][0];const w=.5-.5*Math.cos(Math.PI*f);
+  return{k:K[a].k*(1-w)+K[b].k*w,th:K[a].th*(1-w)+K[b].th*w,c:C[a]*(1-w)+C[b]*w,br:w<.5?K[a].br:K[b].br}};
+ chest(c);
+ const cr=ecoC(t,s,'rv')*rvA.k,Ro=72*lvD,rvo=[],rvi=[];for(let a=150;a<=315;a+=5){const th=a*Math.PI/180,f=Math.sin(Math.PI*(a-150)/165),dep=(34*rvD)*Math.pow(f,.8)*(1-.15*cr);rvi.push([cx+(Ro+dep)*Math.cos(th),cy+(Ro+dep)*Math.sin(th)]);rvo.push([cx+(Ro+dep+6*rvA.th+2)*Math.cos(th),cy+(Ro+dep+6*rvA.th+2)*Math.sin(th)])}
+ const pl=pts=>{c.beginPath();pts.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath()};
+ pl([...rvo,[cx+Ro*Math.cos(315*Math.PI/180),cy+Ro*Math.sin(315*Math.PI/180)],[cx+Ro*Math.cos(150*Math.PI/180),cy+Ro*Math.sin(150*Math.PI/180)]]);c.fillStyle=Gy(104);c.fill();
+ c.beginPath();rvi.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));for(let a=315;a>=150;a-=5){const th=a*Math.PI/180;c.lineTo(cx+(Ro-2)*Math.cos(th),cy+(Ro-2)*Math.sin(th))}c.closePath();c.fillStyle=Gy(0);c.fill();
+ c.strokeStyle=Gy(230);c.lineWidth=5;c.beginPath();rvo.forEach((p,i)=>{const q=[p[0]+(p[0]-cx)*.06,p[1]+(p[1]-cy)*.06];i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1])});c.stroke();
+ const inn=[],out=[];for(let i=0;i<=96;i++){const th=-Math.PI/2+i/96*2*Math.PI-Math.PI/6,q=at(th);const ri=46*lvD*(1-.36*q.c*q.k)+1.4*Math.sin(i*1.3)+.9*Math.sin(i*3.1),ro=ri+24*q.th*(1+.55*q.c*Math.max(0,q.k));inn.push([cx+ri*Math.cos(th),cy+ri*Math.sin(th),q.br]);out.push([cx+ro*Math.cos(th),cy+ro*Math.sin(th)])}
+ c.fillStyle=Gy(118);c.beginPath();out.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();
+ c.fillStyle=Gy(232);for(let i=0;i<96;i++)if(inn[i][2]){c.beginPath();c.moveTo(inn[i][0],inn[i][1]);c.lineTo(inn[i+1][0],inn[i+1][1]);c.lineTo(out[i+1][0],out[i+1][1]);c.lineTo(out[i][0],out[i][1]);c.fill()}
+ c.fillStyle=Gy(0);c.beginPath();inn.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();
+ c.strokeStyle=Gy(150);c.lineWidth=2;c.stroke();
+ c.fillStyle=Gy(130);for(const a of [35,145]){const th=a*Math.PI/180,q=at(th),r=46*lvD*(1-.36*q.c*q.k)-11;c.beginPath();c.ellipse(cx+r*Math.cos(th),cy+r*Math.sin(th),9+2*q.c,8+2*q.c,th,0,7);c.fill()}
+ c.strokeStyle=Gy(255);c.lineWidth=6;c.beginPath();c.arc(cx,cy,80*lvD,.15,2.95);c.stroke();
+ return{cx,cy,inn}}
+/* motor de ultrasonido: speckle polar, reflexión especular, atenuación y campo cercano */
+const EN=300,EM=document.createElement('canvas');EM.width=EM.height=EN;const em=EM.getContext('2d',{willReadFrequently:true});
+const EM2=document.createElement('canvas');EM2.width=EM2.height=EN;const em2=EM2.getContext('2d',{willReadFrequently:true});
+const EOUT=document.createElement('canvas');EOUT.width=EOUT.height=EN;const eox=EOUT.getContext('2d'),EIMG=eox.createImageData(EN,EN);
+const FAX=EN/2,FAY=EN*14/360,FR=EN*338/360,FHA=.68,NR=175,NT=96;
+const LK=new Int32Array(EN*EN),UX=new Float32Array(EN*EN),UY=new Float32Array(EN*EN),TG=new Float32Array(EN*EN),NF=new Float32Array(EN*EN);
+for(let y=0;y<EN;y++)for(let x=0;x<EN;x++){const p=y*EN+x,dx=x-FAX,dy=y-FAY,r=Math.hypot(dx,dy),th=Math.atan2(dx,dy);
+ if(x<1||y<1||x>EN-2||y>EN-2||r>FR||r<2||Math.abs(th)>FHA){LK[p]=-1;continue}
+ const rn=r/FR;LK[p]=Math.min(NR-1,Math.floor(rn*NR))*NT+Math.min(NT-1,Math.floor((th+FHA)/(2*FHA)*NT));UX[p]=dx/r;UY[p]=dy/r;
+ TG[p]=(1.08-.38*rn)*(1-Math.pow(Math.abs(th)/FHA,8)*.7)*(rn>.97?(1-rn)/.03:1);NF[p]=rn<.06?.28*(1-rn/.06):0}
+function speck(){const a=new Float32Array(NR*NT),b=new Float32Array(NR*NT);for(let i=0;i<a.length;i++)a[i]=Math.sqrt(-2*Math.log(Math.random()+1e-9));
+ for(let r=0;r<NR;r++)for(let t=0;t<NT;t++){let sum=0,n=0;for(let k=-3;k<=3;k++){const tt=t+k;if(tt<0||tt>=NT)continue;const w=[.35,.8,1.4,2,1.4,.8,.35][k+3];sum+=a[r*NT+tt]*w;n+=w}b[r*NT+t]=sum/n}
+ for(let r=1;r<NR;r++)for(let t=0;t<NT;t++)a[r*NT+t]=.6*b[r*NT+t]+.4*b[(r-1)*NT+t];let m=0;for(let i=0;i<a.length;i++)m+=a[i];m/=a.length;for(let i=0;i<a.length;i++){a[i]/=m;if(Math.random()<.025)a[i]*=2.1}return a}
+const SPK=[speck(),speck(),speck()];
+function ultrasound(t){em2.filter='blur(6px)';em2.fillStyle='#000';em2.fillRect(0,0,EN,EN);em2.drawImage(EM,0,0);em2.filter='none';const d2=em2.getImageData(0,0,EN,EN).data;const d=em.getImageData(0,0,EN,EN).data,o=EIMG.data,ph=t*3,i0=((Math.floor(ph)%3)+3)%3,A=SPK[i0],Bq=SPK[(i0+1)%3],w=ph-Math.floor(ph),row=EN*4;
+ for(let p=0;p<EN*EN;p++){const q=p*4,k=LK[p];if(k<0){o[q]=o[q+1]=o[q+2]=0;o[q+3]=255;continue}
+  const T=d[q]/255,gx=(d[q+4]-d[q-4])/510,gy=(d[q+row]-d[q-row])/510,sp=A[k]*(1-w)+Bq[k]*w;
+  const hx=d2[q+4]-d2[q-4],hy=d2[q+row]-d2[q-row],hm=Math.hypot(hx,hy),an=hm>3?.55+.45*Math.abs(hx*UX[p]+hy*UY[p])/hm:1;
+  const sc2=Math.min(sp,1.6);let v=T*(.12+.88*sp)*an*1.75+Math.abs(gx*UX[p]+gy*UY[p])*1.4*sp+(T<.05?.022*sc2*sc2:0);
+  v=v*TG[p]+NF[p]*sp;const out=255*Math.min(1,Math.pow(Math.max(0,v*1.05),1.08));o[q]=out;o[q+1]=out*.985;o[q+2]=out*.95;o[q+3]=255}
+ eox.putImageData(EIMG,0,0)}
+function drawEchoView(c,x,y,S,view,t,s){const e=em;e.setTransform(1,0,0,1,0,0);e.filter='none';e.fillStyle='#000';e.fillRect(0,0,EN,EN);e.setTransform(EN/360,0,0,EN/360,0,0);
+ e.filter='blur(2.2px)';const geo=view==='psax'?psax(e,t,s):apical(e,t,s,view==='a2c');e.filter='none';ultrasound(t);
+ c.save();c.fillStyle='#000';c.fillRect(x,y,S,S);c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(EOUT,x,y,S,S);const k=S/360;c.translate(x,y);c.scale(k,k);
+ // interfaz de ecógrafo
+ c.fillStyle='rgba(255,255,255,.75)';for(let dcm=1;dcm<=16;dcm++){const r=dcm*338/16;c.beginPath();c.arc(180+Math.sin(.7)*r+6,14+Math.cos(.7)*r,dcm%5?1.2:2.2,0,7);c.fill()}
+ c.fillStyle='#2bd96b';c.beginPath();c.arc(118,16,4,0,7);c.fill();
+ c.fillStyle='rgba(255,255,255,.8)';c.beginPath();c.moveTo(352,180);c.lineTo(344,175);c.lineTo(344,185);c.fill();
+ c.font='700 16px "Source Sans 3",sans-serif';c.fillStyle='#fff';c.textAlign='left';c.fillText({psax:'PEEC',a4c:'A4C',a2c:'A2C'}[view],8,22);
+ c.font='500 11px "Source Sans 3",sans-serif';c.fillStyle='rgba(220,230,225,.75)';c.fillText('S5-1 · 16 cm',8,38);c.fillText('G 52 · DR 60',8,52);c.textAlign='right';c.fillText('FR 54 Hz',352,22);c.fillText('MI 1,1 · TIS 0,4',352,36);
+ for(let i=0;i<8;i++){c.fillStyle=Gy(i*36);c.fillRect(6,120+i*12,6,12)}
+ // ECG del ecógrafo
+ const win=2.5,W0=Math.floor(t/win)*win,pxs=300/win,yb=346;c.strokeStyle='#2bd96b';c.lineWidth=1.6;c.beginPath();let f=1;for(let tt=W0;tt<=t;tt+=1/pxs){const xx=30+(tt-W0)*pxs,yy=yb-sig('II',tt)*12;f?c.moveTo(xx,yy):c.lineTo(xx,yy);f=0}c.stroke();
+ c.fillStyle='#ffe27a';c.fillRect(30+(t-W0)*pxs-1,yb-16,2,22);
+ if(st.reveal&&st.tMark){c.font='600 12px "Source Sans 3",sans-serif';c.fillStyle='rgba(255,226,122,.85)';c.textAlign='center';const L=(t2,a,b)=>c.fillText(t2,a,b);
+  if(view==='psax'){L('VD',geo.cx-60,geo.cy-86);L('VI',geo.cx,geo.cy+4)}else{L('VI',geo.LX,(geo.ap+geo.B)/2);L('AI',geo.LX+4,geo.B+44);if(view==='a4c'){L('VD',geo.RX,(geo.ap+geo.B)/2+24);L('AD',geo.RX,geo.B+40);L('Ao desc.',geo.LX+58,geo.B+132)}}
+  const inf=st.sc.inf,sc=st.sc,aff=new Set([...(inf?inf.sa:[]),...(sc.scar?sc.scar.sa:[])]);c.strokeStyle='#ff4d6d';c.lineWidth=2.5;c.setLineDash([6,4]);
+  if(view==='psax'&&aff.size){const keysA=['ant','al','il','inf','is','as'];geo.inn.forEach((p,i)=>{if(i===geo.inn.length-1)return;const th=-Math.PI/2+i/96*2*Math.PI-Math.PI/6;let d=((th*180/Math.PI)+90+720+30)%360;const kk=keysA[Math.floor(d/60)%6];if(aff.has(kk)||aff.has('sub')){c.beginPath();c.moveTo(p[0],p[1]);c.lineTo(geo.inn[i+1][0],geo.inn[i+1][1]);c.stroke()}})}
+  else if(view!=='psax'){const apx=APEX.has(sc.id);[[geo.iL,geo.sL],[geo.iR,geo.sR]].forEach(([arr,key])=>{c.beginPath();let on=false;arr.forEach((p,i)=>{const f2=i/(arr.length-1);const hit=aff.has('sub')||(f2<.35?apx||aff.has(key):aff.has(key));if(hit){on?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]);on=true}else on=false});c.stroke()})}
+  if(view==='a4c'&&aff.has('rv')){c.beginPath();c.ellipse(geo.RX-24,(geo.ap+geo.B)/2+34,20,64,0,Math.PI*.6,Math.PI*1.4);c.stroke()}
+  c.setLineDash([])}
+ c.restore()}
+function drawEcho(c,W,Hh,t){c.fillStyle='#000';c.fillRect(0,0,W,Hh);const s=hstate(t);const S=Math.min((W-16)/3,Hh-30);
+ const views=['psax','a4c','a2c'],names=['Paraesternal eje corto (papilares)','Apical 4 cámaras','Apical 2 cámaras'],gap=(W-3*S)/4;
+ views.forEach((v,i)=>{const x=gap+i*(S+gap);drawEchoView(c,x,4,S,v,t,s);c.font='600 13px "Source Sans 3",sans-serif';c.fillStyle='#cfd6d2';c.textAlign='center';c.fillText(names[i],x+S/2,S+22)})}
+
+/* ---------- interfaz ---------- */
+const hc=$('#heart'),hx=hc.getContext('2d');let HW=0,HH=0;
+function layoutHeart(){const d=Math.min(2,devicePixelRatio||1);HW=hc.clientWidth;HH=hc.clientHeight;hc.width=HW*d;hc.height=HH*d;hx.scale(d,d)}
+const sel=$('#scSel');const grps=[...new Set(SC.map(s=>s.g))];
+function fillSel(){sel.innerHTML=(st.caseOn&&!st.reveal?'<option>Caso clínico: escenario oculto</option>':'')+grps.map(gp=>`<optgroup label="${esc(gp)}">${SC.filter(s=>s.g===gp).map(s=>`<option value="${s.id}" ${s===st.sc?'selected':''}>${esc(s.n)}</option>`).join('')}</optgroup>`).join('');sel.disabled=st.caseOn&&!st.reveal}
+const PH=['Hiperaguda (min)','Lesión aguda (h)','Necrosis (h–días)','Crónica (sem)'];
+$('#phase').innerHTML=PH.map((p,i)=>`<button data-p="${i}" aria-pressed="${i===st.phase}">${p}</button>`).join('');
+const SP=[[1,'1×'],[.5,'0,5×'],[.2,'Cámara lenta'],[0,'Pausa']];
+$('#speed').innerHTML=SP.map(([v,l])=>`<button data-s="${v}" aria-pressed="${v===1}">${l}</button>`).join('');
+function renderText(){const sc=st.sc,r=st.reveal,p=sc.p;
+ $('#phaseCtl').style.display=sc.inf&&!sc.noEvo&&r?'':'none';
+ $('#pt').innerHTML=`<div class="lbl">Paciente virtual</div><div class="who">${esc(p.who)}</div><p><b>Antecedentes:</b> ${esc(p.hx)}</p><p><b>Motivo de consulta:</b> ${esc(p.mc)}</p><div class="chips">${p.sx.map(x=>`<span>${esc(x)}</span>`).join('')}</div><p><b>Exploración:</b> ${esc(p.ex)}</p>`;
+ const inf=sc.inf;$('#keys').innerHTML=r&&st.tHi?(inf?'<span><i style="background:#c8102e"></i>Derivaciones con elevación del ST (cara afectada)</span><span><i style="background:#1f5fbf"></i>Descenso del ST (imagen especular)</span>':'<span><i style="background:#11804a"></i>Derivaciones clave para este diagnóstico</span>'):'';
+ $('#info').innerHTML=r?`<h2>${esc(sc.n)}</h2><p class="sub">${sc.art?'Arteria o territorio: <b>'+esc(sc.art)+'</b> · ':''}${esc(sc.g)}</p>
+ <section><h3>Qué ves en el ECG</h3><ul>${sc.ecg.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></section>
+ <section><h3>Dónde y cómo se produce</h3><p>${esc(sc.mech)}</p></section>
+ <section><h3>Clínica esperable</h3><ul>${sc.clin.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></section>
+ <section><h3>Actitud inicial en urgencias</h3><ul>${sc.act.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></section>`:'<h2>Escenario oculto</h2><p class="sub">Responde al caso para ver la explicación.</p>';
+ $('#ecoTxt').innerHTML=r?`<h3>Hallazgos ecocardiográficos</h3><ul>${(ECO[sc.id]||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'<h3>Hallazgos ecocardiográficos</h3><p>Se muestran al resolver el caso. Observa qué segmentos dejan de engrosarse.</p>';
+ $('#veil').style.display=r?'none':'grid';updVitals(true)}
+function updVitals(){const p=st.sc.p,h=hr(st.S);const vh=$('#vHr'),vb=$('#vBp');vh.textContent=h??(st.gen.r.k==='vf'?'FV':'--');vb.textContent=p.bp;$('#vSp').textContent=p.sp??'--';$('#vFr').textContent=p.fr;
+ const crit=st.sc.noPulse||(h&&(h<45||h>150))||parseInt(p.bp)<90;vh.classList.toggle('alarm',!!crit);vb.classList.toggle('alarm',parseInt(p.bp)<90||p.bp==='---')}
+/* ---------- registro para Mundo Emergencia (ecg_hist) ---------- */
+const EH_K='ecg_hist';function ehGet(){try{return JSON.parse(localStorage.getItem(EH_K))||{}}catch(e){return{}}}
+function ehSet(f){try{const h=ehGet();f(h);localStorage.setItem(EH_K,JSON.stringify(h))}catch(e){}}
+function ehVisto(id){ehSet(h=>{h.v=h.v||{};h.v[id]=1})}
+function ehGc(path){try{window.goatcounter&&goatcounter.count&&goatcounter.count({path,title:'Caso terminado',event:true})}catch(e){}}
+function setSc(id){st.sc=BYID[id];reset();fillSel();renderText();ehVisto(id)}
+sel.addEventListener('change',()=>setSc(sel.value));
+$('#phase').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;st.phase=+b.dataset.p;[...$('#phase').children].forEach(x=>x.setAttribute('aria-pressed',x===b));buildMods()});
+$('#speed').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;st.speed=+b.dataset.s;[...$('#speed').children].forEach(x=>x.setAttribute('aria-pressed',x===b))});
+for(const [id,k] of [['tMark','tMark'],['tCond','tCond'],['tCor','tCor'],['tHi','tHi'],['tExt','tExt']])$('#'+id).addEventListener('change',e=>{st[k]=e.target.checked;if(k==='tExt')layoutECG();renderText()});
+/* caso clínico */
+let score=[0,0];const quiz=$('#quiz');
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+$('#caseBtn').addEventListener('click',()=>{const pick=SC[Math.floor(Math.random()*SC.length)];st.caseOn=true;st.reveal=false;st.sc=pick;st.phase=pick.inf&&!pick.noEvo?1+Math.floor(Math.random()*2):1;reset();
+ [...$('#phase').children].forEach(x=>x.setAttribute('aria-pressed',+x.dataset.p===st.phase));
+ const opts=shuffle([pick,...shuffle(SC.filter(s=>s!==pick&&s.g===pick.g)).slice(0,3)]);
+ quiz.style.display='block';quiz.innerHTML=`<h2>Caso clínico · ¿cuál es el diagnóstico?</h2><p>Lee la clínica del paciente y el ECG de 12 derivaciones.</p><div class="opts" id="o1">${opts.map(o=>`<button data-id="${o.id}">${esc(o.n)}</button>`).join('')}</div><div id="q2"></div><p class="fb" id="fb"></p>`;
+ fillSel();renderText();quiz.scrollIntoView({behavior:'smooth',block:'start'})});
+quiz.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;const pick=st.sc;
+ if(b.dataset.id){const ok=b.dataset.id===pick.id;score[1]++;if(ok)score[0]++;ehSet(h=>{h.casos=(h.casos||0)+1;if(ok)h.dx=(h.dx||0)+1;h.racha=ok?(h.racha||0)+1:0;h.best=Math.max(h.best||0,h.racha);h.v=h.v||{};h.v[pick.id]=1});ehGc('caso/ecg/'+pick.id+(ok?'/acierto':'/fallo'));[...$('#o1').children].forEach(x=>{x.disabled=true;if(x.dataset.id===pick.id)x.className='ok';else if(x===b)x.className='bad'});
+  if(pick.art&&pick.id!=='scasest'){$('#q2').innerHTML=`<h3>¿Qué arteria es la culpable más probable?</h3><div class="opts" id="o2">${shuffle(ARTS.slice()).slice(0,8).map(a=>`<button data-a="${esc(a)}">${esc(a)}</button>`).join('')}</div>`;$('#fb').textContent=ok?'Diagnóstico correcto.':'No es ese: fíjate en las derivaciones resaltadas al revelarse.'}
+  else finish(ok)}
+ else if(b.dataset.a){const ok=b.dataset.a===pick.art;ehSet(h=>{h.artN=(h.artN||0)+1;if(ok)h.art=(h.art||0)+1});[...$('#o2').children].forEach(x=>{x.disabled=true;if(x.dataset.a===pick.art)x.className='ok';else if(x===b)x.className='bad'});finish(ok)}});
+function finish(ok){st.reveal=true;$('#fb').textContent=(ok?'Correcto. ':'Revisa la explicación. ')+`Puntuación: ${score[0]}/${score[1]}. El corazón y la explicación ya están visibles.`;
+ const nb=document.createElement('button');nb.textContent='Otro caso';nb.style.marginInlineStart='10px';nb.onclick=()=>$('#caseBtn').click();$('#fb').append(nb);
+ const cl=document.createElement('button');cl.textContent='Salir del modo caso';cl.style.marginInlineStart='8px';cl.onclick=()=>{st.caseOn=false;quiz.style.display='none';fillSel();renderText()};$('#fb').append(cl);fillSel();renderText()}
+
+/* ---------- bucle ---------- */
+let last=performance.now(),vt=0,manual=false;
+function frame(now){const dt=Math.max(0,Math.min(.05,(now-last)/1000));last=now;if(!manual){st.S+=dt*st.speed;render()}requestAnimationFrame(frame)}
+function render(){fill(st.S+2);drawHeart(hx,HW,HH,st.S);drawECG(st.S);drawMon(st.S);if(vt%2===0){ecx.setTransform(CD,0,0,CD,0,0);drawEcho(ecx,CW,CH,st.S)}if((vt+=1)%15===0)updVitals()}
+const ec=$('#echo'),ecx=ec.getContext('2d');let CW=0,CH=0,CD=1;
+function layoutEcho(){CD=Math.min(2,devicePixelRatio||1);CW=ec.clientWidth;CH=ec.clientHeight;ec.width=CW*CD;ec.height=CH*CD}
+function lay(){layoutHeart();layoutECG();layoutMon();layoutEcho()}
+const ro=new ResizeObserver(()=>{lay();render()});ro.observe(hc);ro.observe(ecg);ro.observe(mon);ro.observe(ec);
+fillSel();reset();renderText();lay();requestAnimationFrame(frame);ehVisto(st.sc.id);
+
+/* ---------- API para grabar vídeo ---------- */
+const vc2=document.createElement('canvas');vc2.width=1280;vc2.height=720;const vx=vc2.getContext('2d');const hoff=document.createElement('canvas');hoff.width=1520;hoff.height=1200;const hox=hoff.getContext('2d');
+window.SIM={eco(view,S){const cv=document.createElement('canvas');cv.width=cv.height=600;const cc=cv.getContext('2d');st.S=S;fill(S+2);drawEchoView(cc,0,0,600,view,S,hstate(S));return cv.toDataURL('image/png')},set(id,ph){manual=true;st.caseOn=false;st.reveal=true;if(ph!=null)st.phase=ph;setSc(id)},frameAt(S,lbl){st.S=S;fill(S+2);hox.setTransform(1,0,0,1,0,0);
+ const s=drawHeart(hox,1520,1200,S);const c=vx;c.setTransform(1,0,0,1,0,0);c.fillStyle='#0c0a0b';c.fillRect(0,0,1280,720);c.drawImage(hoff,-10,60,700,553);
+ c.fillStyle='#000';c.fillRect(670,0,610,720);const sc=st.sc,views=EV[sc.id]||['a4c','psax'],nm={psax:'Paraesternal eje corto',a4c:'Apical 4 cámaras',a2c:'Apical 2 cámaras'};
+ c.font='700 20px "Source Sans 3",sans-serif';c.fillStyle='#fff';c.textAlign='left';c.fillText('Ecocardiograma',690,34);
+ views.forEach((v,i)=>{const x=684+i*300;drawEchoView(c,x,46,286,v,S,s);c.setTransform(1,0,0,1,0,0);c.font='600 14px "Source Sans 3",sans-serif';c.fillStyle='#cfd6d2';c.textAlign='center';c.fillText(nm[v],x+143,350)});
+ c.textAlign='left';const ld=sc.vl,win=4,W0=Math.floor(S/win)*win,pxs=560/win;c.font='700 20px "Source Sans 3",sans-serif';c.fillStyle='#fff';c.fillText('ECG',690,392);
+ ld.forEach((L,i)=>{const y0=446+i*82;const col=(()=>{const inf=sc.inf;if(inf){const v=inf.st[L]||0;if(v>.07)return '#ff6b81';if(v<-.07)return '#7fb0ff'}return '#4dff9a'})();
+  c.strokeStyle=col;c.lineWidth=2;const seg=(a,b,xo)=>{c.beginPath();let f=1;for(let t=a;t<=b;t+=1/pxs){const x=xo+(t-a)*pxs,y=y0-sig(L,t)*30;f?c.moveTo(x,y):c.lineTo(x,y);f=0}c.stroke()};
+  seg(W0,S,705);seg(S+.2-win,W0,705+(S-W0+.2)*pxs);c.font='700 15px "Source Sans 3",sans-serif';c.fillStyle=col;c.fillText(L,690,y0-26)});
+ const h=hr(S);c.font='700 24px "Source Sans 3",sans-serif';c.fillStyle='#4dff9a';c.textAlign='right';c.fillText(h?h+' lpm':sc.r.k==='vf'?'FV · sin pulso':'',1262,392);c.textAlign='left';
+ if(lbl){c.font='700 17px "Source Sans 3",sans-serif';const w=c.measureText(lbl).width+24;c.fillStyle='rgba(255,215,90,.95)';c.fillRect(20,674,w,30);c.fillStyle='#1a1206';c.fillText(lbl,32,695)}
+ return vc2.toDataURL('image/jpeg',.92)}};
+}
+</script>
+<script data-goatcounter="https://mundoemergencia.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

@@ -6,6 +6,8 @@
 
 const VMNI = "../"; // los módulos de VMNI viven en la raíz de este repositorio
 
+const IAM_ECG = ["iam-as","iam-ae","iam-lat","iam-la","iam-inf","iam-infvd","iam-post","scasest"];
+
 const CAPITULOS = [
   {
     id: "phtls", n: 1, titulo: "La calle", sub: "Trauma prehospitalario · PHTLS",
@@ -78,7 +80,26 @@ const CAPITULOS = [
     insignia: { id: "henderson", nombre: "Henderson-Hasselbalch", icono: "🧪", txt: "Examen de gasometría superado" }
   },
   {
-    id: "rcp", n: 5, titulo: "Parada", sub: "Soporte vital avanzado · ERC 2025",
+    id: "ecg", n: 5, titulo: "Monitores", sub: "ECG · territorio isquémico y arritmias",
+    color: "#818cf8", icono: "📈",
+    historia: "03:12 h. Suena la alarma del box 4: el monitor dibuja algo que hace diez minutos no estaba. El corazón te lo está contando latido a latido; tu trabajo es saber dónde mirar, qué arteria se ha cerrado y qué circuito está girando.",
+    modulos: [
+      { id: "ecg_sim", nombre: "Simulador de ECG y corazón", url: "modulos/ecg.html", desc: "25 escenarios (8 síndromes coronarios, 11 arritmias, 6 bloqueos): corazón animado sincronizado con el ECG de 12 derivaciones (+V4R y V7–V9), ecocardiograma en 3 planos, monitor y casos clínicos aleatorios." }
+    ],
+    misiones: [
+      { id: "ecg_m1", txt: "Explora 5 escenarios distintos", xp: 50, auto: s => Object.keys(s.obj("ecg_hist").v || {}).length >= 5 },
+      { id: "ecg_m2", txt: "Recorre los 8 síndromes coronarios (anterior, lateral, inferior, VD, posterior, SCASEST…)", xp: 100, auto: s => { const v = s.obj("ecg_hist").v || {}; return IAM_ECG.every(k => v[k]); } },
+      { id: "ecg_m3", txt: "Explora los 25 escenarios", xp: 150, auto: s => Object.keys(s.obj("ecg_hist").v || {}).length >= 25 },
+      { id: "ecg_m4", txt: "Resuelve 5 casos clínicos aleatorios", xp: 100, auto: s => (s.obj("ecg_hist").casos || 0) >= 5 },
+      { id: "ecg_m5", txt: "Racha de 5 diagnósticos correctos seguidos", xp: 150, auto: s => (s.obj("ecg_hist").best || 0) >= 5 },
+      { id: "ecg_m6", txt: "Acierta la arteria culpable en 5 infartos", xp: 150, auto: s => (s.obj("ecg_hist").art || 0) >= 5 },
+      { id: "ecg_m7", txt: "Reto: 20 casos con ≥ 80 % de diagnósticos correctos", xp: 200, auto: s => { const h = s.obj("ecg_hist"); return (h.casos || 0) >= 20 && (h.dx || 0) / h.casos >= .8; } },
+      { id: "ecg_exam", txt: "Supera el examen del capítulo", xp: 0, auto: s => s.stars("ecg") >= 1 }
+    ],
+    insignia: { id: "einthoven", nombre: "Einthoven", icono: "📈", txt: "Examen de ECG superado" }
+  },
+  {
+    id: "rcp", n: 6, titulo: "Parada", sub: "Soporte vital avanzado · ERC 2025",
     color: "#38bdf8", icono: "⚡",
     historia: "Mientras lo trasladas a TAC, el monitor cambia: fibrilación ventricular. Compresiones, descarga, adrenalina, causas reversibles. Cada segundo sin compresiones cuenta.",
     modulos: [
@@ -96,7 +117,7 @@ const CAPITULOS = [
     insignia: { id: "rosc", nombre: "RCE", icono: "💓", txt: "Examen de SVA superado" }
   },
   {
-    id: "vmni", n: 6, titulo: "Respira", sub: "Ventilación mecánica no invasiva",
+    id: "vmni", n: 7, titulo: "Respira", sub: "Ventilación mecánica no invasiva",
     color: "#34d399", icono: "🫁",
     historia: "Recuperado, pero ahora es otro paciente el que te necesita: EPOC agudizado, pH 7,26, tirando de accesorios. Ajusta la máscara, el EPAP, el soporte… y lee las curvas antes de que se agote.",
     modulos: [
@@ -118,7 +139,7 @@ const CAPITULOS = [
     insignia: { id: "sincronia", nombre: "Sincronía", icono: "〰️", txt: "Examen de VMNI superado" }
   },
   {
-    id: "hk", n: 7, titulo: "Box vital", sub: "Hiperpotasemia aguda",
+    id: "hk", n: 8, titulo: "Box vital", sub: "Hiperpotasemia aguda",
     color: "#a3e635", icono: "⚡",
     historia: "03:10 h. Varón de 68 años con ERC, IECA y espironolactona. Dice que no siente las piernas. El monitor muestra una bradicardia con QRS cada vez más ancho y la enfermera te enseña la gasometría: K⁺ 7,1. Tienes minutos, no horas.",
     modulos: [
@@ -139,7 +160,7 @@ const CAPITULOS = [
     insignia: { id: "membrana", nombre: "Membrana estable", icono: "⚡", txt: "Examen de hiperpotasemia superado" }
   },
   {
-    id: "cad", n: 8, titulo: "Box de agudos", sub: "Cetoacidosis y estado hiperosmolar · CAD/EHH",
+    id: "cad", n: 9, titulo: "Box de agudos", sub: "Cetoacidosis y estado hiperosmolar · CAD/EHH",
     color: "#f472b6", icono: "🩸",
     historia: "04:30 h. Mujer de 24 años, DM1, tres días vomitando. Respira hondo y rápido, huele a manzana y tiene la boca seca. Glucemia capilar: «HI». Antes de tocar la insulina necesitas un dato que todavía no tienes: el potasio.",
     modulos: [
@@ -159,7 +180,7 @@ const CAPITULOS = [
     insignia: { id: "dulce", nombre: "Brecha cerrada", icono: "🩸", txt: "Examen de CAD/EHH superado" }
   },
   {
-    id: "turno", n: 9, titulo: "Fin de guardia", sub: "Sala de descanso · TurnoValor",
+    id: "turno", n: 10, titulo: "Fin de guardia", sub: "Sala de descanso · TurnoValor",
     color: "#a78bfa", icono: "☕",
     historia: "08:00 h. Relevo hecho. Antes de irte, mira qué ha supuesto esta guardia: horas, carga y valor de cada turno. Cuidar del equipo también es medicina de urgencias.",
     modulos: [
@@ -251,6 +272,20 @@ const PREGUNTAS = {
     { q: "¿Qué mecanismo de hipoxemia NO mejora al subir la FiO₂?", o: ["Hipoventilación", "Alteración V/Q", "Shunt", "Difusión"], c: 2, e: "La sangre del shunt no pasa por alvéolos ventilados: más O₂ inspirado apenas la toca." },
     { q: "Intoxicación por salicilatos. Patrón gasométrico típico del adulto:", o: ["Alcalosis metabólica pura", "Acidosis metabólica con AG elevado + alcalosis respiratoria", "Acidosis respiratoria aguda", "Acidosis hiperclorémica"], c: 1, e: "El salicilato estimula directamente el centro respiratorio: la PaCO₂ queda por debajo de lo que predice Winter." },
     { q: "Alcalosis metabólica con Cl⁻ urinario de 6 mEq/l. Orienta a:", o: ["Hiperaldosteronismo primario", "Vómitos o SNG: salinosensible", "Síndrome de Bartter", "Diurético en plena acción"], c: 1, e: "Cl⁻ urinario < 10: depleción de volumen y cloro; responde a suero salino. > 20: causas salinorresistentes (mineralocorticoides, Bartter, diurético activo)." }
+  ],
+  ecg: [
+    { q: "ST↑ en II, III y aVF con el ST de III mayor que el de II. Arteria más probable:", o: ["Circunfleja", "Coronaria derecha", "DA proximal", "Tronco común"], c: 1, e: "ST III > II orienta a coronaria derecha. Si II ≥ III y hay ST↑ en I, aVL o V5–V6, piensa en circunfleja." },
+    { q: "En todo IAM inferior debes registrar además:", o: ["Solo V1–V6", "V4R (y V3R) y V7–V9", "Tira de ritmo en DII", "aVR repetido"], c: 1, e: "V4R detecta la extensión al VD (ST↑ ≥ 1 mm) y V7–V9 la afectación posterior." },
+    { q: "IAM inferior con hipotensión, ingurgitación yugular y pulmones limpios. ¿Qué evitas?", o: ["Volumen IV", "Nitratos y diuréticos", "Reperfusión", "Monitorización"], c: 1, e: "Infarto de VD: el ventrículo depende de la precarga. Nitratos, diuréticos (y con precaución mórficos) pueden hundir la presión. Volumen y reperfusión." },
+    { q: "Descenso del ST en V1–V3 con R alta y T positiva en V1–V2. Sospechas:", o: ["SCASEST anterior", "IAMCEST posterior: confirma con V7–V9", "Bloqueo de rama derecha", "Hipertrofia del VD"], c: 1, e: "Es la imagen en espejo de la pared posterior. ST↑ ≥ 0,5 mm en V7–V9 lo confirma y cambia la indicación: es un IAMCEST." },
+    { q: "Descenso del ST en 6 o más derivaciones con elevación en aVR orienta a:", o: ["Pericarditis", "Isquemia subendocárdica difusa: tronco común o 3 vasos", "Repolarización precoz", "IAM lateral alto"], c: 1, e: "Paciente de muy alto riesgo: coronariografía inmediata si está inestable." },
+    { q: "Taquicardia regular de QRS estrecho a 150 lpm justos. Debes sospechar:", o: ["Taquicardia sinusal", "Flutter auricular 2:1", "Fibrilación auricular", "TV"], c: 1, e: "Ondas F a 300/min con conducción 2:1. Maniobras vagales o adenosina frenan el nodo y desenmascaran los dientes de sierra." },
+    { q: "Fibrilación auricular preexcitada (WPW), estable. ¿Qué NO debes dar?", o: ["Procainamida", "Cardioversión eléctrica", "Adenosina, β-bloqueantes, calcioantagonistas o digoxina", "Anticoagulación según riesgo"], c: 2, e: "Frenar el nodo AV deja toda la conducción a la vía accesoria y puede precipitar FV." },
+    { q: "PR constante y, de pronto, una P bloqueada, con QRS ancho. Es:", o: ["Mobitz I benigno", "Mobitz II: infranodal, riesgo de BAV completo", "BAV de 1.er grado", "Extrasístole auricular bloqueada"], c: 1, e: "Bloqueo en el His o en las ramas. Marcapasos transcutáneo preparado e indicación de marcapasos definitivo." },
+    { q: "Alargamiento progresivo del PR hasta una P no conducida:", o: ["Mobitz II", "Wenckebach (Mobitz I)", "BAV completo", "Flutter 4:1"], c: 1, e: "Fatiga progresiva del nodo AV: nivel nodal, habitualmente benigno (IAM inferior, vagotonía)." },
+    { q: "Taquicardia de QRS ancho regular, PA 82/50 y mareo. Primera medida:", o: ["Amiodarona en 20 minutos", "Cardioversión eléctrica sincronizada", "Adenosina", "Desfibrilación no sincronizada"], c: 1, e: "TV con pulso e inestable: cardioversión sincronizada. Si estuviera estable, amiodarona o procainamida." },
+    { q: "rsR′ en V1–V2 con S ancha en I y V6 y QRS ≥ 0,12 s:", o: ["Bloqueo de rama izquierda", "Bloqueo de rama derecha", "Preexcitación", "Hiperpotasemia"], c: 1, e: "La R′ de V1 es la activación tardía del VD. Si es nuevo, piensa en TEP, IAM anterior o cardiopatía." },
+    { q: "Pseudo-r′ en V1 y pseudo-S en II, III y aVF durante una taquicardia regular estrecha:", o: ["Flutter", "TRIN: P retrógrada pegada al QRS", "Taquicardia auricular", "TV fascicular"], c: 1, e: "Reentrada intranodal: maniobras vagales (Valsalva modificada) y, si no cede, adenosina en bolo rápido." }
   ],
   rcp: [
     { q: "¿A qué frecuencia deben hacerse las compresiones torácicas en el adulto?", o: ["60–80/min", "80–100/min", "100–120/min", "> 140/min"], c: 2, e: "100–120 por minuto, con descompresión completa entre compresiones." },

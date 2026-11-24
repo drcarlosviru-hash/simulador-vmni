@@ -8,11 +8,12 @@ Mundo virtual de la emergencia por capítulos, con misiones, XP, rangos, insigni
 2. **El parte** · AmbulancePad SUC (libro interactivo y simulador de parte asistencial)
 3. **Box de trauma** · ATLS
 4. **Laboratorio** · Gasometría y medio interno (diagrama de Davenport vivo, 4 vídeos narrados, simulador de casos en 4 niveles y analizador)
-5. **Parada** · Simulador PCR, algoritmo SVA ERC 2025
-6. **Respira** · VMNI (repaso, guía visual, ventiladores y simulador)
-7. **Box vital** · Hiperpotasemia aguda (taller interactivo con ECG en vivo + simulador con monitor)
-8. **Box de agudos** · CAD/EHH (taller interactivo + simulador hora a hora de 0 a 24 h)
-9. **Fin de guardia** · TurnoValor (demo con datos ficticios)
+5. **Monitores** · Simulador de ECG y corazón (25 escenarios: síndromes coronarios, arritmias y bloqueos, con corazón animado, ECG de 12 derivaciones, ecocardiograma y casos clínicos)
+6. **Parada** · Simulador PCR, algoritmo SVA ERC 2025
+7. **Respira** · VMNI (repaso, guía visual, ventiladores y simulador)
+8. **Box vital** · Hiperpotasemia aguda (taller interactivo con ECG en vivo + simulador con monitor)
+9. **Box de agudos** · CAD/EHH (taller interactivo + simulador hora a hora de 0 a 24 h)
+10. **Fin de guardia** · TurnoValor (demo con datos ficticios)
 
 **🩺 Paciente virtual (fase 1):** motor común de escenarios (`mundo/motor/`) con paciente 2,5D que respira y cambia según tus decisiones, monitor multiparamétrico (ECG, pletismografía, capnografía, PANI), auscultación sintetizada, ventilador de VMNI ajustable, modo tutor/examen y debriefing por competencias con línea temporal y repetición. Escenarios: insuficiencia respiratoria aguda (EAP hipertensivo o EPOC hipercápnico) El paciente virtual de parada cardiorrespiratoria se basa en el Simulador PCR · SVA ERC 2025 (`mundo/modulos/rcp.html?sim=1`), con paciente animado y repetición minuto a minuto en la evaluación.
 
