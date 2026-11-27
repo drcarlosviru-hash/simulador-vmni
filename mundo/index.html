@@ -612,7 +612,7 @@ function openSettings(){
       </div>
     </div>`);
   $("#bExp").onclick = () => {
-    const extra = {}; ["phtls_ch","phtls_cs","phtls_qz","phtls_mn","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist","hktaller","hiperk_hist","motor_hist","gaso-v1","ecg_hist"].forEach(k => { const v = localStorage.getItem(k); if (v != null) extra[k] = v; });
+    const extra = {}; ["phtls_ch","phtls_cs","phtls_qz","phtls_mn","atls_ch","atls_cs","atls_qz","atls_sim","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist","hktaller","hiperk_hist","motor_hist","gaso-v1","ecg_hist"].forEach(k => { const v = localStorage.getItem(k); if (v != null) extra[k] = v; });
     const blob = new Blob([JSON.stringify({ mundo: S, modulos: extra, fecha: new Date().toISOString() }, null, 1)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "mundo-emergencia-progreso.json"; a.click();
   };
@@ -633,7 +633,7 @@ function openSettings(){
       <div class="mb row"><button class="btn" id="rNo">Cancelar</button><button class="btn pri" id="rYes">Sí, reiniciar</button></div>`);
     $("#rNo").onclick = openSettings;
     $("#rYes").onclick = () => {
-      ["phtls_ch","phtls_cs","phtls_qz","phtls_mn","atls_ch","atls_cs","atls_qz","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist","hktaller","hiperk_hist","motor_hist","gaso-v1","ecg_hist",KEY].forEach(k => localStorage.removeItem(k));
+      ["phtls_ch","phtls_cs","phtls_qz","phtls_mn","atls_ch","atls_cs","atls_qz","atls_sim","pcr_hist","apad_done","apadSim2","cadtaller","cadehh_hist","hktaller","hiperk_hist","motor_hist","gaso-v1","ecg_hist",KEY].forEach(k => localStorage.removeItem(k));
       S = { nombre:"", rol:"", visitas:{}, estrellas:{}, mejorNota:{}, manual:{}, noche:0, libre:false, cielo:"", vistos:[], insVistas:[] };
       save(); closeModal(); render(true); openProfile(true);
     };

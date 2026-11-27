@@ -127,6 +127,28 @@ footer{max-width:1100px;margin:20px auto 0;padding:0 16px 24px;font-size:12px;co
 .lb{overflow:auto}.lb img{background:#fff;cursor:zoom-in}.lb.zm{align-items:flex-start;justify-content:flex-start}.lb.zm img{max-width:none;max-height:none;width:250%;cursor:zoom-out}
 .lbx{position:fixed;top:12px;right:12px;z-index:100;border:0;border-radius:99px;width:40px;height:40px;background:#fff;color:#111;font-size:18px;cursor:pointer}
 .tw{overflow-x:auto}table.t{font-size:12px}
+.simgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.stile{cursor:pointer;position:relative;transition:transform .15s}.stile:hover{transform:translateY(-2px)}.stile .ic{font-size:34px}.stile .done{position:absolute;top:12px;right:12px;font:700 12px Inter;color:var(--grn)}
+.simlay{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){.simlay{grid-template-columns:1fr}}
+.svgwrap{background:var(--bg);border-radius:16px;padding:8px;border:1px solid var(--line)}
+.stage-svg{width:100%;height:auto;display:block;max-height:70vh;cursor:crosshair;user-select:none;-webkit-user-select:none}
+.stage-svg .lbl{font:600 11px Inter;fill:#64748b}
+.ssteps{list-style:none;padding:0;margin:0 0 10px}.ssteps li{padding:6px 10px;border-radius:10px;font-size:13px;color:var(--mute);margin-bottom:4px;border:1px solid var(--line)}
+.ssteps li.on{border-color:var(--blu);color:var(--ink);font-weight:600;background:color-mix(in srgb,var(--blu) 10%,var(--card))}.ssteps li.ok{color:var(--grn);border-color:color-mix(in srgb,var(--grn) 40%,var(--line))}
+.monitor.mini{padding:10px;margin-bottom:10px}.monitor.mini .vgrid{grid-template-columns:repeat(auto-fit,minmax(70px,1fr))}
+.gauge{margin-top:8px}
+@keyframes drip{0%{transform:translate(0,0);opacity:1}100%{transform:translate(-22px,240px);opacity:.2}}
+@keyframes pulse{0%,100%{transform:scale(1);transform-origin:170px 530px}50%{transform:scale(1.6);transform-origin:170px 530px}}
+.xorder{display:grid;gap:6px;margin:10px 0}.xslot{display:flex;gap:10px;align-items:center;border:2px dashed;border-radius:12px;padding:8px 10px;min-height:42px;font-size:13px}.xslot b{font:800 18px Sora}
+.xcards{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.xcard{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:10px 12px;font:500 13px Inter;cursor:pointer;text-align:left;flex:1 1 220px}
+.xcard.good{border-color:var(--grn);opacity:.45}.xcard.bad{border-color:var(--red);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.bags{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}.bag{border:0;border-radius:12px 12px 18px 18px;padding:12px 2px;font:600 11px Inter;color:#fff;background:var(--c);cursor:pointer;transition:transform .15s}.bag.pop{transform:scale(1.15)}
+@media (max-width:520px){.bags{grid-template-columns:repeat(3,1fr)}}
+.ratio{margin-top:8px}.rb{display:grid;grid-template-columns:70px 1fr 24px;gap:6px;align-items:center;font-size:12px;margin:3px 0}.rb i{display:block;height:10px;border-radius:6px}
+
+.mediagrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}.mfig{margin:0;background:var(--card2,#0001);border-radius:12px;overflow:hidden}.mfig img,.mfig video{width:100%;max-height:300px;object-fit:contain;background:#000;display:block}.mfig figcaption{padding:10px;font-size:13px;line-height:1.4}.mfail{padding:24px 12px;text-align:center;font-size:13px;opacity:.7}
 .triage-btns.t5{grid-template-columns:repeat(5,1fr)}.triage-btns.t5 button{font-size:12px;padding:14px 2px}.tr-gris{background:#6b7280}
 @media (max-width:520px){.triage-btns.t5{grid-template-columns:repeat(3,1fr)}}
 </style>
@@ -141,6 +163,7 @@ footer{max-width:1100px;margin:20px auto 0;padding:0 16px 24px;font-size:12px;co
  <section class="view" id="v-taller"></section>
  <section class="view" id="v-anatomia"></section>
  <section class="view" id="v-capitulos"></section>
+ <section class="view" id="v-simular"></section>
  <section class="view" id="v-herramientas"></section>
  <section class="view" id="v-repaso"></section>
 </main>
@@ -377,6 +400,7 @@ const CHAPTERS = [
     {p:"Un torniquete en un entorno austero debe reevaluarse idealmente antes de:",o:["30 min","2 h","6 h","24 h"],a:1,e:"Para sustituirlo o convertirlo a otra técnica de hemostasia."}]}
 ];
 
+const CH_ATLAS={3:['vasos','extinf'],4:['cuello'],5:['torax'],6:['vasos','torax','abdomen'],7:['cabeza','columna'],8:['piel'],9:['piel'],10:['extinf','extsup','pelvis'],11:['abdomen','cabeza'],12:['cabeza','torax'],13:['abdomen','pelvis'],14:['columna'],21:['torax','abdomen','pelvis'],22:['abdomen','vasos'],23:['cabeza'],24:['vasos','extinf']};
 
 const REGIONS = {
  cabeza:{t:"Cabeza y cerebro",ch:7,
@@ -783,13 +807,12 @@ const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelect
 const PH={x:"var(--x)",X:"var(--x)",A:"var(--a)",B:"var(--b)",C:"var(--c)",D:"var(--d)",E:"var(--e)",Prealerta:"#64748b",Anexos:"#0f766e",Secundaria:"#475569",Traslado:"#334155"};
 const ST={get(k,d){try{const v=localStorage.getItem("atls_"+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem("atls_"+k,JSON.stringify(v))}catch(e){}}};
 const R={};
-const CH_ATLAS={3:['vasos','torax'],4:['torax','abdomen'],6:['vasos'],7:['cuello'],8:['cabeza'],9:['columna'],10:['torax'],11:['abdomen'],12:['extinf','pelvis','extsup'],13:['piel'],14:['abdomen','cabeza'],15:['pelvis','cabeza'],18:['torax'],19:['piel'],22:['vasos','extinf']};
 let pending=null;
 function goThen(v,fn){pending=fn;if(location.hash!=="#"+v)location.hash=v;else show(v)}
 const prog={ch:ST.get("ch",{}),cs:ST.get("cs",{}),qz:ST.get("qz",0)};
 function saveProg(){ST.set("ch",prog.ch);ST.set("cs",prog.cs);ST.set("qz",prog.qz)}
 
-const VIEWS=[["inicio","🏠","Inicio"],["taller","🚑","Taller"],["anatomia","🫀","Anatomía"],["capitulos","📘","Capítulos"],["herramientas","🧮","Herramientas"],["repaso","✅","Repaso"]];
+const VIEWS=[["inicio","🏠","Inicio"],["taller","🚑","Taller"],["anatomia","🫀","Anatomía"],["capitulos","📘","Capítulos"],["simular","🎮","Simular"],["herramientas","🧮","Calculadoras"],["repaso","✅","Repaso"]];
 function buildNav(){
  $("#tabs").innerHTML=VIEWS.map(([k,,l])=>`<button data-v="${k}">${l}</button>`).join("");
  $("#bnav").innerHTML=VIEWS.map(([k,i,l])=>`<button data-v="${k}"><span>${i}</span>${l}</button>`).join("");
@@ -797,7 +820,7 @@ function buildNav(){
 }
 function go(v){ if(location.hash!=="#"+v) location.hash=v; else show(v); }
 function show(v){
- if(v!=="taller"&&typeof stopSim==="function")stopSim();
+ if(v!=="taller"&&typeof stopSim==="function")stopSim();if(v!=="simular"&&typeof simClear==="function")simClear();
  if(!VIEWS.find(x=>x[0]===v)) v="inicio";
  $$(".view").forEach(s=>s.classList.toggle("on",s.id==="v-"+v));
  $$("[data-v]").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
@@ -861,8 +884,8 @@ R.inicio=()=>{
  <div class="hero"><svg class="ekg" viewBox="0 0 400 80"><path d="M0 50 H120 l10 -6 l8 6 h14 l6 -40 l8 64 l6 -24 h22 l10 -8 l10 8 H400" fill="none" stroke="#fff" stroke-width="3"/></svg>
   <span class="chip" style="background:#ffffff22;color:#fff">Soporte vital avanzado en trauma · 11.ª ed.</span>
   <h1>Aprende ATLS practicando</h1>
-  <p>Estaciones de simulación en el box de reanimación con monitor en tiempo real, anatomía interactiva y los 24 capítulos resumidos con las novedades de la 11.ª edición.</p>
-  <div class="row"><button class="btn pri" onclick="go('taller')">🚑 Empezar simulación</button><button class="btn" onclick="go('anatomia')">🫀 Explorar anatomía</button></div>
+  <p>Casos en el box de reanimación con monitor en tiempo real, ${SIMS.length} simuladores visuales de técnicas (torniquete, aguja, faja, eFAST, Glasgow…), anatomía interactiva y los 24 capítulos con las novedades de la 11.ª edición.</p>
+  <div class="row"><button class="btn pri" onclick="go('taller')">🚑 Casos clínicos</button><button class="btn" onclick="go('simular')">🎮 Simuladores</button><button class="btn" onclick="go('anatomia')">🫀 Anatomía</button></div>
   <div class="stats"><div class="stat"><b>${nc}/${CHAPTERS.length}</b>capítulos</div><div class="stat"><b>${ns}/${CASES.length+1}</b>simulaciones</div><div class="stat"><b>${prog.qz}%</b>mejor test</div></div>
  </div>
  <div class="spacer"></div>
@@ -881,6 +904,9 @@ R.inicio=()=>{
  <div class="spacer"></div>
  <div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🖼️ Atlas de anatomía</h2><button class="btn" onclick="go('anatomia')">Ver las ${Object.values(GRAY).flat().length} láminas</button></div><p class="small mute">Láminas de OpenStax <i>Anatomy and Physiology</i> y Gray's Anatomy (1918), integradas en cada región, capítulo y estación.</p>
  <div class="homegal">${["os_2313_The_Lung_Pleurea","os_1316_Meningeal_LayersN","os_807_Pelvis","os_2129ab_Lower_Limb_Arteries_Anterior_Posterior","os_2306_The_Larynx","os_513_Degree_of_burns"].map(f=>`<img src="img/${f}.jpg" loading="lazy" alt="" onclick="openLB(this.src,'image')">`).join("")}</div></div>
+ <div class="spacer"></div>
+ <div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">🎮 Simuladores visuales</h2><button class="btn pri" onclick="go('simular')">Ver los ${SIMS.length}</button></div><p class="small mute">Toca y arrastra sobre el paciente para practicar cada técnica con las reglas del manual.</p>
+  <div class="row">${SIMS.map(x=>`<button class="btn" onclick="openSim('${x.id}')">${x.ic} ${x.t}</button>`).join("")}</div></div>
  <div class="spacer"></div>
  <div class="grid g3">
   <div class="card"><h3>🚑 Box de reanimación</h3><p class="small mute">${CASES.length} estaciones clínicas y un triaje de múltiples víctimas. Cada decisión cambia las constantes y consume tiempo.</p><button class="btn" onclick="go('taller')">Abrir</button></div>
@@ -944,7 +970,7 @@ function renderCh(n){{
  <div class="sec b"><h4>Lo esencial</h4><ul class="clean">${c.res.map(x=>`<li>${x}</li>`).join("")}</ul></div>
  <div class="sec r"><h4>Perlas clínicas</h4><ul class="clean">${c.per.map(x=>`<li>${x}</li>`).join("")}</ul></div>
  <div class="sec a"><h4>Números que debes saber</h4><div class="nums">${c.num.map(x=>`<span>${x}</span>`).join("")}</div></div>
- <div class="row">${c.reg?`<button class="btn" onclick="anatSel='${c.reg}';go('anatomia')">🫀 Ver anatomía</button>`:""}${cs.map(k=>`<button class="btn" onclick="startCase('${k.id}')">${k.ic} ${k.t}</button>`).join("")}</div></div>
+ <div class="row">${c.reg?`<button class="btn" onclick="anatSel='${c.reg}';go('anatomia')">🫀 Ver anatomía</button>`:""}${cs.map(k=>`<button class="btn" onclick="startCase('${k.id}')">${k.ic} ${k.t}</button>`).join("")}${SIMS.filter(s=>s.ch===n).map(s=>`<button class="btn pri" onclick="openSim('${s.id}')">🎮 ${s.t}</button>`).join("")}</div></div>
  ${CH_ATLAS[n]?`<div class="spacer"></div><div class="card" id="chAtlas">${atlasBox(CH_ATLAS[n])}</div>`:""}
  <div class="spacer"></div><div class="card"><h3>Mini-test</h3><div id="chq"></div></div>`;
  if(CH_ATLAS[n]) wireAtlas($("#chAtlas"),CH_ATLAS[n]);
@@ -1033,7 +1059,7 @@ function nextStep(){
 function choose(j,b){
  const s=SIM.c.steps[SIM.i],o=s.o[j]; SIM.t+=o.min||0; applyEff(o.eff); drawVit();
  if(o.ok){ if(!SIM.miss)SIM.first++; b.classList.add("good"); $$("#stage .opt").forEach(x=>x.disabled=true);
-  $("#sfb").innerHTML=`<div class="fb good">✔ ${o.fb}</div><div class="spacer"></div><button class="btn dark" id="nx">${SIM.i+1<SIM.c.steps.length?"Siguiente →":"Ver resultado"}</button>`; $("#nx").onclick=nextStep;
+  $("#sfb").innerHTML=`<div class="fb good">✔ ${o.fb}</div>${simFor(o.t)}<div class="spacer"></div><button class="btn dark" id="nx">${SIM.i+1<SIM.c.steps.length?"Siguiente →":"Ver resultado"}</button>`; $("#nx").onclick=nextStep;
  } else { SIM.miss=true; b.classList.add("bad"); b.disabled=true; $("#sfb").innerHTML=`<div class="fb bad">✘ ${o.fb} <b>Inténtalo de nuevo.</b></div>`; }
 }
 function endCase(){
@@ -1116,6 +1142,460 @@ R.herramientas=()=>{
  const tq=()=>{if(!tqT){$("#tqV").textContent="--:--";$("#tqH").textContent="";return}const s=Math.floor((Date.now()-tqT)/1000);$("#tqV").textContent=`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;$("#tqH").textContent="Colocado a las "+new Date(tqT).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})+(s>=7200?" · ⚠️ más de 2 h: reevaluar":"")};
  clearInterval(tqI);tqI=setInterval(tq,1000);$("#tqS").onclick=()=>{tqT=Date.now();tq()};$("#tqX").onclick=()=>{tqT=null;tq()};tq();
 };
+
+// ---------- MATERIAL REAL (Wikimedia Commons, licencia libre) ----------
+// Los archivos NO se copian a la app: se cargan desde Wikimedia (requiere conexión) y se muestran con autor y licencia.
+const WM="https://upload.wikimedia.org/wikipedia/commons/";
+const WP0="https://upload.wikimedia.org/wikipedia/commons/";
+const WT="https://thumb.wikimedia.org/wikipedia/commons/thumb/";
+const CF="https://commons.wikimedia.org/wiki/File:";
+const MEDIA={
+ torniquete:[
+  {k:"img",src:WT+"c/c6/Tourniquet_application.jpg/960px-Tourniquet_application.jpg",f:"Tourniquet_application.jpg",t:"Colocación en simulacro TCCC",c:"Observa dónde queda el torniquete respecto a la herida y a la articulación. En el simulador: 5–8 cm proximal y nunca sobre la rodilla.",a:"US Navy (MC)",l:"Dominio público"},
+  {k:"img",src:WT+"a/a1/Combat_casualty_training_120821-F-RS318-417.jpg/960px-Combat_casualty_training_120821-F-RS318-417.jpg",f:"Combat_casualty_training_120821-F-RS318-417.jpg",t:"Control de hemorragia en entrenamiento",c:"Escenario simulado de lesión por explosión: el control de la hemorragia exanguinante va antes que la vía aérea (xABCDE).",a:"Staff Sgt. John Bainter, USAF",l:"Dominio público"},
+  {k:"img",src:WT+"c/c4/A_black_CAT_tourniquet_of_the_7th_generation.jpg/960px-A_black_CAT_tourniquet_of_the_7th_generation.jpg",f:"A_black_CAT_tourniquet_of_the_7th_generation.jpg",t:"Torniquete CAT (7.ª generación)",c:"Identifica banda, molinete (windlass), clip de fijación y la tira donde se anota la hora.",a:"Struppig taucher",l:"CC BY 4.0"}
+ ],
+ aguja:[
+  {k:"img",src:WT+"5/51/Needle_Chest_Decompression_%287952541%29.jpg/960px-Needle_Chest_Decompression_%287952541%29.jpg",f:"Needle_Chest_Decompression_(7952541).jpg",t:"Descompresión con aguja en simulacro",c:"Fíjate en la posición del brazo y del punto de punción. En ATLS 11: 5.º espacio intercostal entre línea axilar anterior y media (o 2.º EIC LMC), sobre el borde superior de la costilla inferior.",a:"Cpl. Fallon Lewis, US Army",l:"Dominio público"},
+  {k:"img",src:WT+"5/5a/X-ray_of_pneumothorax_signs.jpg/960px-X-ray_of_pneumothorax_signs.jpg",f:"X-ray_of_pneumothorax_signs.jpg",t:"Radiografía: signos de neumotórax",c:"Neumotórax en general, no necesariamente a tensión. El neumotórax a tensión es un diagnóstico clínico: no esperes a la radiografía.",a:"Karthik Easvur",l:"CC BY-SA 3.0"},
+  {k:"img",src:WT+"9/9f/Chest_X-ray_of_pneumothorax.png/960px-Chest_X-ray_of_pneumothorax.png",f:"Chest_X-ray_of_pneumothorax.png",t:"Neumotórax derecho (inicial y tras drenaje)",c:"Compara el pulmón colapsado con el reexpandido tras el drenaje. Es un caso espontáneo, no traumático.",a:"Bonilla et al.",l:"CC BY 4.0"},
+  {k:"img",src:WT+"1/14/Massive_right_hemothorax.jpg/960px-Massive_right_hemothorax.jpg",f:"Massive_right_hemothorax.jpg",t:"Hemotórax masivo derecho",c:"Otra causa de shock torácico: velamiento del hemitórax. Se trata con drenaje torácico y reposición, no con aguja.",a:"Kaul y Paniagua",l:"CC BY 2.0"}
+ ],
+ faja:[
+  {k:"vid",src:WP0+"0/0e/PelvicBinding.webm",f:"PelvicBinding.webm",t:"Vídeo: faja pélvica improvisada con sábana",c:"Compara con el simulador: la sábana se centra en los trocánteres mayores, no en las crestas ilíacas, y se fija con bridas.",a:"James Heilman, MD",l:"CC BY-SA 4.0"},
+  {k:"img",src:WT+"f/fb/EquipmentforPelvicBinder.jpg/960px-EquipmentforPelvicBinder.jpg",f:"EquipmentforPelvicBinder.jpg",t:"Material para una faja improvisada",c:"Una sábana y dos bridas bastan si no hay faja comercial.",a:"Doc James",l:"CC BY-SA 4.0"}
+ ],
+ efast:[
+  {k:"img",src:WT+"f/fa/MorisonNoText.png/960px-MorisonNoText.png",f:"MorisonNoText.png",t:"Espacio de Morison normal",c:"Interfaz hígado–riñón sin línea negra entre ambos: ausencia de líquido libre.",a:"Drahreg01",l:"CC BY-SA 3.0"},
+  {k:"img",src:WC("e/e0/FluidMorisonsPouchEctop.PNG"),f:"FluidMorisonsPouchEctop.PNG",t:"Líquido libre en Morison",c:"Banda anecoica (negra) entre hígado y riñón = líquido libre. Aquí es un embarazo ectópico; en trauma lo asumimos hemoperitoneo.",a:"James Heilman, MD",l:"CC BY-SA 3.0"},
+  {k:"img",src:WC("a/ad/PericardialeffusionUS.PNG"),f:"PericardialeffusionUS.PNG",t:"Derrame pericárdico",c:"Líquido anecoico rodeando el corazón. En trauma penetrante con hipotensión sugiere taponamiento.",a:"James Heilman, MD",l:"CC BY-SA 3.0"}
+ ],
+ crico:[
+  {k:"vid",src:WC("8/82/Surgical_cricicothyroidotomy_with_Kelly.webm"),f:"Surgical_cricicothyroidotomy_with_Kelly.webm",t:"Vídeo: cricotiroidotomía quirúrgica",c:"Compara con el orden de pasos del simulador: palpar membrana, incisión, abrir con pinza o dedo y colocar el tubo.",a:"Arif Alper Çevik",l:"CC BY 3.0"}
+ ]
+};
+function WC(p){return WP0+p}
+function mediaPanel(id){const m=MEDIA[id];if(!m)return"";
+ return `<div class="card" id="mediaPanel"><h3 style="margin-top:0">🎥 Ver en real</h3><p class="small mute">Material libre de Wikimedia Commons. Se carga desde Internet y se muestra con su autor y licencia. Contrástalo con lo que acabas de practicar.</p><div class="mediagrid">${m.map(x=>`<figure class="mfig">${x.k==="vid"?`<video src="${x.src}" controls preload="none" playsinline muted onerror="this.outerHTML='<div class=&quot;mfail&quot;>No se pudo cargar el vídeo. Ábrelo en Commons con el enlace de abajo.</div>'"></video>`:`<img src="${x.src}" alt="${x.t}" loading="lazy" onerror="this.outerHTML='<div class=&quot;mfail&quot;>No se pudo cargar la imagen (¿sin conexión?).</div>'">`}<figcaption><b>${x.t}</b><br>${x.c}<br><span class="small mute">${x.a} · ${x.l} · <a href="${CF}${x.f}" target="_blank" rel="noopener">Commons</a></span></figcaption></figure>`).join("")}</div></div>`}
+
+// ====== SIMULADORES VISUALES (ilustraciones originales, criterios del manual ATLS 11) ======
+const SIMS=[
+ {id:"torniquete",ic:"🩸",t:"Torniquete",ch:3,lvl:"Básico",d:"Coloca, aprieta y comprueba el pulso distal en una hemorragia arterial del muslo."},
+ {id:"aguja",ic:"💉",t:"Descompresión torácica",ch:5,lvl:"Básico",d:"Encuentra el punto correcto para descomprimir un neumotórax a tensión."},
+ {id:"faja",ic:"🦴",t:"Faja pélvica",ch:21,lvl:"Básico",d:"Coloca la faja a la altura correcta y cierra una pelvis en libro abierto."},
+ {id:"shock",ic:"❤️",t:"El continuo del shock",ch:6,lvl:"Básico",d:"Mira cómo cambia el paciente al sangrar y cómo responde a la sangre."},
+ {id:"xabcde",ic:"🔤",t:"Ordena el xABCDE",ch:1,lvl:"Básico",d:"Prioriza los hallazgos de un politraumatizado en el orden correcto."},
+ {id:"gcs",ic:"🧠",t:"Glasgow en directo",ch:7,lvl:"Intermedio",d:"Estimula al paciente, observa ojos, palabras y postura, y puntúa."},
+ {id:"efast",ic:"📡",t:"eFAST",ch:21,lvl:"Intermedio",d:"Coloca la sonda en las 6 ventanas e interpreta la imagen."},
+ {id:"crico",ic:"🔪",t:"Cricotiroidotomía",ch:4,lvl:"Intermedio",d:"Localiza la membrana cricotiroidea y ordena los pasos."},
+ {id:"sangre",ic:"🧪",t:"Reanimación con hemoderivados",ch:6,lvl:"Intermedio",d:"Transfunde con proporción equilibrada, decide el TXA y evita la dilución."},
+ {id:"embarazo",ic:"🤰",t:"Compresión de la cava",ch:13,lvl:"Básico",d:"Libera la cava en una embarazada hipotensa y elige dónde canalizar."}
+];
+const SV={}; // renderizadores
+let simTimers=[];
+function simClear(){simTimers.forEach(t=>{clearInterval(t);clearTimeout(t)});simTimers=[];cancelAnimationFrame(window.efRaf)}
+function simEvery(fn,ms){const t=setInterval(fn,ms);simTimers.push(t);return t}
+function simAfter(fn,ms){const t=setTimeout(fn,ms);simTimers.push(t);return t}
+function svgPt(svg,ev){const p=svg.createSVGPoint();const e=ev.touches?ev.touches[0]:ev;p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
+function simDone(id,p){prog.sim=prog.sim||ST.get("sim",{});prog.sim[id]=Math.max(prog.sim[id]||0,p);ST.set("sim",prog.sim)}
+function steps(list,cur){return `<ol class="ssteps">${list.map((s,i)=>`<li class="${i<cur?"ok":i===cur?"on":""}">${i<cur?"✔":i+1}. ${s}</li>`).join("")}</ol>`}
+function fbBox(ok,txt){return `<div class="fb ${ok?"good":"bad"}">${ok?"✔":"✘"} ${txt}</div>`}
+
+R.simular=()=>{simClear();prog.sim=ST.get("sim",{});
+ $("#v-simular").innerHTML=`<h2>Simuladores visuales</h2><p class="mute small">Practica cada técnica tocando y arrastrando sobre el paciente. Las reglas son las del manual ATLS 11; cada simulador enlaza con su capítulo.</p>
+ <div class="simgrid">${SIMS.map(s=>`<div class="card stile" onclick="openSim('${s.id}')"><div class="ic">${s.ic}</div>${prog.sim[s.id]!=null?`<div class="done">✓ ${prog.sim[s.id]}%</div>`:""}<h3>${s.t}${MEDIA[s.id]?" <span class='chip' style='font-size:11px'>🎥 Ver en real</span>":""}</h3><div class="row"><span class="chip">${s.lvl}</span><span class="chip">Cap. ${s.ch}</span></div><p class="small mute">${s.d}</p></div>`).join("")}
+ <div class="card stile" onclick="go('herramientas')"><div class="ic">🔥</div><h3>Quemados</h3><div class="row"><span class="chip">Básico</span><span class="chip">Cap. 9</span></div><p class="small mute">Pinta las quemaduras sobre el cuerpo y calcula el ritmo de Ringer lactato.</p></div></div>`;
+};
+function openSim(id){goThen("simular",()=>runSim(id))}
+function runSim(id){simClear();const s=SIMS.find(x=>x.id===id);
+ $("#v-simular").innerHTML=`<div class="row"><button class="btn" onclick="R.simular()">← Simuladores</button><button class="btn" onclick="runSim('${id}')">↻ Reiniciar</button><button class="btn" onclick="openCh(${s.ch})">📘 Cap. ${s.ch}</button>${MEDIA[id]?`<button class="btn" onclick="document.getElementById('mediaPanel').scrollIntoView({behavior:'smooth'})">🎥 Ver en real</button>`:""}</div><div class="spacer"></div>
+ <div class="card"><h2 style="margin-top:0">${s.ic} ${s.t}</h2><div id="simBox"></div></div>${mediaPanel(id)}`;
+ SV[id]($("#simBox"));window.scrollTo(0,0)}
+
+// ---------- 1. TORNIQUETE ----------
+SV.torniquete=box=>{
+ // escala: 1 cm ≈ 6,7 unidades. Herida en y=250; rodilla 288-322.
+ const W=250,KN=[288,322],CM=6.7;let st={y:null,turns:0,loss:0,step:0,pulseChecked:false,timed:false,hard:false,t0:Date.now(),second:null,errors:0};
+ box.innerHTML=`<p class="small">Varón de 30 años con sangrado arterial a chorro en la cara interna del muslo derecho. La presión directa no lo controla. <b>Toca el muslo</b> para colocar el torniquete.</p>
+ <div class="simlay"><div class="svgwrap"><svg id="tqSvg" viewBox="0 0 300 560" class="stage-svg">
+  <defs><linearGradient id="skinG" x1="0" x2="1"><stop offset="0" stop-color="#e9b896"/><stop offset=".5" stop-color="#f6cfb0"/><stop offset="1" stop-color="#dfa985"/></linearGradient></defs>
+  <rect x="0" y="0" width="300" height="560" fill="transparent"/>
+  <path d="M70 10 H220 Q228 120 205 290 Q198 310 200 330 Q196 420 178 500 L182 520 Q200 530 238 536 Q246 548 230 552 L140 552 Q128 548 130 520 L125 500 Q105 420 100 330 Q102 310 95 290 Q68 120 70 10Z" fill="url(#skinG)" stroke="#b9805f" stroke-width="2"/>
+  <ellipse cx="150" cy="305" rx="34" ry="14" fill="#e3a888" opacity=".55"/>
+  <text x="246" y="309" class="lbl">rodilla</text><line x1="205" y1="305" x2="243" y2="305" stroke="#999" stroke-dasharray="3 3"/>
+  <g id="tqWound"><ellipse cx="125" cy="250" rx="11" ry="6" fill="#7a0d12"/><path d="M118 250 q7 -5 14 0" stroke="#c81e2a" stroke-width="3" fill="none"/></g>
+  <g id="tqDrops"></g>
+  <ellipse id="tqPool" cx="70" cy="545" rx="0" ry="0" fill="#9b111e" opacity=".85"/>
+  <g id="tqRuler" opacity="0"><rect x="226" y="${250-8*CM}" width="10" height="${3*CM}" fill="#22c55e" opacity=".5"/><line x1="231" y1="250" x2="231" y2="${250-10*CM}" stroke="#16a34a" stroke-width="2"/><text x="240" y="${250-6*CM}" class="lbl" fill="#15803d">5–8 cm</text></g>
+  <g id="tqBand"></g><g id="tqBand2"></g>
+  <circle id="tqPulse" cx="170" cy="530" r="9" fill="#ef4444" opacity="0"/>
+  <text id="tqPulseT" x="150" y="515" class="lbl" text-anchor="middle"></text>
+ </svg></div>
+ <div><div id="tqSteps"></div>
+  <div class="gauge"><div class="small mute">Pérdida de sangre estimada</div><div class="big" id="tqLoss">0 mL</div><div class="prog"><i id="tqLossB" style="width:0"></i></div></div>
+  <div class="row" style="margin-top:10px"><button class="btn pri" id="tqTurn" disabled>🔄 Girar molinete</button><button class="btn" id="tqPalp" disabled>✋ Palpar pulso pedio</button><button class="btn" id="tqTime" disabled>🖊️ Anotar la hora</button></div>
+  <div class="row" style="margin-top:6px"><button class="btn" id="tq2" disabled>➕ Segundo torniquete</button><label class="small"><input type="checkbox" id="tqHard"> Caso difícil (muslo muy voluminoso)</label></div>
+  <div id="tqFb" style="margin-top:10px"></div></div></div>`;
+ const svg=$("#tqSvg");
+ const rate=()=>{ // mL por segundo simulado
+  if(st.y===null) return 18; const occ=st.hard&&!st.second?Math.min(st.turns,3):st.turns;
+  if(st.y>250) return 18; if(st.y>=KN[0]-4&&st.y<=KN[1]+4) return 16;
+  return [18,26,9,0,0,0][occ]}; // 1 vuelta: torniquete venoso ↑ sangrado
+ const pulse=()=>{const occ=st.hard&&!st.second?Math.min(st.turns,3):st.turns;return st.y===null||st.y>250||occ<4};
+ const draw=()=>{
+  $("#tqSteps").innerHTML=steps(["Colócalo 5–8 cm por encima de la herida, nunca sobre una articulación","Apriétalo hasta que deje de sangrar","Comprueba que no hay pulso distal","Anota la hora de colocación"],st.step);
+  $("#tqBand").innerHTML=st.y===null?"":`<rect x="62" y="${st.y-9}" width="176" height="18" rx="4" fill="#1f2937"/><rect x="62" y="${st.y-9}" width="176" height="4" fill="#374151"/><g transform="translate(150 ${st.y})"><rect x="-6" y="-24" width="12" height="48" rx="3" fill="#111" transform="rotate(${st.turns*45})"/></g>${st.timed?`<text x="150" y="${st.y+4}" fill="#fff" font-size="10" text-anchor="middle" font-weight="700">T ${new Date(st.t0).toLocaleTimeString("es",{hour:"2-digit",minute:"2-digit"})}</text>`:""}`;
+  $("#tqBand2").innerHTML=st.second===null?"":`<rect x="64" y="${st.second-9}" width="172" height="18" rx="4" fill="#1f2937"/><g transform="translate(150 ${st.second})"><rect x="-6" y="-24" width="12" height="48" rx="3" fill="#111" transform="rotate(135)"/></g>`;
+  const r=rate();const d=$("#tqDrops");d.innerHTML=r>0?[0,1,2,3].map(i=>`<circle cx="${118+i%2*6}" cy="256" r="${3+r/9}" fill="#b3121f" style="animation:drip ${Math.max(.35,2.4-r/10)}s ${i*.25}s infinite linear"/>`).join(""):"";
+  $("#tqLoss").textContent=Math.round(st.loss)+" mL";$("#tqLossB").style.width=Math.min(100,st.loss/15)+"%";$("#tqLossB").style.background=st.loss>1000?"var(--red)":"var(--amb)";
+  $("#tqPool").setAttribute("rx",Math.min(70,st.loss/14));$("#tqPool").setAttribute("ry",Math.min(9,st.loss/90));
+  $("#tqTurn").disabled=st.y===null||st.turns>=5;$("#tqPalp").disabled=st.y===null;$("#tqTime").disabled=st.step<3||st.timed;$("#tq2").disabled=st.y===null||st.second!==null||st.y>250;
+ };
+ simEvery(()=>{st.loss+=rate()*0.5;draw()},500);
+ svg.addEventListener("click",ev=>{if(st.y!==null)return;const p=svgPt(svg,ev);if(p.y<15||p.y>500)return;const y=p.y,dcm=(250-y)/CM;
+  let ok=false,msg;
+  if(y>250) msg="Está por debajo (distal) de la herida: no detiene el flujo arterial que llega a ella.";
+  else if(y>=KN[0]-4&&y<=KN[1]+4) msg="Está sobre la rodilla: ATLS indica no colocarlo nunca sobre una articulación.";
+  else if(dcm<4) msg=`Está a ${dcm.toFixed(0)} cm, demasiado pegado a la herida.`;
+  else if(dcm>10) msg=`Está a ${dcm.toFixed(0)} cm. ATLS lo coloca 5–8 cm por encima de la herida, sobre la piel.`;
+  else {ok=true;msg=`Bien colocado: ${dcm.toFixed(0)} cm por encima de la herida, sobre la piel y lejos de la rodilla. Ahora gira el molinete.`}
+  $("#tqRuler").setAttribute("opacity",1);
+  if(ok){st.y=y;st.step=1}else{st.errors++;simAfter(()=>$("#tqRuler").setAttribute("opacity",0),2500)}
+  $("#tqFb").innerHTML=fbBox(ok,msg);draw()});
+ $("#tqTurn").onclick=()=>{st.turns++;const r=rate();let m;
+  if(st.turns===1)m=fbBox(false,"¡Sangra más! Con poca presión el torniquete solo cierra las venas (torniquete venoso). Sigue apretando.");
+  else if(r>0)m=fbBox(false,"Todavía sangra. Sigue girando.");
+  else{if(st.step<2)st.step=2;m=fbBox(true,"Ha dejado de sangrar. Duele mucho: es normal si está bien apretado. ¿Hay pulso distal?")}
+  if(st.hard&&!st.second&&st.turns>=4&&rate()===0&&pulse()){}
+  if(st.hard&&!st.second&&st.turns>=4)m=fbBox(false,"Muslo muy voluminoso: aunque está al máximo, no ocluye del todo. Coloca un <b>segundo torniquete</b> 5–8 cm por encima del primero.");
+  $("#tqFb").innerHTML=m;draw()};
+ $("#tqPalp").onclick=()=>{const p=pulse();const c=$("#tqPulse");c.style.animation=p?"pulse 0.8s infinite":"none";c.setAttribute("opacity",p?1:.25);$("#tqPulseT").textContent=p?"pulso presente":"sin pulso";
+  simAfter(()=>{c.style.animation="none";c.setAttribute("opacity",0);$("#tqPulseT").textContent=""},2500);
+  if(!p&&rate()===0){if(st.step<3)st.step=3;$("#tqFb").innerHTML=fbBox(true,"Sin pulso distal y sin sangrado: torniquete eficaz. Anota la hora.")}
+  else if(rate()===0)$("#tqFb").innerHTML=fbBox(false,"Ya no sangra, pero <b>aún hay pulso</b>: el flujo arterial no está ocluido y puede volver a sangrar. Aprieta más.");
+  else $("#tqFb").innerHTML=fbBox(false,"Hay pulso y sigue sangrando: aprieta.");draw()};
+ $("#tq2").onclick=()=>{st.second=Math.max(30,st.y-6.5*CM);$("#tqFb").innerHTML=fbBox(true,"Segundo torniquete colocado 5–8 cm por encima del primero y apretado.");if(rate()===0&&st.step<2)st.step=2;draw()};
+ $("#tqTime").onclick=()=>{st.timed=true;st.step=4;const p=Math.max(0,100-st.errors*15-(st.loss>1500?20:st.loss>800?10:0));simDone("torniquete",p);
+  $("#tqFb").innerHTML=fbBox(true,`Hora anotada en el propio dispositivo. Puntuación: <b>${p}%</b> · pérdida ${Math.round(st.loss)} mL.`)+`<div class="sec b"><h4>Recuerda (cap. 3)</h4><ul class="clean"><li>Presión directa → empaquetamiento → torniquete.</li><li>5–8 cm por encima de la herida, sobre la piel, nunca sobre una articulación.</li><li>Apretar por encima de la presión sistólica: sin sangrado y sin pulso distal.</li><li>Si sigue sangrando, un segundo torniquete 5–8 cm por encima.</li><li>Anota la hora en el dispositivo; reevalúa y convierte cuando el paciente esté estable.</li></ul></div>`;draw()};
+ $("#tqHard").onchange=e=>{st.hard=e.target.checked;draw()};
+ draw();
+};
+
+// ---------- 2. DESCOMPRESIÓN TORÁCICA ----------
+SV.aguja=box=>{
+ const MID=200,ribY=n=>105+(n-1)*33,ribAt=(n,dx)=>ribY(n)+30*Math.max(0,dx-18)/157;
+ const L={MCL:85,AAL:140,MAL:162};let st={done:false,tries:0,lines:true};
+ const ribs=[];for(let n=1;n<=8;n++)for(const sg of[-1,1]){const x0=MID+sg*18,x1=MID+sg*175;ribs.push(`<path d="M${x0} ${ribY(n)} L${x1} ${ribY(n)+30}" stroke="#d6c7ae" stroke-width="11" stroke-linecap="round" opacity=".9"/>`)}
+ box.innerHTML=`<p class="small">Mujer de 42 años, atropello. Agitada, SpO₂ 84 %, PAS 78, murmullo abolido en el hemitórax <b>derecho</b>, yugulares ingurgitadas. <b>Toca el tórax</b> donde introducirías la aguja (≥ 14 G).</p>
+ <div class="simlay"><div class="svgwrap"><svg id="ndSvg" viewBox="0 0 400 440" class="stage-svg">
+  <path d="M150 0 L150 40 Q60 55 25 90 Q12 200 30 430 L370 430 Q388 200 375 90 Q340 55 250 40 L250 0Z" fill="#f3c9a8" stroke="#b9805f" stroke-width="2"/>
+  <path id="ndVein" d="M165 5 Q170 25 168 42" stroke="#5b6fb4" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M235 5 Q230 25 232 42" stroke="#5b6fb4" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <g id="ndLungs"><path id="ndLR" d="M185 100 Q120 95 70 140 Q50 260 70 370 Q130 390 185 360Z" fill="#f6a5b0" opacity=".25"/><path d="M215 100 Q280 95 330 140 Q350 260 330 370 Q270 390 215 360Z" fill="#f6a5b0" opacity=".55"/></g>
+  <path id="ndAir" d="M185 100 Q120 95 70 140 Q50 260 70 370 Q130 390 185 360 Q160 250 185 100Z" fill="#e0f2fe" opacity=".6"/>
+  <text id="ndAirT" x="105" y="250" class="lbl" fill="#0369a1">aire a tensión</text>
+  ${ribs.join("")}
+  <rect x="${MID-18}" y="95" width="36" height="210" rx="10" fill="#e7dcc7" stroke="#bfae8f"/>
+  <path d="M60 78 Q120 92 182 92 M340 78 Q280 92 218 92" stroke="#e7dcc7" stroke-width="12" stroke-linecap="round" fill="none"/>
+  <rect id="ndTrach" x="${MID-10+18}" y="0" width="20" height="92" rx="8" fill="#cbd5e1" stroke="#94a3b8"/>
+  <circle cx="${MID-L.MCL}" cy="232" r="6" fill="#c98c6e"/><circle cx="${MID+L.MCL}" cy="232" r="6" fill="#c98c6e"/>
+  <g id="ndLines">${Object.entries(L).map(([k,dx])=>`<line x1="${MID-dx}" y1="60" x2="${MID-dx}" y2="425" stroke="#2563eb" stroke-dasharray="5 5" stroke-width="1.5"/><text x="${MID-dx}" y="${k==="MAL"?435:k==="AAL"?58:58}" font-size="11" fill="#1d4ed8" text-anchor="middle" font-weight="700">${{MCL:"LMC",AAL:"LAA",MAL:"LAM"}[k]}</text>`).join("")}
+   ${[2,5].map(n=>`<text x="${MID+30}" y="${(ribAt(n,30)+ribAt(n+1,30))/2+4}" font-size="11" fill="#64748b">${n}.º EIC</text>`).join("")}</g>
+  <g id="ndMark"></g>
+  <text x="12" y="20" font-size="12" fill="#64748b">derecha del paciente</text><text x="388" y="20" font-size="12" fill="#64748b" text-anchor="end">izquierda</text>
+ </svg></div>
+ <div><div class="monitor mini"><div class="vgrid" id="ndVit"></div></div>
+  <label class="small"><input type="checkbox" id="ndLn" checked> Mostrar líneas de referencia (desmárcalo para el modo examen)</label>
+  <div id="ndFb" style="margin-top:10px"></div></div></div>`;
+ const v={fc:132,pas:78,spo2:84,fr:36};
+ const vit=()=>{$("#ndVit").innerHTML=[["FC",v.fc,"c-hr",v.fc>120],["PAS",v.pas,"c-bp",v.pas<90],["SpO₂",v.spo2,"c-sp",v.spo2<94],["FR",v.fr,"c-rr",v.fr>30]].map(([l,x,c,a])=>`<div class="vb ${a?"alarm":""}"><small>${l}</small><b class="${c}">${x}</b></div>`).join("")};vit();
+ const deter=simEvery(()=>{if(st.done)return;v.pas=Math.max(50,v.pas-1);v.spo2=Math.max(70,v.spo2-1);v.fc=Math.min(155,v.fc+1);vit()},3000);
+ $("#ndLn").onchange=e=>{$("#ndLines").style.display=e.target.checked?"":"none"};
+ const svg=$("#ndSvg");
+ svg.addEventListener("click",ev=>{if(st.done)return;const p=svgPt(svg,ev),dx=Math.abs(p.x-MID),side=p.x<MID?"R":"L";
+  let n=0;for(let k=1;k<=9;k++)if(p.y>ribAt(k,dx))n=k; // EIC n = entre costilla n y n+1
+  const onRib=[1,2,3,4,5,6,7,8].some(k=>Math.abs(p.y-ribAt(k,dx))<5);
+  $("#ndMark").innerHTML+=`<circle cx="${p.x}" cy="${p.y}" r="6" fill="${'#ef4444'}" opacity=".8"/>`;
+  st.tries++;let ok=false,msg;
+  if(dx<20) msg="Eso es el esternón.";
+  else if(side==="L") msg="Ese es el lado sano. El murmullo está abolido en el hemitórax <b>derecho</b>: descomprimir el lado equivocado no alivia la tensión y puede causar un neumotórax.";
+  else if(onRib) msg="Estás sobre una costilla. Busca el espacio intercostal (justo por encima del borde superior de la costilla inferior, lejos del paquete vasculonervioso).";
+  else if(n===2&&Math.abs(dx-L.MCL)<=16) ok=true,msg="Correcto: 2.º espacio intercostal en la línea medioclavicular.";
+  else if(n===5&&dx>=L.AAL-6&&dx<=L.MAL+8) ok=true,msg="Correcto: 5.º espacio intercostal entre la línea axilar anterior y la media (a la altura del pliegue submamario).";
+  else if(n===2&&dx<L.MCL-16) msg="Demasiado medial: riesgo de lesionar la arteria mamaria interna o el corazón. Ve a la línea medioclavicular.";
+  else if(n===4||n===6) msg=`Estás en el ${n}.º espacio. ATLS usa el 5.º espacio entre la línea axilar anterior y la media, o el 2.º en la medioclavicular.`;
+  else msg=`Estás en el ${n||1}.º espacio intercostal. Las dos localizaciones de consenso son el 2.º EIC en la LMC y el 5.º EIC entre la LAA y la LAM.`;
+  $("#ndFb").innerHTML=fbBox(ok,msg);
+  if(ok){st.done=true;$("#ndMark").innerHTML+=`<line x1="${p.x-34}" y1="${p.y-10}" x2="${p.x}" y2="${p.y}" stroke="#475569" stroke-width="4"/><text x="${p.x+10}" y="${p.y-12}" font-size="16" font-weight="800" fill="#0369a1">¡Pssssh!</text>`;
+   $("#ndAir").style.transition="opacity 2s";$("#ndAir").style.opacity=0;$("#ndAirT").textContent="";$("#ndLR").style.transition="opacity 2s";$("#ndLR").style.opacity=.55;$("#ndTrach").style.transition="transform 2s";$("#ndTrach").setAttribute("transform","translate(-18 0)");
+   let k=0;simEvery(()=>{if(k++>8)return;v.pas+=4;v.fc-=3;v.spo2=Math.min(97,v.spo2+1.5|0);v.fr-=1;vit()},400);
+   const sc=Math.max(0,100-(st.tries-1)*20);simDone("aguja",sc);
+   simAfter(()=>{$("#ndFb").innerHTML+=`<div class="spacer"></div><div class="card" style="background:var(--bg)"><b>El pulmón se reexpande y mejora la presión. ¿Y ahora?</b><div class="opts" id="ndQ">${[["Retirar la aguja: ya está resuelto",0],["Colocar un tubo de tórax (14 Fr sirve para el neumotórax) en el 5.º EIC",1],["Esperar a la radiografía de control para decidir",0]].map(([t,o])=>`<button class="opt" data-o="${o}">${t}</button>`).join("")}</div><div id="ndQf"></div></div>`;
+    $$("#ndQ .opt").forEach(b=>b.onclick=()=>{const g=+b.dataset.o;b.classList.add(g?"good":"bad");$("#ndQf").innerHTML=g?fbBox(true,`La aguja y el dedo son temporales: el tratamiento definitivo es el tubo de toracostomía. Puntuación: <b>${sc}%</b>.`):fbBox(false,"La aguja se acoda u obstruye y la tensión puede reaparecer.")})},1800)}
+ });
+};
+
+// ---------- 3. FAJA PÉLVICA ----------
+SV.faja=box=>{
+ let st={y:120,set:false,tries:0,closed:false};
+ const half=sg=>{const m=x=>200+sg*(x-200);return `<path d="M${m(178)} 100 Q${m(150)} 40 ${m(95)} 55 Q${m(50)} 75 ${m(68)} 140 Q${m(80)} 175 ${m(110)} 195 Q${m(118)} 225 ${m(150)} 240 L${m(194)} 248 L${m(194)} 222 Q${m(160)} 214 ${m(150)} 200 Q${m(172)} 160 ${m(178)} 100Z" fill="#efe4cf" stroke="#8a7b63" stroke-width="2"/><path d="M${m(180)} 118 Q${m(128)} 150 ${m(140)} 200 Q${m(160)} 228 ${m(194)} 232" stroke="#8a7b63" stroke-width="3" fill="none"/><path d="M${m(170)} 95 Q${m(120)} 70 ${m(85)} 95" stroke="#cdbb9a" stroke-width="2" fill="none"/><ellipse cx="${m(160)}" cy="225" rx="17" ry="11" fill="#fdf7ee" stroke="#8a7b63"/><circle cx="${m(117)}" cy="200" r="20" fill="#fdf7ee" stroke="#8a7b63"/>`};
+ const fem=sg=>{const m=x=>200+sg*(x-200);return `<path d="M${m(117)} 182 Q${m(95)} 185 ${m(88)} 205 L${m(78)} 222 Q${m(70)} 240 ${m(86)} 248 L${m(110)} 420 L${m(140)} 420 L${m(124)} 232 Q${m(134)} 205 ${m(117)} 182Z" fill="#efe4cf" stroke="#8a7b63" stroke-width="2"/><circle cx="${m(117)}" cy="200" r="18" fill="#efe4cf" stroke="#8a7b63" stroke-width="2"/>`};
+ box.innerHTML=`<p class="small">Mujer de 55 años con shock (PAS 80) y dolor pélvico tras un aplastamiento: pelvis en libro abierto. <b>Arrastra la faja</b> (o usa el control) hasta la altura correcta y pulsa «Ajustar».</p>
+ <div class="simlay"><div class="svgwrap"><svg id="pbSvg" viewBox="0 0 400 430" class="stage-svg" style="touch-action:none">
+  <path d="M40 30 Q30 160 60 250 L80 430 L320 430 L340 250 Q370 160 360 30Z" fill="#f6d2b6" opacity=".55"/>
+  <g id="pbFem">${fem(-1)}${fem(1)}</g>
+  <path d="M178 95 L222 95 L214 190 Q200 205 186 190Z" fill="#e8dcc4" stroke="#8a7b63" stroke-width="2"/>
+  <g id="pbL" style="transform-origin:178px 110px;transition:transform 1.6s">${half(-1)}</g>
+  <g id="pbR" style="transform-origin:222px 110px;transition:transform 1.6s">${half(1)}</g>
+  <g id="pbBleed"><ellipse cx="200" cy="215" rx="70" ry="38" fill="#b91c1c" opacity=".28"/><text x="200" y="300" text-anchor="middle" class="lbl" fill="#991b1b">hematoma pélvico</text></g>
+  <g id="pbLm" font-size="12" font-weight="600" fill="#334155" text-anchor="end"><text x="396" y="52">cresta ilíaca</text><text x="396" y="138">EIAS</text><text x="396" y="268">trocánter mayor</text><text x="396" y="340">muslo</text></g>
+  <g id="pbBand" style="cursor:grab"><rect x="20" y="-20" width="360" height="40" rx="10" fill="#0f766e" opacity=".82"/><rect x="185" y="-20" width="30" height="40" fill="#115e59"/><text x="200" y="5" fill="#fff" font-size="12" text-anchor="middle" font-weight="700">FAJA</text></g>
+ </svg></div>
+ <div><div class="monitor mini"><div class="vgrid" id="pbVit"></div></div>
+  <label class="small mute">Altura de la faja</label><input type="range" id="pbR2" min="40" max="360" value="120" style="width:100%">
+  <div class="row"><button class="btn pri" id="pbSet">🔒 Ajustar faja</button><button class="btn" id="pbExam">🖐️ Comprobar estabilidad comprimiendo las crestas</button></div>
+  <label class="small"><input type="checkbox" id="pbLmC" checked> Mostrar referencias anatómicas</label>
+  <div id="pbFb" style="margin-top:10px"></div></div></div>`;
+ const v={fc:128,pas:80};const vit=()=>{$("#pbVit").innerHTML=[["FC",v.fc,"c-hr",v.fc>120],["PAS",v.pas,"c-bp",v.pas<90]].map(([l,x,c,a])=>`<div class="vb ${a?"alarm":""}"><small>${l}</small><b class="${c}">${x}</b></div>`).join("")};vit();
+ $("#pbL").style.transform="rotate(-9deg)";$("#pbR").style.transform="rotate(9deg)";
+ const place=y=>{st.y=clamp(y,40,360);$("#pbBand").setAttribute("transform",`translate(0 ${st.y})`);$("#pbR2").value=st.y};place(120);
+ const svg=$("#pbSvg");let drag=false;
+ const dn=e=>{drag=true;e.preventDefault()},mv=e=>{if(!drag||st.closed)return;place(svgPt(svg,e).y)},up=()=>drag=false;
+ $("#pbBand").addEventListener("pointerdown",dn);svg.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);
+ $("#pbR2").oninput=e=>{if(!st.closed)place(+e.target.value)};
+ $("#pbLmC").onchange=e=>$("#pbLm").style.display=e.target.checked?"":"none";
+ $("#pbExam").onclick=()=>{v.pas-=8;v.fc+=6;vit();$("#pbFb").innerHTML=fbBox(false,"No manipules una pelvis sospechosa: comprimir y separar las crestas puede desplazar los fragmentos y aumentar la hemorragia. La sospecha (mecanismo + shock) basta para poner la faja.")};
+ $("#pbSet").onclick=()=>{if(st.closed)return;st.tries++;const y=st.y;let ok=false,m;
+  if(y<95)m="A la altura de las crestas ilíacas no cierra el anillo y puede abrirlo más.";
+  else if(y<190)m="Demasiado alta (abdomen/EIAS): no comprime el anillo pélvico de forma eficaz.";
+  else if(y<=250){ok=true;m="Correcto: centrada en los <b>trocánteres mayores</b>. La faja cierra el libro abierto y reduce el volumen pélvico."}
+  else m="Demasiado baja: está sobre los muslos y no actúa sobre la pelvis.";
+  $("#pbFb").innerHTML=fbBox(ok,m);
+  if(ok){st.closed=true;$("#pbL").style.transform="rotate(0deg)";$("#pbR").style.transform="rotate(0deg)";$("#pbBleed").style.transition="opacity 2s";$("#pbBleed").style.opacity=.25;
+   let k=0;simEvery(()=>{if(k++>6)return;v.pas+=3;v.fc-=2;vit()},400);const sc=Math.max(0,100-(st.tries-1)*25);simDone("faja",sc);
+   simAfter(()=>$("#pbFb").innerHTML+=`<div class="sec b"><h4>Siguientes pasos (cap. 21)</h4><ul class="clean"><li>Sigue en shock: transfusión masiva y TXA.</li><li>Sangre en el meato o hematoma perineal: no sondar hasta descartar lesión uretral.</li><li>Control definitivo: angioembolización, empaquetamiento preperitoneal, fijación o REBOA.</li><li>Si tu centro no puede, traslada sin esperar al TAC.</li></ul><p class="small">Puntuación: <b>${sc}%</b></p></div>`,1700)}
+  else{v.pas-=3;vit()}};
+};
+
+// ---------- 4. CONTINUO DEL SHOCK ----------
+SV.shock=box=>{
+ const LV=[{n:"Menor",fc:84,pas:124,pp:42,fr:16,bd:-1,gcs:15,skin:"#f2c2a0",crt:1.5,say:"Me duele la pierna, pero estoy bien.",eye:1,resp:"rápida"},
+  {n:"Menor-moderada",fc:102,pas:118,pp:32,fr:21,bd:-4,gcs:15,skin:"#ecc4a8",crt:2.5,say:"Estoy nervioso… ¿Qué me pasa?",eye:1,resp:"bastante rápida"},
+  {n:"Moderada",fc:118,pas:98,pp:26,fr:26,bd:-8,gcs:14,skin:"#e3cfc0",crt:3.5,say:"Tengo frío… y mucha sed…",eye:.6,resp:"transitoria"},
+  {n:"Mayor",fc:142,pas:72,pp:18,fr:34,bd:-13,gcs:11,skin:"#d8d6d0",crt:5,say:"…mmh…",eye:.15,resp:"mínima o nula"}];
+ let lv=0,timer=null,cur={...LV[0]};
+ box.innerHTML=`<p class="small">ATLS 11 ya no usa clases I–IV: la hemorragia es un <b>continuo</b> y lo que clasifica es la respuesta a la reanimación. Desliza para que el paciente sangre y prueba a darle sangre.</p>
+ <div class="simlay"><div class="svgwrap"><svg viewBox="0 0 320 360" class="stage-svg">
+  <rect x="20" y="300" width="280" height="14" rx="6" fill="#cbd5e1"/>
+  <path id="shBody" d="M60 300 Q60 210 160 205 Q260 210 260 300Z" fill="#f2c2a0" stroke="#b9805f" stroke-width="2"/>
+  <circle id="shHead" cx="160" cy="140" r="62" fill="#f2c2a0" stroke="#b9805f" stroke-width="2"/>
+  <g id="shEyes"><ellipse cx="138" cy="132" rx="9" ry="6" fill="#1f2937"/><ellipse cx="182" cy="132" rx="9" ry="6" fill="#1f2937"/></g>
+  <path id="shMouth" d="M140 172 Q160 182 180 172" stroke="#7c2d12" stroke-width="3" fill="none"/>
+  <g id="shSweat" opacity="0"><path d="M108 120 q-6 12 0 16 q6 -4 0 -16" fill="#7dd3fc"/><path d="M214 150 q-6 12 0 16 q6 -4 0 -16" fill="#7dd3fc"/><path d="M200 100 q-5 10 0 13 q5 -3 0 -13" fill="#7dd3fc"/></g>
+  <g id="shBubble"><rect x="185" y="20" width="130" height="58" rx="12" fill="#fff" stroke="#cbd5e1"/><path d="M200 78 L192 92 L215 78Z" fill="#fff" stroke="#cbd5e1"/><foreignObject x="190" y="24" width="120" height="52"><div xmlns="http://www.w3.org/1999/xhtml" id="shSay" style="font:600 11px Inter;color:#1f2937;line-height:1.25"></div></foreignObject></g>
+  <g id="shNail" transform="translate(268 238)"><rect x="0" y="0" width="34" height="46" rx="14" fill="#f3b2a8" stroke="#b9805f"/><rect id="shNailC" x="6" y="6" width="22" height="22" rx="8" fill="#f87171"/></g>
+  <text x="285" y="296" class="lbl" text-anchor="middle">uña</text>
+ </svg></div>
+ <div><div class="monitor mini"><div class="vgrid" id="shVit"></div></div>
+  <div class="row" style="justify-content:space-between;margin-top:6px"><b id="shName" style="font-size:20px"></b><span class="chip" id="shResp"></span></div>
+  <input type="range" min="0" max="3" step="1" value="0" id="shR" style="width:100%"><div class="row small mute" style="justify-content:space-between"><span>Menor</span><span>Mayor</span></div>
+  <div class="row" style="margin-top:8px"><button class="btn" id="shCrt">👆 Presionar la uña</button><button class="btn pri" id="shBlood">🩸 Dar sangre (bolo)</button></div>
+  <div id="shFb" style="margin-top:10px"></div></div></div>`;
+ const paint=v=>{$("#shBody").setAttribute("fill",v.skin);$("#shHead").setAttribute("fill",v.skin);$("#shEyes").setAttribute("transform",`translate(0 ${132*(1-v.eye)}) scale(1 ${Math.max(.12,v.eye)})`);$("#shSweat").setAttribute("opacity",v.bd<=-8?1:0);
+  $("#shMouth").setAttribute("d",v.bd<=-8?"M140 178 Q160 168 180 178":"M140 172 Q160 182 180 172");$("#shSay").textContent=v.say;
+  $("#shVit").innerHTML=[["FC",v.fc,"c-hr",v.fc>120],["PAS",v.pas,"c-bp",v.pas<90],["P. pulso",v.pp,"c-bp",v.pp<25],["FR",v.fr,"c-rr",v.fr>24],["EB",v.bd,"c-co",v.bd<=-6],["GCS",v.gcs,"c-gcs",v.gcs<14]].map(([l,x,c,a])=>`<div class="vb ${a?"alarm":""}"><small>${l}</small><b class="${c}">${x}</b></div>`).join("")};
+ const set=i=>{lv=i;clearTimeout(timer);cur={...LV[i]};paint(cur);$("#shName").textContent=LV[i].n;$("#shResp").textContent="Respuesta esperada: "+LV[i].resp;$("#shFb").innerHTML=""};
+ $("#shR").oninput=e=>set(+e.target.value);
+ $("#shCrt").onclick=()=>{const c=$("#shNailC"),t=LV[lv].crt;c.style.transition="none";c.setAttribute("fill","#fde2dc");simAfter(()=>{c.style.transition=`fill ${t}s linear`;c.setAttribute("fill","#f87171")},600);$("#shFb").innerHTML=`<div class="fb ${t>2?"bad":"good"}">Relleno capilar ≈ ${t} s ${t>2?"(enlentecido)":"(normal)"}</div>`};
+ $("#shBlood").onclick=()=>{clearTimeout(timer);const base=LV[lv];
+  if(lv<=1){cur={...LV[0],say:"Ya me encuentro mejor."};paint(cur);$("#shFb").innerHTML=fbBox(true,"<b>Respuesta rápida y mantenida.</b> Probablemente no necesitará más hemoderivados ni control quirúrgico urgente. Reevalúa.")}
+  else if(lv===2){cur={...LV[1],say:"Un poco mejor…"};paint(cur);$("#shFb").innerHTML=`<div class="fb good">⏳ Mejora…</div>`;
+   timer=simAfter(()=>{cur={...base};paint(cur);$("#shFb").innerHTML=fbBox(false,"<b>Respuesta transitoria:</b> mejora y vuelve a empeorar. Sigue sangrando: hemoderivados y control quirúrgico o angiográfico probables.")},3500)}
+  else{cur={...base,fc:base.fc-4,pas:base.pas+4};paint(cur);$("#shFb").innerHTML=fbBox(false,"<b>Respuesta mínima o nula:</b> hemorragia exanguinante. Transfusión masiva (1:1:1 o sangre total), TXA si < 3 h y control quirúrgico inmediato. Descarta también neumotórax a tensión y taponamiento.")}
+  simDone("shock",100)};
+ set(0);
+};
+
+// ---------- 5. ORDENA EL xABCDE ----------
+SV.xabcde=box=>{
+ const SC=[
+  {t:"Moto contra coche",f:[["x","Sangrado arterial a chorro en el brazo izquierdo"],["A","Ronquido y sangre en la boca"],["B","Murmullo abolido en el hemitórax derecho, SpO₂ 86 %"],["C","Pelvis dolorosa, piel fría, PAS 82"],["D","GCS 11, pupila izquierda más grande"],["E","Temperatura 34,9 °C con ropa mojada"]]},
+  {t:"Caída de un andamio",f:[["x","Amputación parcial de la pierna que sangra"],["A","Estridor y voz ronca tras un golpe en el cuello"],["B","Tórax inestable con respiración paradójica"],["C","FAST positivo en el espacio hepatorrenal, FC 130"],["D","No mueve las piernas, priapismo"],["E","Hematomas en la espalda al girarlo"]]},
+  {t:"Explosión en un taller",f:[["x","Herida en la ingle con sangrado pulsátil"],["A","Quemaduras faciales y esputo carbonáceo"],["B","Herida soplante en el tórax"],["C","FC 140 y relleno capilar de 4 s"],["D","GCS 13, glucemia pendiente"],["E","Quemaduras en el 30 % de la superficie"]]}];
+ const sc=SC[Math.floor(Math.random()*SC.length)];const cards=sc.f.map((f,i)=>({k:f[0],t:f[1],i})).sort(()=>Math.random()-.5);let order=[],errs=0;
+ box.innerHTML=`<p class="small"><b>${sc.t}.</b> Toca las tarjetas en el orden en que tratarías cada problema.</p><div class="xorder" id="xoSlots">${["x","A","B","C","D","E"].map((k,i)=>`<div class="xslot" style="border-color:${PH[k]}"><b style="color:${PH[k]}">${i+1}</b><span id="xs${i}"></span></div>`).join("")}</div>
+ <div class="xcards" id="xoCards">${cards.map((c,j)=>`<button class="xcard" data-j="${j}">${c.t}</button>`).join("")}</div><div id="xoFb"></div>`;
+ const keys=["x","A","B","C","D","E"];
+ $$("#xoCards .xcard").forEach(b=>b.onclick=()=>{const c=cards[+b.dataset.j],pos=order.length;
+  if(c.k===keys[pos]){order.push(c);b.disabled=true;b.classList.add("good");$("#xs"+pos).innerHTML=`<span class="phase" style="background:${PH[c.k]}">${c.k}</span> ${c.t}`;$("#xoFb").innerHTML="";
+   if(order.length===6){const p=Math.max(0,100-errs*10);simDone("xabcde",p);$("#xoFb").innerHTML=fbBox(true,`¡Orden correcto! Errores: ${errs}. Puntuación: <b>${p}%</b>.`)+`<button class="btn pri" onclick="runSim('xabcde')">Otro paciente</button>`}}
+  else{errs++;b.classList.add("bad");simAfter(()=>b.classList.remove("bad"),700);$("#xoFb").innerHTML=fbBox(false,`Ahora toca la <b>${keys[pos]}</b>: ${{x:"hemorragia exsanguinante externa",A:"vía aérea",B:"ventilación",C:"circulación y hemorragia interna",D:"discapacidad neurológica",E:"exposición y entorno"}[keys[pos]]}.`)}});
+};
+
+// ---------- 6. GLASGOW EN DIRECTO ----------
+SV.gcs=box=>{
+ const PT=[{O:3,V:4,M:6},{O:2,V:2,M:4},{O:1,V:1,M:3},{O:4,V:5,M:6},{O:1,V:1,M:2},{O:2,V:3,M:5},{O:1,V:2,M:4},{O:3,V:3,M:5}];
+ const p=PT[Math.floor(Math.random()*PT.length)];const SAY={5:"Estoy en el hospital. Me caí de la moto esta mañana.",4:"¿Dónde estoy?… ¿Es martes?… No sé qué ha pasado.",3:"¡Mamá!… ¡Fuera!… ¡Agua!",2:"Mmmh… aaah…",1:""};
+ let stim="none",sel={};
+ const armsFor=m=>({6:"M150 175 L110 215 L95 260 M150 175 L210 150 L222 108",5:"M150 175 L110 215 L95 260 M150 175 L195 150 L168 118",4:"M150 175 L100 205 L72 228 M150 175 L200 205 L228 228",3:"M150 175 L120 220 L140 198 M150 175 L180 220 L160 198",2:"M150 175 L118 240 L108 290 M150 175 L182 240 L192 290",1:"M150 175 L112 228 L104 278 M150 175 L188 228 L196 278"}[m]);
+ box.innerHTML=`<p class="small">Paciente con TCE. Estimúlalo como en la exploración real (primero sin tocar, luego con la voz y después con presión) y puntúa la <b>mejor respuesta</b>.</p>
+ <div class="simlay"><div class="svgwrap"><svg viewBox="0 0 300 330" class="stage-svg">
+  <rect x="10" y="300" width="280" height="12" rx="5" fill="#cbd5e1"/>
+  <circle cx="150" cy="95" r="52" fill="#f2c2a0" stroke="#b9805f" stroke-width="2"/>
+  <g id="gEyes"></g><path d="M130 122 Q150 130 170 122" stroke="#7c2d12" stroke-width="3" fill="none"/>
+  <path d="M150 147 L150 255" stroke="#b9805f" stroke-width="14" stroke-linecap="round"/>
+  <path id="gArms" d="" stroke="#e8b48f" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M150 255 L125 300 M150 255 L175 300" stroke="#b9805f" stroke-width="13" stroke-linecap="round"/>
+  <g id="gBub" opacity="0"><rect x="170" y="5" width="125" height="62" rx="12" fill="#fff" stroke="#cbd5e1"/><foreignObject x="176" y="10" width="114" height="54"><div xmlns="http://www.w3.org/1999/xhtml" id="gSay" style="font:600 11px Inter;color:#1f2937;line-height:1.25"></div></foreignObject></g>
+  <text id="gStim" x="150" y="325" text-anchor="middle" class="lbl"></text>
+ </svg></div>
+ <div><div class="row"><button class="btn" data-s="obs">👀 Observar</button><button class="btn" data-s="voz">🗣️ Hablarle</button><button class="btn" data-s="orden">✌️ «Levante dos dedos»</button><button class="btn" data-s="pres">👇 Presión (trapecio / lecho ungueal)</button></div>
+  ${[["O","Ocular",[[4,"Espontánea"],[3,"Al sonido"],[2,"A la presión"],[1,"Ninguna"]]],["V","Verbal",[[5,"Orientado"],[4,"Confuso"],[3,"Palabras"],[2,"Sonidos"],[1,"Ninguna"]]],["M","Motora",[[6,"Obedece"],[5,"Localiza"],[4,"Flexión normal"],[3,"Flexión anormal"],[2,"Extensión"],[1,"Ninguna"]]]].map(([k,l,a])=>`<div class="small mute" style="margin-top:8px">${l}</div><div class="seg" data-gk="${k}">${a.map(([v,t])=>`<button data-v="${v}">${v} · ${t}</button>`).join("")}</div>`).join("")}
+  <button class="btn pri" id="gChk" style="margin-top:10px">Comprobar</button><div id="gFb" style="margin-top:10px"></div></div></div>`;
+ const eyes=open=>$("#gEyes").innerHTML=open?`<ellipse cx="132" cy="88" rx="8" ry="6" fill="#1f2937"/><ellipse cx="168" cy="88" rx="8" ry="6" fill="#1f2937"/>`:`<path d="M124 90 h16 M160 90 h16" stroke="#1f2937" stroke-width="3"/>`;
+ const show=s=>{stim=s;let open=false,arms=armsFor(1),say=null,lab="";
+  if(s==="obs"){open=p.O===4;arms=p.M>=5?armsFor(6).replace("L222 108","L215 160"):armsFor(1);lab="Observación sin estímulo";if(p.V>=4&&p.O===4)say=SAY[p.V]}
+  if(s==="voz"){open=p.O>=3;say=p.V>1?SAY[p.V]:null;lab="Le hablas en voz alta";arms=armsFor(1)}
+  if(s==="orden"){open=p.O>=3;arms=p.M===6?armsFor(6):armsFor(1);lab=p.M===6?"Levanta dos dedos":"No obedece la orden";say=p.V>1?SAY[p.V]:null}
+  if(s==="pres"){open=p.O>=2;arms=armsFor(p.M===6?5:p.M);lab={6:"Lleva la mano al estímulo",5:"Lleva la mano al estímulo",4:"Retira el brazo (flexión normal)",3:"Flexión anormal (decorticación)",2:"Extensión (descerebración)",1:"Sin respuesta motora"}[p.M];say=p.V>1?SAY[p.V]:null}
+  eyes(open);$("#gArms").setAttribute("d",arms);$("#gBub").setAttribute("opacity",say?1:0);$("#gSay").textContent=say||"";$("#gStim").textContent=lab};
+ $$("[data-s]").forEach(b=>b.onclick=()=>show(b.dataset.s));show("obs");
+ $$("[data-gk]").forEach(s=>$$("button",s).forEach(b=>b.onclick=()=>{$$("button",s).forEach(x=>x.classList.remove("on"));b.classList.add("on");sel[s.dataset.gk]=+b.dataset.v}));
+ $("#gChk").onclick=()=>{if(!sel.O||!sel.V||!sel.M){$("#gFb").innerHTML=fbBox(false,"Puntúa los tres componentes.");return}
+  const ok=["O","V","M"].filter(k=>sel[k]===p[k]).length,t=p.O+p.V+p.M;simDone("gcs",Math.round(ok/3*100));
+  $("#gFb").innerHTML=fbBox(ok===3,`Real: O${p.O} V${p.V} M${p.M} = <b>${t}</b> (${t<=8?"TCE grave → intubar":t<=12?"TCE moderado":"TCE leve"}). Has acertado ${ok}/3.`)+(p.O===1&&p.V===1&&p.M<=2?"":"")+`<button class="btn" onclick="runSim('gcs')">Otro paciente</button>`};
+};
+
+// ---------- 7. eFAST ----------
+SV.efast=box=>{
+ const CASES2=[{n:"Hemoperitoneo",pos:{ruq:1,pel:1},dx:0},{n:"Taponamiento cardiaco",pos:{per:1},dx:1},{n:"Neumotórax izquierdo",pos:{lpl:1},dx:2},{n:"Hemoperitoneo esplénico",pos:{luq:1,pel:1},dx:0},{n:"Sin hallazgos",pos:{},dx:3}];
+ const cs=CASES2[Math.floor(Math.random()*CASES2.length)];const seen=new Set();
+ const WIN={rpl:["Pulmón derecho",120,120],lpl:["Pulmón izquierdo",200,120],per:["Pericardio (subxifoidea)",160,190],ruq:["Hepatorrenal (Morison)",105,230],luq:["Esplenorrenal",215,225],pel:["Pélvica (suprapúbica)",160,320]};
+ box.innerHTML=`<p class="small">Varón de 35 años, PAS 86, FC 124 tras un accidente de tráfico. <b>Toca cada punto</b> para colocar la sonda en las seis ventanas y luego elige tu diagnóstico.</p>
+ <div class="simlay"><div class="svgwrap"><svg id="efSvg" viewBox="0 0 320 380" class="stage-svg">
+  <path d="M95 20 Q60 40 55 90 Q48 220 70 360 L250 360 Q272 220 265 90 Q260 40 225 20Z" fill="#f3c9a8" stroke="#b9805f" stroke-width="2"/>
+  <path d="M90 175 Q160 205 230 175" stroke="#d6a07e" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+  ${Object.entries(WIN).map(([k,[l,x,y]])=>`<g class="efp" data-w="${k}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="17" fill="#0ea5e9" opacity=".25"/><circle cx="${x}" cy="${y}" r="7" fill="#0284c7"/><text x="${x}" y="${y+30}" text-anchor="middle" font-size="10" font-weight="600" fill="#475569">${l.split(" (")[0]}</text></g>`).join("")}
+ </svg></div>
+ <div><canvas id="efCv" width="460" height="300" style="width:100%;background:#000;border-radius:14px"></canvas><div class="small" id="efLab" style="margin-top:4px"><b>Selecciona una ventana</b></div>
+  <div class="small mute">Ventanas vistas: <span id="efSeen">0</span>/6</div>
+  <div class="opts" id="efQ" style="margin-top:8px">${["Hemoperitoneo: laparotomía / control de la hemorragia","Taponamiento: descompresión pericárdica y cirugía","Neumotórax: descompresión y tubo de tórax","eFAST negativo: buscar otra causa (pelvis, huesos largos, retroperitoneo)"].map((t,i)=>`<button class="opt" data-i="${i}">${t}</button>`).join("")}</div><div id="efFb"></div></div></div>`;
+ const cv=$("#efCv"),g=cv.getContext("2d");
+ const speck=(n,a)=>{for(let i=0;i<n;i++){const x=Math.random()*460,y=Math.random()*300,c=80+Math.random()*90;g.fillStyle=`rgba(${c},${c},${c},${a})`;g.fillRect(x,y,2,2)}};
+ const fan=()=>{g.save();g.beginPath();g.moveTo(230,8);g.arc(230,8,290,Math.PI*.25,Math.PI*.75);g.closePath();g.clip();g.fillStyle="#2a2a2a";g.fillRect(0,0,460,300)};
+ const organ=(x,y,rx,ry,col,rot=0)=>{g.save();g.translate(x,y);g.rotate(rot);g.beginPath();g.ellipse(0,0,rx,ry,0,0,Math.PI*2);g.fillStyle=col;g.fill();g.restore()};
+ const draw=w=>{cancelAnimationFrame(window.efRaf);g.clearRect(0,0,460,300);const pos=!!cs.pos[w];
+  if(w==="rpl"||w==="lpl"){let t=0;const loop=()=>{g.clearRect(0,0,460,300);fan();g.fillStyle="#3a3a3a";g.fillRect(0,0,460,300);
+    [[120,60],[300,60]].forEach(([x])=>{g.fillStyle="#111";g.fillRect(x-22,40,44,260)});g.fillStyle="#ddd";g.fillRect(60,30,340,12);g.fillRect(60,85,340,6);
+    if(!pos){t+=1;for(let i=0;i<260;i++){const x=(i*17+t*3)%340+60,y=92+((i*37)%200);g.fillStyle="rgba(200,200,200,.35)";g.fillRect(x,y,3,2)}}
+    else{for(let y=92;y<300;y+=6){g.fillStyle="rgba(180,180,180,.35)";g.fillRect(60,y,340,2)}}
+    g.restore();g.fillStyle="#9ca3af";g.font="16px Inter";g.fillText(pos?"Sin deslizamiento pleural (patrón en «código de barras»)":"Deslizamiento pleural presente («arena de playa»)",12,292);window.efRaf=requestAnimationFrame(loop)};loop();return}
+  fan();speck(2500,.5);
+  if(w==="ruq"){organ(170,120,140,70,"#5a5a5a",-.2);organ(290,180,70,38,"#444",.3);organ(290,180,42,20,"#777",.3);if(pos){g.save();g.translate(240,160);g.rotate(.3);g.beginPath();g.ellipse(0,0,52,9,0,0,Math.PI*2);g.fillStyle="#000";g.fill();g.restore()}}
+  if(w==="luq"){organ(160,110,90,55,"#555",.2);organ(280,180,70,36,"#444",-.3);organ(280,180,40,18,"#777",-.3);if(pos){g.beginPath();g.ellipse(215,140,50,10,.4,0,Math.PI*2);g.fillStyle="#000";g.fill()}}
+  if(w==="per"){organ(230,130,140,40,"#5a5a5a");organ(230,210,85,60,"#3d3d3d");if(pos){g.beginPath();g.ellipse(230,210,108,82,0,0,Math.PI*2);g.strokeStyle="#000";g.lineWidth=18;g.stroke()}organ(230,210,70,48,"#333")}
+  if(w==="pel"){organ(230,170,80,55,"#111");organ(230,170,80,55,"#141414");if(pos){g.beginPath();g.moveTo(140,230);g.quadraticCurveTo(230,280,320,230);g.lineTo(320,250);g.quadraticCurveTo(230,295,140,250);g.fillStyle="#000";g.fill()}g.fillStyle="#555";g.fillRect(100,95,260,8)}
+  g.restore();g.fillStyle="#9ca3af";g.font="16px Inter";g.fillText(pos?"Líquido libre anecoico (negro)":"Sin líquido libre",12,292)};
+ $$(".efp").forEach(e=>e.onclick=()=>{const w=e.dataset.w;seen.add(w);$$(".efp circle:first-child").forEach(c=>c.setAttribute("opacity",.25));e.querySelector("circle").setAttribute("opacity",.7);$("#efLab").innerHTML=`<b>${WIN[w][0]}</b>`;$("#efSeen").textContent=seen.size;draw(w)});
+ $$("#efQ .opt").forEach(b=>b.onclick=()=>{if(seen.size<6){$("#efFb").innerHTML=fbBox(false,`Explora las 6 ventanas antes de decidir (llevas ${seen.size}).`);return}const ok=+b.dataset.i===cs.dx;b.classList.add(ok?"good":"bad");simDone("efast",ok?100:40);
+  $("#efFb").innerHTML=fbBox(ok,`Diagnóstico: <b>${cs.n}</b>. ${ok?"":"Revisa las ventanas positivas. "}En el paciente inestable, la eFAST guía la decisión; el TAC se reserva para pacientes hemodinámicamente normales.`)+`<button class="btn" onclick="runSim('efast')">Otro paciente</button>`});
+};
+
+// ---------- 8. CRICOTIROIDOTOMÍA ----------
+SV.crico=box=>{
+ const STEPS=["Estabiliza la laringe con la mano no dominante y palpa la membrana","Incisión a través de la piel y de la membrana cricotiroidea","Introduce un bougie a través de la incisión hacia la tráquea","Desliza un tubo con balón de calibre pequeño sobre el bougie","Infla el balón y confirma con capnografía"];
+ let found=false,tries=0,order=[];
+ box.innerHTML=`<p class="small">No puedes intubar ni oxigenar: indicación de vía aérea quirúrgica. <b>Primero toca la membrana cricotiroidea.</b></p>
+ <div class="simlay"><div class="svgwrap"><svg id="crSvg" viewBox="0 0 300 420" class="stage-svg">
+  <path d="M80 0 Q70 200 40 420 L260 420 Q230 200 220 0Z" fill="#f3c9a8" stroke="#b9805f" stroke-width="2"/>
+  <ellipse cx="150" cy="20" rx="55" ry="22" fill="#eadfca" stroke="#a8977a"/><text x="150" y="24" text-anchor="middle" class="lbl">hioides</text>
+  <path d="M100 60 L200 60 L185 150 L150 170 L115 150Z" fill="#eadfca" stroke="#a8977a" stroke-width="2"/><path d="M135 60 L150 80 L165 60" stroke="#a8977a" fill="none"/>
+  <rect id="crMem" x="122" y="171" width="56" height="22" rx="4" fill="#f1d3c0" stroke="#d4a48a" stroke-dasharray="3 3"/>
+  <path d="M112 194 L188 194 L192 222 L108 222Z" fill="#eadfca" stroke="#a8977a" stroke-width="2"/>
+  ${[0,1,2,3,4,5].map(i=>`<rect x="118" y="${232+i*22}" width="64" height="13" rx="6" fill="#eadfca" stroke="#a8977a"/>`).join("")}
+  <path d="M100 255 Q150 300 200 255 L200 290 Q150 320 100 290Z" fill="#c084a0" opacity=".55"/>
+  <path d="M120 395 Q150 380 180 395" stroke="#a8977a" stroke-width="3" fill="none"/>
+  <g id="crLbl" opacity="0" font-size="11" fill="#475569"><text x="205" y="110">cartílago tiroides</text><text x="205" y="187">membrana cricotiroidea</text><text x="205" y="212">cartílago cricoides</text><text x="205" y="285">tiroides (glándula)</text><text x="186" y="400">escotadura esternal</text></g>
+  <g id="crMk"></g>
+ </svg></div>
+ <div><div id="crFb"></div><div id="crSeq" style="display:none"><p class="small"><b>Ahora ordena los pasos</b> (técnica con bisturí, bougie y tubo):</p><div class="xcards" id="crCards"></div><ol class="ssteps" id="crList"></ol></div></div></div>`;
+ const svg=$("#crSvg");
+ svg.addEventListener("click",ev=>{if(found)return;const p=svgPt(svg,ev);tries++;$("#crMk").innerHTML+=`<circle cx="${p.x}" cy="${p.y}" r="5" fill="#ef4444"/>`;
+  let ok=p.x>118&&p.x<182&&p.y>166&&p.y<197,m;
+  if(ok)m="Correcto: la membrana cricotiroidea, entre el cartílago tiroides (arriba) y el cricoides (abajo).";
+  else if(p.y<166&&p.y>55)m="Eso es el cartílago tiroides. La membrana está justo debajo, en la depresión entre tiroides y cricoides.";
+  else if(p.y>=197&&p.y<226)m="Ese es el anillo cricoides. La membrana queda justo por encima.";
+  else if(p.y>=226)m="Demasiado bajo: anillos traqueales y glándula tiroides (muy vascularizada).";
+  else m="Demasiado alto: estás en la zona del hioides.";
+  $("#crFb").innerHTML=fbBox(ok,m);if(ok){found=true;$("#crLbl").setAttribute("opacity",1);$("#crMem").setAttribute("fill","#86efac");$("#crSeq").style.display="";drawSeq()}});
+ const shuffled=STEPS.map((s,i)=>({s,i})).sort(()=>Math.random()-.5);let errs=0;
+ const drawSeq=()=>{$("#crCards").innerHTML=shuffled.map((c,j)=>`<button class="xcard" data-j="${j}" ${order.includes(c.i)?"disabled":""}>${c.s}</button>`).join("");$("#crList").innerHTML=order.map(i=>`<li class="ok">✔ ${STEPS[i]}</li>`).join("");
+  $$("#crCards .xcard").forEach(b=>b.onclick=()=>{const c=shuffled[+b.dataset.j];if(c.i===order.length){order.push(c.i);drawSeq();if(order.length===5){const sc=Math.max(0,100-(tries-1)*15-errs*10);simDone("crico",sc);$("#crFb").innerHTML=fbBox(true,`Vía aérea quirúrgica completada. Puntuación: <b>${sc}%</b>. Recuerda: una vez empezada, termínala.`)}}else{errs++;b.classList.add("bad");simAfter(()=>b.classList.remove("bad"),600)}})};
+};
+
+// ---------- 9. HEMODERIVADOS ----------
+SV.sangre=box=>{
+ let st={ch:0,pfc:0,pq:0,st:0,sal:0,txa:null,hrs:1,mtp:false,abc:new Set()};
+ box.innerHTML=`<p class="small">Varón de 28 años con herida penetrante abdominal, PAS 84, FC 128, FAST positivo. Calcula la puntuación ABC, decide el TXA y reanima tocando las bolsas.</p>
+ <div class="grid g2"><div>
+  <div class="card" style="background:var(--bg)"><b>1. Puntuación ABC</b><div class="seg" id="sgAbc">${[["a","PAS ≤ 90"],["b","FC ≥ 120"],["c","FAST positivo"],["d","Penetrante en tronco"]].map(([k,l])=>`<button data-k="${k}">${l}</button>`).join("")}</div><div class="small" id="sgAbcR"></div><button class="btn" id="sgMtp" style="margin-top:6px" disabled>🚨 Activar transfusión masiva</button></div>
+  <div class="card" style="background:var(--bg);margin-top:10px"><b>2. Ácido tranexámico</b><div class="small mute">Horas desde la lesión: <b id="sgH">1</b> h</div><input type="range" id="sgHr" min="0.5" max="6" step="0.5" value="1" style="width:100%"><button class="btn" id="sgTxa">💊 Administrar TXA 2 g</button><div id="sgTxaF"></div></div>
+ </div><div>
+  <div class="card" style="background:var(--bg)"><b>3. Reanimación</b><div class="bags">
+   <button class="bag" data-b="ch" style="--c:#b91c1c">🩸<br>Hematíes</button><button class="bag" data-b="pfc" style="--c:#eab308">🟡<br>Plasma</button><button class="bag" data-b="pq" style="--c:#f97316">🟠<br>Plaquetas</button><button class="bag" data-b="st" style="--c:#7f1d1d">🩸<br>Sangre total</button><button class="bag" data-b="sal" style="--c:#38bdf8">💧<br>Salino 500 mL</button></div>
+   <div id="sgTot" class="small" style="margin-top:8px"></div><div class="ratio" id="sgRatio"></div><div id="sgFb" style="margin-top:8px"></div></div>
+ </div></div>`;
+ const abc=()=>{const n=st.abc.size;$("#sgAbcR").innerHTML=`ABC = <b>${n}</b> ${n>=2?"→ probable transfusión masiva":""}`;$("#sgMtp").disabled=n<2||st.mtp};
+ $$("#sgAbc button").forEach(b=>b.onclick=()=>{b.classList.toggle("on");st.abc.has(b.dataset.k)?st.abc.delete(b.dataset.k):st.abc.add(b.dataset.k);abc()});abc();
+ $("#sgMtp").onclick=()=>{st.mtp=true;$("#sgMtp").textContent="✅ Protocolo activado";$("#sgMtp").disabled=true;upd()};
+ $("#sgHr").oninput=e=>{st.hrs=+e.target.value;$("#sgH").textContent=st.hrs};
+ $("#sgTxa").onclick=()=>{st.txa=st.hrs;$("#sgTxaF").innerHTML=st.hrs<=3?fbBox(true,"Dentro de las 3 primeras horas: 2 g IV (o 1 g + 1 g en 8 h)."):fbBox(false,"Más de 3 h: ATLS no lo recomienda salvo hiperfibrinólisis demostrada.");upd()};
+ const upd=()=>{const blood=st.ch+st.pfc+st.pq+st.st;const msgs=[];
+  $("#sgTot").innerHTML=`Hematíes ${st.ch} · Plasma ${st.pfc} · Plaquetas ${st.pq} · Sangre total ${st.st} · Salino ${st.sal*500} mL`;
+  const r=st.ch?[st.ch,st.pfc,st.pq]:[0,0,0];const mx=Math.max(1,...r);
+  $("#sgRatio").innerHTML=st.ch?[["Hematíes",st.ch,"#b91c1c"],["Plasma",st.pfc,"#eab308"],["Plaquetas",st.pq,"#f97316"]].map(([l,x,c])=>`<div class="rb"><span>${l}</span><i style="width:${x/mx*100}%;background:${c}"></i><b>${x}</b></div>`).join(""):"";
+  if(st.sal*500>=1000)msgs.push(fbBox(false,"Demasiado cristaloide: diluye los factores, enfría y acidifica (tríada letal). ATLS lo limita a un puente de 250–500 mL si no hay sangre."));
+  if(st.ch>=3&&(st.pfc<st.ch-1||st.pq<Math.floor(st.ch/2)))msgs.push(fbBox(false,"Proporción desequilibrada: el objetivo es 1:1:1 (o sangre total)."));
+  if(blood>=6&&st.sal*500<1000&&(st.st>=4||(st.pfc>=st.ch-1&&st.pq>=Math.floor(st.ch/2)))){const sc=(st.mtp?40:0)+(st.txa!==null&&st.txa<=3?30:0)+(st.sal*500<=500?30:10);simDone("sangre",sc);msgs.push(fbBox(true,`Reanimación hemostática equilibrada. ${st.mtp?"":"¿Has activado la transfusión masiva? "}${st.txa===null?"Falta decidir el TXA. ":""}Objetivo PAS ~90 hasta el control quirúrgico. Puntuación: <b>${sc}%</b>.`))}
+  $("#sgFb").innerHTML=msgs.join("")};
+ $$(".bag").forEach(b=>b.onclick=()=>{st[b.dataset.b]++;b.classList.add("pop");simAfter(()=>b.classList.remove("pop"),300);upd()});upd();
+};
+
+// ---------- 10. COMPRESIÓN DE LA CAVA ----------
+SV.embarazo=box=>{
+ let tilted=false,iv=null;
+ box.innerHTML=`<p class="small">Gestante de 32 semanas, colisión frontal. En decúbito supino: PAS 86, FC 118. Observa cómo el útero comprime la vena cava.</p>
+ <div class="simlay"><div class="svgwrap"><svg viewBox="0 0 360 300" class="stage-svg">
+  <g id="pgPt" style="transform-origin:180px 200px;transition:transform 1.4s">
+  <rect x="20" y="210" width="320" height="14" rx="6" fill="#cbd5e1"/>
+  <path d="M40 210 Q40 160 80 155 L300 150 Q335 155 335 185 L335 210Z" fill="#f2c2a0" stroke="#b9805f" stroke-width="2"/>
+  <circle cx="58" cy="150" r="30" fill="#f2c2a0" stroke="#b9805f" stroke-width="2"/>
+  <rect x="95" y="188" width="230" height="12" rx="6" id="pgIvc" fill="#2563eb"/><text x="210" y="220" text-anchor="middle" class="lbl" fill="#1d4ed8">vena cava inferior</text>
+  <rect x="95" y="173" width="230" height="9" rx="4" fill="#dc2626"/><text x="300" y="168" class="lbl" fill="#b91c1c">aorta</text>
+  </g>
+  <g id="pgUt" style="transition:transform 1.4s"><ellipse cx="225" cy="150" rx="78" ry="58" fill="#f9a8d4" stroke="#be185d" stroke-width="2" opacity=".9"/><text x="225" y="150" text-anchor="middle" class="lbl" fill="#9d174d">útero</text></g>
+  <g id="pgArrow"><path d="M225 205 l-8 -12 h16z" fill="#be185d"/></g>
+  <text id="pgCo" x="180" y="40" text-anchor="middle" font-size="15" font-weight="800" fill="#b91c1c">Gasto cardiaco ↓ (hasta −30 %)</text>
+  <circle class="ivp" data-p="brazo" cx="110" cy="245" r="14" fill="#10b981" opacity=".35"/><text x="110" y="275" text-anchor="middle" class="lbl">brazo</text>
+  <circle class="ivp" data-p="pierna" cx="300" cy="245" r="14" fill="#10b981" opacity=".35"/><text x="300" y="275" text-anchor="middle" class="lbl">pierna/tibia</text>
+ </svg></div>
+ <div><div class="monitor mini"><div class="vgrid" id="pgVit"></div></div>
+  <div class="row"><button class="btn pri" id="pgL">🤚 Desplazar el útero a la izquierda</button><button class="btn" id="pgT">↪️ Lateralizar (lado derecho arriba)</button><button class="btn" id="pgTr">⬇️ Trendelenburg</button></div>
+  <p class="small"><b>Después, toca dónde canalizarías la vía (punto verde).</b></p><div id="pgFb"></div></div></div>`;
+ const v={fc:118,pas:86};const vit=()=>$("#pgVit").innerHTML=[["FC",v.fc,"c-hr",v.fc>110],["PAS",v.pas,"c-bp",v.pas<90]].map(([l,x,c,a])=>`<div class="vb ${a?"alarm":""}"><small>${l}</small><b class="${c}">${x}</b></div>`).join("");vit();
+ const relief=(how)=>{if(tilted)return;tilted=true;$("#pgUt").style.transform="translate(0 -26px)";$("#pgIvc").setAttribute("height",16);$("#pgArrow").style.display="none";$("#pgCo").textContent="Cava liberada: el retorno venoso mejora";$("#pgCo").setAttribute("fill","#15803d");
+  if(how==="t")$("#pgPt").style.transform="rotate(-6deg)";let k=0;simEvery(()=>{if(k++>5)return;v.pas+=3;v.fc-=2;vit()},400);
+  $("#pgFb").innerHTML=fbBox(true,"Correcto. Sin comprimir la cava, mejoran el retorno venoso y la presión. Mantén el desplazamiento durante toda la valoración.");done()};
+ $("#pgL").onclick=()=>relief("l");$("#pgT").onclick=()=>relief("t");
+ $("#pgTr").onclick=()=>{$("#pgFb").innerHTML=fbBox(false,"El Trendelenburg no libera la compresión de la cava: el útero sigue apoyado sobre ella.")};
+ $$(".ivp").forEach(c=>c.onclick=()=>{iv=c.dataset.p;$$(".ivp").forEach(x=>x.setAttribute("opacity",.35));c.setAttribute("opacity",.9);
+  $("#pgFb").innerHTML+=iv==="brazo"?fbBox(true,"Bien: accesos IV/IO por encima del diafragma. (Si necesita tubo de tórax, se coloca más alto.)"):fbBox(false,"Por debajo del diafragma, la cava comprimida reduce la eficacia del acceso. Canaliza por encima del diafragma.");done()});
+ let fin=false;const done=()=>{if(tilted&&iv&&!fin)fin=true,simDone("embarazo",iv==="brazo"?100:60),$("#pgFb").innerHTML+=`<div class="sec b"><h4>Recuerda (cap. 13)</h4><ul class="clean"><li>Reanima primero a la madre: la principal causa de muerte fetal es la muerte materna.</li><li>&gt; 20 semanas: cardiotocografía mínimo 4–6 h.</li><li>Rh negativa: anti-D en las primeras 72 h.</li></ul></div>`};
+};
+
+// Enlace de las decisiones de los casos con los simuladores
+const SIM_KEYS=[[/torniquete/i,"torniquete"],[/descomprimir|aguja ≥ 14/i,"aguja"],[/faja pélvica/i,"faja"],[/ABC = 2|1:1:1|transfusión masiva/i,"sangre"],[/útero a la izquierda/i,"embarazo"],[/10 mL\/kg de concentrado/i,"shock"]];
+function simFor(t){const m=SIM_KEYS.find(([r])=>r.test(t));if(!m)return"";const s=SIMS.find(x=>x.id===m[1]);return `<div class="spacer"></div><button class="btn" onclick="stopSim();openSim('${s.id}')">🎮 Practica esta técnica: ${s.t}</button>`}
 
 buildNav(); show(location.hash.slice(1)||"inicio");
 

@@ -48,12 +48,13 @@ const CAPITULOS = [
     color: "#ff4d6d", icono: "🏥",
     historia: "El herido llega al box vital: taquicárdico, frío, Glasgow 11. El equipo te mira. Revisión primaria, control de la hemorragia, FAST y decisión: ¿quirófano, radiología o TAC?",
     modulos: [
-      { id: "atls", nombre: "Taller ATLS interactivo", url: "modulos/atls.html", desc: "Revisión primaria y secundaria, shock, casos y test." }
+      { id: "atls", nombre: "Taller ATLS interactivo", url: "modulos/atls.html", desc: "Revisión primaria y secundaria, shock, 8 casos, 10 estaciones de simulación, atlas anatómico y test." }
     ],
     misiones: [
       { id: "atls_open", txt: "Entra en el taller ATLS", xp: 50, auto: s => s.visit("atls") },
       { id: "atls_cap", txt: "Completa al menos 3 capítulos del taller", xp: 100, auto: s => s.count("atls_ch") >= 3 },
       { id: "atls_caso", txt: "Resuelve un caso clínico", xp: 100, auto: s => s.count("atls_cs") >= 1 },
+      { id: "atls_sim", txt: "Completa 3 estaciones de simulación de habilidades", xp: 100, auto: s => s.count("atls_sim") >= 3 },
       { id: "atls_test", txt: "Saca 70 % o más en el test del taller", xp: 150, auto: s => s.num("atls_qz") >= 70 },
       { id: "atls_exam", txt: "Supera el examen del capítulo", xp: 0, auto: s => s.stars("atls") >= 1 }
     ],
