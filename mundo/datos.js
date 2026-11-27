@@ -10,7 +10,7 @@ const IAM_ECG = ["iam-as","iam-ae","iam-lat","iam-la","iam-inf","iam-infvd","iam
 
 const CAPITULOS = [
   {
-    id: "phtls", n: 1, titulo: "La calle", sub: "Trauma prehospitalario · PHTLS",
+    id: "phtls", n: 1, titulo: "Prehospitalaria", sub: "Politrauma prehospitalario · PHTLS",
     color: "#ff8a3d", icono: "🚑",
     historia: "02:14 h. Colisión frontal en la GC-1. Dos vehículos, un herido atrapado y sangrado activo en el muslo. Eres el primer recurso en llegar. La escena, el XABCDE y la decisión de traslado son tuyos.",
     modulos: [

@@ -114,6 +114,15 @@ td.hl,th.hl{background:color-mix(in srgb,var(--red) 14%,transparent)}
 footer{max-width:1100px;margin:20px auto 0;padding:0 16px 24px;font-size:12px;color:var(--mute)}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .spacer{height:12px}
+.mhero{background:linear-gradient(135deg,#0f3d2e,#14532d 60%,#166534);color:#fff;border-radius:22px;padding:22px}.mhero p{color:#d1fae5}.mhero .chip{background:#ffffff22;color:#fff}.mhero .btn{background:#ffffff18;color:#fff;border-color:#ffffff40}.mhero .btn.pri{background:#fff;color:#14532d}.mhero .prog{background:#ffffff30}.mhero .prog i{background:#4ade80}.mhero .mute{color:#bbf7d0}
+.mgrid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}.mcard{display:flex;gap:12px;cursor:pointer;position:relative;transition:transform .15s}.mcard:hover{transform:translateY(-2px)}.mcard.read{border-color:#86efac}.mic{font-size:30px}.mtick{position:absolute;top:10px;right:12px;color:var(--grn);font-weight:800}
+.mart{font-size:16.5px;line-height:1.65}.mart.big{font-size:19.5px}.mart h3{margin-top:22px;font-size:18px}
+.corto{background:color-mix(in srgb,var(--grn) 12%,transparent);border-left:5px solid var(--grn);padding:12px 14px;border-radius:12px;font-size:1.06em;font-weight:500}
+.gl{all:unset;cursor:pointer;color:var(--blu);border-bottom:2px dotted var(--blu);font-weight:600}.gl.demo{color:#fff;border-color:#fff;cursor:default}
+#glpop{position:absolute;z-index:80;width:280px;background:var(--ink);color:var(--bg);padding:12px;border-radius:12px;font-size:14px;line-height:1.4;box-shadow:0 10px 30px #0005;display:none}#glpop.on{display:block}#glpop b{display:block;margin-bottom:4px;text-transform:capitalize}
+.steps{list-style:none;padding:0;display:grid;gap:8px}.steps li{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;transition:all .15s}.steps .sn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:var(--bg);font:800 13px Sora}.steps li.ok{border-color:var(--grn);background:color-mix(in srgb,var(--grn) 10%,var(--card))}.steps li.ok .sn{background:var(--grn)}
+.flips{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}.flip{perspective:900px;cursor:pointer;min-height:130px}.fi{position:relative;width:100%;height:100%;min-height:130px;transition:transform .5s;transform-style:preserve-3d}.flip.on .fi{transform:rotateY(180deg)}.ff,.fb2{position:absolute;inset:0;backface-visibility:hidden;border-radius:14px;padding:14px;display:flex;flex-direction:column;justify-content:center;gap:4px}.ff{background:color-mix(in srgb,var(--amb) 16%,var(--card));border:1.5px solid var(--amb)}.fb2{background:color-mix(in srgb,var(--blu) 12%,var(--card));border:1.5px solid var(--blu);transform:rotateY(180deg);font-size:15px}
+@media (max-width:760px){.bnav button{font-size:10px}.bnav button span{font-size:18px}}
 #simBody{max-height:360px}
 .chth{width:52px;height:52px;object-fit:cover;border-radius:10px;background:#fff;flex:none;border:1px solid var(--line)}
 .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px}.gal figure{margin:0}.gal img{width:100%;aspect-ratio:4/3;object-fit:contain;background:#fff;border-radius:10px;border:1px solid var(--line);cursor:zoom-in}.gal figcaption{font-size:12px;margin-top:4px;line-height:1.3}.gal figcaption span{display:block;color:var(--mute);font-size:11px}
@@ -136,6 +145,7 @@ footer{max-width:1100px;margin:20px auto 0;padding:0 16px 24px;font-size:12px;co
 </div></header>
 <main>
  <section class="view" id="v-inicio"></section>
+ <section class="view" id="v-manual"></section>
  <section class="view" id="v-taller"></section>
  <section class="view" id="v-anatomia"></section>
  <section class="view" id="v-capitulos"></section>
@@ -391,6 +401,229 @@ const REGIONS = {
   les:["Lesión medular completa o incompleta","Shock neurogénico (lesiones por encima de T6)","Fracturas inestables"],
   sig:["Dolor en línea media","Déficit motor o sensitivo","Priapismo, respiración diafragmática"],
   acc:["RME selectiva según criterios","PAM 85–90 si lesión medular","Acolchar, colchón de vacío, minimizar tiempo en tabla"]}
+};
+
+// ====== MANUAL INTERACTIVO (lenguaje sencillo, redacción propia) ======
+// Términos entre [[ ]] se convierten en palabras del glosario que se pueden tocar.
+const GLOS = {
+ "shock":"Situación en la que la sangre no llega bien a los tejidos. Las células se quedan sin oxígeno y empiezan a fallar.",
+ "perfusión":"Llegada de sangre (y con ella oxígeno) a los órganos.",
+ "hemorragia exsanguinante":"Sangrado tan intenso que puede matar en pocos minutos.",
+ "torniquete":"Banda que se aprieta alrededor de un brazo o pierna para cortar el sangrado.",
+ "hipotensión permisiva":"Aceptar una presión arterial algo baja (PAS 80–90) para no aumentar el sangrado hasta que el cirujano lo controle.",
+ "PAS":"Presión arterial sistólica: el número ‘alto’ de la tensión.",
+ "PAM":"Presión arterial media: la presión promedio que empuja la sangre a los órganos.",
+ "SpO₂":"Porcentaje de oxígeno en la sangre medido con el pulsioxímetro (la pinza del dedo).",
+ "EtCO₂":"Cantidad de CO₂ al final de cada espiración. Indica cómo ventila y perfunde el paciente.",
+ "GCS":"Escala de coma de Glasgow: puntúa de 3 a 15 los ojos, el habla y el movimiento.",
+ "XABCDE":"Orden de evaluación del herido: hemorragia, vía aérea, respiración, circulación, neurológico y exposición.",
+ "vía aérea":"Camino por el que entra el aire: boca, nariz, faringe, laringe y tráquea.",
+ "tracción mandibular":"Maniobra que adelanta la mandíbula para abrir la vía aérea sin mover el cuello.",
+ "capnografía":"Monitor que dibuja la curva del CO₂ espirado.",
+ "neumotórax a tensión":"Aire atrapado entre el pulmón y la pared del tórax que aplasta el pulmón y el corazón.",
+ "descompresión con aguja":"Pinchar el tórax con una aguja para dejar salir el aire atrapado.",
+ "apósito oclusivo":"Parche que sella una herida del tórax para que no entre aire.",
+ "taponamiento cardiaco":"Sangre acumulada alrededor del corazón que le impide llenarse.",
+ "TCE":"Traumatismo craneoencefálico: golpe en la cabeza que afecta al cerebro.",
+ "lesión secundaria":"Daño que aparece después del golpe por falta de oxígeno, presión baja o azúcar alterado. Es la que podemos evitar.",
+ "herniación":"Desplazamiento del cerebro por aumento de presión dentro del cráneo. Es una emergencia extrema.",
+ "RME":"Restricción del movimiento espinal: limitar los movimientos de la columna en quien puede tenerla lesionada.",
+ "shock neurogénico":"Bajada de tensión con pulso lento por lesión de la médula espinal.",
+ "evisceración":"Salida de vísceras (intestino) a través de una herida abdominal.",
+ "faja pélvica":"Cinturón que cierra la pelvis rota para frenar el sangrado interno.",
+ "síndrome compartimental":"Hinchazón dentro de un músculo que corta su circulación. Duele de forma desproporcionada.",
+ "SCQ":"Superficie corporal quemada, en porcentaje del cuerpo.",
+ "regla de los nueves":"Forma rápida de calcular la superficie quemada: cada zona vale 9 % o múltiplos.",
+ "triaje":"Clasificar a los heridos según su gravedad cuando hay muchos.",
+ "START":"Método de triaje rápido: camina, respira, perfunde y obedece.",
+ "hipotermia":"Temperatura corporal por debajo de 35 °C.",
+ "golpe de calor":"Temperatura de 40 °C o más con alteración del cerebro (confusión, convulsiones).",
+ "TXA":"Ácido tranexámico: medicamento que ayuda a que el coágulo no se deshaga.",
+ "cinemática":"Estudio de cómo se produjo el accidente para adivinar las lesiones ocultas.",
+ "intraósea":"Vía para dar medicación o líquidos a través de un hueso cuando no se encuentra una vena.",
+ "desprendimiento de placenta":"Separación de la placenta del útero tras un golpe. Sangra y pone en peligro al feto.",
+ "tríada letal":"Combinación mortal de frío, acidez de la sangre y mala coagulación.",
+ "zona de unión":"Ingle, axila o cuello: donde un torniquete normal no se puede poner."
+};
+
+const MANUAL = [
+{n:1,t:"Qué es PHTLS y por qué importa",ic:"📜",
+ corto:"PHTLS enseña a atender a un herido grave antes de llegar al hospital, con un orden claro y sin perder tiempo.",
+ facil:["Imagina que alguien sufre un accidente. Los primeros minutos deciden mucho: lo que hacemos (o dejamos de hacer) en la calle puede cambiar el final.",
+  "PHTLS no da recetas cerradas. Enseña <b>principios</b> y cada profesional decide cómo aplicarlos según lo que tiene delante.",
+  "El trauma tiene tres momentos: <b>antes</b> (prevenir), <b>durante</b> (el golpe) y <b>después</b> (la asistencia). El curso se centra en el después, pero sin olvidar la prevención."],
+ pasos:null,
+ mitos:[["El que llega primero solo tiene que trasladar rápido","Falso: hay que tratar lo que mata en minutos (hemorragia, vía aérea) y trasladar sin demoras innecesarias."],["Existe una única forma correcta de hacer cada técnica","Falso: hay principios fijos y varias formas válidas de cumplirlos."]]},
+{n:2,t:"Los principios de oro",ic:"⭐",
+ corto:"Un puñado de reglas que nunca cambian: seguridad, controlar la [[hemorragia exsanguinante]], oxigenar y llegar pronto al sitio adecuado.",
+ facil:["Piensa en los principios como las reglas de oro de un piloto: da igual el avión, siempre se cumplen.",
+  "Primero <b>tú y tu equipo seguros</b>. Después, encontrar y frenar lo que mata rápido.",
+  "El paciente crítico necesita un quirófano, no una ambulancia parada: <b>poco tiempo en la escena</b> y elegir el hospital que pueda resolver el problema.",
+  "Mantener el oxígeno (objetivo [[SpO₂]] de 94 % o más), evitar el frío y aliviar el dolor también son principios."],
+ pasos:["Asegura la escena","Mira el conjunto: ¿cuántos heridos? ¿qué pasó?","Busca y frena la hemorragia grave","Abre la vía aérea y oxigena","Decide pronto el traslado","Avisa al hospital y entrega bien al paciente"],
+ mitos:[["Si el paciente está grave, hay que hacer todo en la escena","Falso: en el crítico, lo que no salva la vida en ese momento se hace en ruta."],["El dolor puede esperar","Falso: la analgesia forma parte de una buena atención."]]},
+{n:3,t:"El shock: cuando la sangre no llega",ic:"🩸",
+ corto:"El [[shock]] es la falta de [[perfusión]]. En el trauma casi siempre se debe a una hemorragia.",
+ facil:["El cuerpo funciona como una ciudad con tuberías. Si hay una fuga grande, el agua no llega a los barrios: eso es el shock.",
+  "Al principio el cuerpo se defiende: el corazón late más rápido y la piel se pone fría y pálida para ahorrar sangre. <b>La tensión baja tarde</b>, cuando las defensas ya se agotan.",
+  "Por eso no hay que esperar a que la tensión caiga: la taquicardia, la piel fría y la ansiedad ya avisan.",
+  "Si el sangrado es interno y aún no se ha controlado, se aceptan cifras algo bajas ([[hipotensión permisiva]]) para no ‘reventar’ el coágulo. En el [[TCE]] no: el cerebro necesita presión."],
+ pasos:["Detecta signos precoces: pulso rápido, piel fría, relleno lento, ansiedad","Frena la hemorragia externa","Oxigena y abriga","Traslada rápido","Líquidos en pequeños bolos para objetivo de PAS","Considera [[TXA]] en las primeras 3 horas"],
+ mitos:[["Si la tensión es normal, no hay shock","Falso: la tensión baja tarde; el pulso rápido y la piel fría aparecen antes."],["Cuanto más suero, mejor","Falso: mucho suero diluye la sangre, enfría y aumenta el sangrado."]]},
+{n:4,t:"La física del trauma",ic:"🚗",
+ corto:"Mirar cómo fue el accidente ([[cinemática]]) ayuda a sospechar lesiones que no se ven.",
+ facil:["La energía de un choque no desaparece: se la queda el cuerpo. Y la velocidad cuenta muchísimo: <b>el doble de velocidad es cuatro veces más energía</b>.",
+  "En un choque hay tres golpes: el coche contra el obstáculo, el cuerpo contra el coche y los órganos contra el propio cuerpo.",
+  "Las pistas de la escena (volante doblado, parabrisas roto en forma de estrella, deformación lateral) cuentan qué partes del cuerpo sufrieron."],
+ pasos:["Observa el vehículo y la escena","Pregunta: velocidad, cinturón, airbag, altura de caída","Relaciona: ¿qué parte del cuerpo recibió el golpe?","Busca activamente esas lesiones"],
+ mitos:[["Si no hay heridas visibles, no hay lesiones graves","Falso: los órganos pueden romperse por dentro sin marcas externas."],["El airbag evita todas las lesiones","Falso: reduce lesiones, pero sin cinturón puede causar otras."]]},
+{n:5,t:"La escena y muchos heridos",ic:"🚧",
+ corto:"Antes de tocar a nadie: escena segura. Si hay muchos heridos, se hace [[triaje]] para salvar al mayor número.",
+ facil:["Tráfico, fuego, cables, violencia o productos tóxicos pueden convertir al rescatador en otra víctima.",
+  "Con muchos heridos y pocos recursos no se atiende por orden de llegada: se clasifica. El método [[START]] tarda menos de un minuto por persona.",
+  "Colores: <b>rojo</b> inmediato, <b>amarillo</b> puede esperar un poco, <b>verde</b> leve, <b>negro</b> fallecido o sin posibilidades."],
+ pasos:["¿Camina? → Verde","¿Respira? No → abre la vía aérea: si sigue sin respirar, Negro; si respira, Rojo","Respira más de 30 por minuto → Rojo","Sin pulso en la muñeca o relleno > 2 s → Rojo","¿Obedece órdenes? No → Rojo · Sí → Amarillo"],
+ mitos:[["Hay que atender primero al que más grita","Falso: el que grita respira y tiene la vía aérea abierta; el silencioso puede ser el más grave."],["El triaje se hace una sola vez","Falso: se repite, porque los heridos cambian."]]},
+{n:6,t:"Evaluar al herido: el XABCDE",ic:"🩺",
+ corto:"Se revisa siempre en el mismo orden ([[XABCDE]]) y se arregla cada problema en cuanto aparece.",
+ facil:["Es como revisar un avión antes de despegar: siempre la misma lista, sin saltarse pasos.",
+  "<b>X</b> sangrado masivo · <b>A</b> vía aérea · <b>B</b> respiración · <b>C</b> circulación · <b>D</b> neurológico · <b>E</b> exponer y abrigar.",
+  "Si encuentras un problema en la A, lo resuelves antes de pasar a la B. Después de cada intervención, vuelves a revisar."],
+ pasos:["X: busca y frena el sangrado grave","A: ¿habla? Si no, abre y limpia la vía aérea","B: mira, escucha, cuenta respiraciones, satura","C: pulso, piel, relleno capilar, otros sangrados","D: Glasgow, pupilas, movilidad","E: desviste para ver todo y luego abriga"],
+ mitos:[["Primero hay que explorar de la cabeza a los pies","Falso: eso es la evaluación secundaria, y llega después de controlar lo vital."],["Una vez evaluado, no hace falta repetir","Falso: se reevalúa continuamente."]]},
+{n:7,t:"La vía aérea y la respiración",ic:"🫁",
+ corto:"Sin aire no hay vida: abrir la [[vía aérea]] y ventilar bien es prioritario.",
+ facil:["La lengua, la sangre o los dientes pueden tapar el paso del aire, sobre todo si el paciente está inconsciente.",
+  "Se empieza por lo sencillo: la [[tracción mandibular]], aspirar y colocar una cánula. Si no basta, dispositivos avanzados.",
+  "La [[capnografía]] es el mejor ‘testigo’ de que el tubo está bien puesto y de cómo ventila el paciente.",
+  "Ventilar demasiado rápido también hace daño: dificulta que la sangre vuelva al corazón."],
+ pasos:["¿Habla? Vía aérea abierta","Si no: tracción mandibular","Aspira sangre y secreciones","Cánula si está inconsciente","Ventila con bolsa si respira mal","Dispositivo avanzado con capnografía si hace falta"],
+ mitos:[["A más oxígeno y más ventilaciones, mejor","Falso: hiperventilar reduce el retorno de sangre y la llegada de sangre al cerebro."],["Si satura bien, respira bien","No siempre: la saturación puede tardar en bajar o ser engañosa (por ejemplo con monóxido de carbono)."]]},
+{n:8,t:"Golpes en la cabeza (TCE)",ic:"🧠",
+ corto:"El golpe ya ocurrió; nuestro trabajo es evitar la [[lesión secundaria]]: falta de oxígeno, tensión baja y azúcar alterado.",
+ facil:["El cerebro está dentro de una caja rígida. Si sangra o se hincha, no hay espacio y la presión sube.",
+  "Un cerebro golpeado es muy sensible: <b>una sola bajada de oxígeno o de tensión empeora mucho el pronóstico</b>.",
+  "Señales de alarma de [[herniación]]: el paciente empeora rápido, una pupila se dilata y no reacciona, posturas anormales.",
+  "Objetivos sencillos: oxígeno ≥ 94 %, [[PAS]] ≥ 110 y [[EtCO₂]] 35–40."],
+ pasos:["Abre la vía aérea protegiendo el cuello","Oxigena: nunca dejes que baje la saturación","Mantén la PAS ≥ 110","Calcula el Glasgow y mira las pupilas","Mide la glucemia","Traslada a un hospital con neurocirugía"],
+ mitos:[["Hiperventilar siempre ayuda al cerebro","Falso: solo se hace de forma leve y controlada si hay signos de herniación."],["Si habló al principio, está bien","Falso: algunos hematomas dan un intervalo lúcido antes de empeorar."]]},
+{n:9,t:"Lesiones de la columna",ic:"🦴",
+ corto:"Hoy no se inmoviliza a todos: se aplica [[RME]] a quien realmente puede tener la columna lesionada.",
+ facil:["Antes se ponía tabla y collarín a casi todos. Hoy se sabe que eso también tiene riesgos (dolor, úlceras, dificultad para respirar).",
+  "Se decide según el mecanismo y la exploración: dolor en el centro de la espalda o cuello, alteración de la consciencia, hormigueos o debilidad.",
+  "El [[shock neurogénico]] es diferente al hemorrágico: tensión baja con pulso lento y piel caliente."],
+ pasos:["Valora el mecanismo","Explora: dolor en línea media, fuerza y sensibilidad","¿Consciencia alterada o lesiones que distraen? → RME","Usa la tabla solo para mover, no para viajar horas","Si hay lesión medular: PAM 85–90"],
+ mitos:[["Toda víctima de tráfico necesita tabla y collarín","Falso: la restricción se indica según criterios."],["Una herida de arma blanca en el cuello siempre requiere collarín","Falso: sin déficit neurológico no está indicado y puede ocultar el sangrado."]]},
+{n:10,t:"Lesiones del tórax",ic:"❤️",
+ corto:"El tórax guarda pulmones y corazón: sus lesiones fallan rápido la respiración y la circulación.",
+ facil:["El pulmón está pegado a la pared del tórax por una capa fina. Si entra aire entre ambos, el pulmón se colapsa.",
+  "En el [[neumotórax a tensión]] el aire atrapado sigue aumentando y aplasta el pulmón y el corazón: falta el aire, baja la tensión y no se oye respirar ese lado. Se trata con [[descompresión con aguja]].",
+  "Una herida que ‘sopla’ se tapa con un [[apósito oclusivo]].",
+  "El [[taponamiento cardiaco]] da tensión baja, venas del cuello hinchadas y ruidos del corazón apagados."],
+ pasos:["Expón y mira el tórax","Sella heridas que soplan","Ausculta ambos lados","Sospecha tensión: disnea + no se oye un lado + tensión baja","Descomprime en el 5.º espacio (línea axilar anterior) o el 2.º (línea media de la clavícula)","Reevalúa a menudo"],
+ mitos:[["Hay que esperar a ver la tráquea desviada","Falso: es un signo tardío; no se espera."],["El apósito oclusivo se pone y se olvida","Falso: si el paciente empeora, se levanta un borde para dejar salir aire."]]},
+{n:11,t:"Lesiones del abdomen (y embarazo)",ic:"🫃",
+ corto:"El abdomen sangra en silencio. No se arregla en la calle: se reconoce y se traslada rápido.",
+ facil:["Hígado y bazo son órganos ‘esponja’ llenos de sangre: si se rompen, sangran mucho sin que se vea.",
+  "Si hay [[evisceración]], no se mete el intestino: se cubre con gasa húmeda.",
+  "Un objeto clavado no se saca: puede estar taponando el sangrado.",
+  "<b>Embarazo:</b> la madre puede perder mucha sangre sin dar signos, y el feto sufre antes. Tumbada boca arriba, el útero aprieta la vena cava: hay que inclinarla o desplazar el útero a la izquierda. Ojo con el [[desprendimiento de placenta]]."],
+ pasos:["Mira marcas, heridas, distensión","Palpa: dolor, rigidez","Cubre vísceras con gasa húmeda","Estabiliza objetos clavados","Embarazada: útero a la izquierda y oxígeno","Traslado a centro quirúrgico"],
+ mitos:[["Si el abdomen está blando, no hay lesión","Falso: al principio la exploración puede ser normal."],["Si la embarazada está estable, el feto también","Falso: el feto puede sufrir con una madre aparentemente estable."]]},
+{n:12,t:"Huesos y extremidades",ic:"🦵",
+ corto:"Las fracturas casi nunca matan, salvo por sangrado: pelvis, fémur o una arteria rota.",
+ facil:["Una fractura de fémur puede esconder más de un litro de sangre; una de pelvis, mucho más.",
+  "Si una pierna o un brazo sangra a chorro: [[torniquete]] alto y apretado, y anota la hora.",
+  "En la ingle o la axila ([[zona de unión]]) no cabe un torniquete normal: se rellena la herida con gasa y se aprieta fuerte.",
+  "La [[faja pélvica]] se coloca a la altura de los trocánteres (los ‘huesos’ laterales de la cadera), no en la cintura."],
+ pasos:["Frena el sangrado (presión, torniquete, empaquetamiento)","Pelvis inestable: faja pélvica","Comprueba pulso, sensibilidad y movilidad distal","Alinea e inmoviliza","Vuelve a comprobar el pulso distal","Vigila dolor desproporcionado ([[síndrome compartimental]])"],
+ mitos:[["El torniquete hace perder la extremidad","Falso: bien usado y por tiempo limitado salva vidas y rara vez causa la pérdida."],["Si el torniquete no frena, se afloja y se recoloca","Falso: se pone un segundo justo por encima."]]},
+{n:13,t:"Quemaduras",ic:"🔥",
+ corto:"Parar la quemadura, vigilar la vía aérea, calcular la [[SCQ]] y evitar el frío.",
+ facil:["Primero se detiene la quemadura: quitar ropa y joyas y enfriar poco tiempo con agua templada (nunca hielo).",
+  "Hollín en la nariz, voz ronca o quemaduras en la cara = la vía aérea puede cerrarse en horas.",
+  "La superficie se calcula con la [[regla de los nueves]] o con la palma de la mano del paciente (≈ 1 %). Solo cuentan las quemaduras de segundo y tercer grado.",
+  "En incendios cerrados, el pulsioxímetro puede marcar normal aunque haya intoxicación por monóxido de carbono."],
+ pasos:["Detén la quemadura","Vía aérea: busca hollín y ronquera","Oxígeno al 100 % si hubo humo","Calcula la superficie quemada","Líquidos según fórmula (regla de 10, Brooke o Parkland)","Cubre con sábanas secas y abriga","Centro de quemados"],
+ mitos:[["Hielo para enfriar","Falso: profundiza la lesión y provoca hipotermia."],["Saturación del 98 % = bien oxigenado","No siempre: el monóxido de carbono engaña al pulsioxímetro."]]},
+{n:14,t:"Niños",ic:"🧒",
+ corto:"Los niños aguantan mucho y luego se derrumban de golpe: la taquicardia es la primera alarma.",
+ facil:["Un niño puede mantener la tensión normal aunque haya perdido mucha sangre. Cuando baja, el colapso está muy cerca.",
+  "Su cabeza es grande: tumbado, el cuello se dobla. Un acolchado bajo los hombros ayuda a abrir la vía aérea.",
+  "Se enfrían muy rápido.",
+  "Las dosis y el material se calculan por peso o con una cinta según la longitud."],
+ pasos:["Impresión general: aspecto, respiración, color","Vía aérea con acolchado bajo hombros","Oxígeno","Si hay shock: 20 mL/kg de suero tibio","Si no hay vena en 2 intentos o 90 s: vía [[intraósea]]","Abriga y traslada a un centro pediátrico"],
+ mitos:[["Si la tensión es normal, el niño no está en shock","Falso: la hipotensión en el niño es muy tardía."],["Un niño es un adulto pequeño","Falso: su anatomía y su respuesta al shock son distintas."]]},
+{n:15,t:"Personas mayores",ic:"👴",
+ corto:"Menos reservas y muchos medicamentos: lesiones ‘pequeñas’ pueden ser graves.",
+ facil:["Una caída desde la propia altura puede romper una cadera o causar un sangrado cerebral, sobre todo si toman anticoagulantes.",
+  "Algunos fármacos (betabloqueantes) impiden que el pulso se acelere: el shock se esconde.",
+  "Una tensión ‘normal’ puede ser baja para alguien que habitualmente es hipertenso.",
+  "Al inmovilizar, se acolchan los huecos y se respeta la curvatura de la espalda."],
+ pasos:["Pregunta por medicamentos (anticoagulantes, betabloqueantes)","Compara con su tensión habitual","Confusión nueva = alarma","Acolcha e inmoviliza respetando su postura","Valora el entorno (posible maltrato)","Umbral bajo para ir a un centro de trauma"],
+ mitos:[["Es normal que un anciano esté confuso","Falso: la confusión nueva tras un golpe es un signo de alarma."],["Pulso normal = no sangra","Falso: los fármacos pueden ocultar la taquicardia."]]},
+{n:16,t:"Prevenir lesiones",ic:"🛡️",
+ corto:"La mayoría de las lesiones se pueden prevenir: el trauma no es un ‘accidente’ inevitable.",
+ facil:["Cinturón, casco, sillas infantiles, detectores de humo y evitar caídas en mayores salvan más vidas que cualquier técnica.",
+  "Se trabaja con educación, mejor diseño (de coches, carreteras) y leyes que se cumplan.",
+  "Los profesionales de emergencias ven los riesgos de primera mano y pueden educar a la comunidad."],
+ pasos:null,
+ mitos:[["Los accidentes son mala suerte","Falso: casi siempre hay factores evitables."],["La prevención no es cosa de los sanitarios","Falso: son agentes clave de educación."]]},
+{n:17,t:"Desastres",ic:"🌪️",
+ corto:"Cuando los recursos no alcanzan, se organiza, se clasifica y se busca el mayor bien para el mayor número.",
+ facil:["Un desastre supera la capacidad habitual. La clave es la organización: un mando claro y buena comunicación.",
+  "El [[triaje]] se repite una y otra vez porque los heridos cambian.",
+  "También hay que cuidar la salud mental de víctimas y equipos."],
+ pasos:["Seguridad y evaluación de la escena","Establece el mando","Pide recursos","Triaje y retriaje","Tratamiento y evacuación organizada"],
+ mitos:[["En un desastre todos deben ir al hospital más cercano","Falso: se reparten para no colapsar un solo centro."]]},
+{n:18,t:"Explosiones y amenazas químicas",ic:"💥",
+ corto:"Una explosión lesiona de varias maneras: onda expansiva, metralla, el cuerpo lanzado y quemaduras.",
+ facil:["La onda expansiva daña los órganos con aire: pulmones, oídos e intestino, aunque no se vean heridas.",
+  "Puede haber un segundo artefacto: la seguridad es lo primero.",
+  "En amenazas químicas: protegerse, descontaminar y usar antídotos si existen."],
+ pasos:["Seguridad (posible segundo artefacto)","Protección personal","Triaje","Control de hemorragias y vía aérea","Descontaminación si hay químicos"],
+ mitos:[["Sin heridas visibles tras una explosión, no hay lesión","Falso: el pulmón y el oído pueden estar dañados por dentro."]]},
+{n:19,t:"Calor y frío",ic:"🌡️",
+ corto:"El [[golpe de calor]] se trata enfriando ya; la [[hipotermia]] empeora cualquier hemorragia.",
+ facil:["Golpe de calor: temperatura de 40 °C o más con confusión. Lo que salva es <b>enfriar rápido</b> (agua fría, hielo en el cuerpo, ventilar).",
+  "Hipotermia: leve 35–32 °C (tiritona), moderada 32–28 °C (deja de tiritar), grave por debajo de 28 °C.",
+  "En el herido, el frío forma parte de la [[tríada letal]]: hay que abrigar siempre."],
+ pasos:["Mide la temperatura","Calor: enfría de inmediato","Frío: quita ropa mojada, aísla y calienta","Maneja con suavidad al hipotérmico grave","Traslada"],
+ mitos:[["Al que tiene golpe de calor se le da agua y se espera","Falso: hay que enfriar de forma agresiva y urgente."],["Si no tiene pulso y está helado, está muerto","Falso: nadie está muerto hasta que está caliente y muerto."]]},
+{n:20,t:"Rayos, agua, buceo y altura",ic:"⚡",
+ corto:"Situaciones especiales con reglas propias: en el rayo, atender primero a quien parece muerto.",
+ facil:["Rayo: la parada cardiaca responde bien a la reanimación precoz, por eso con varias víctimas se atiende primero a las que no respiran.",
+  "Ahogamiento: el problema es la falta de oxígeno; ventilar cuanto antes.",
+  "Buceo: problemas por burbujas de gas; oxígeno al 100 % y cámara hiperbárica.",
+  "Altura: si aparecen síntomas graves, lo que cura es bajar."],
+ pasos:null,
+ mitos:[["Tocar a una víctima de rayo es peligroso","Falso: no queda carga eléctrica en el cuerpo."],["En el ahogado lo primero es sacar el agua de los pulmones","Falso: lo primero es ventilar."]]},
+{n:21,t:"Lejos de todo",ic:"🏔️",
+ corto:"En montaña o zonas remotas la ayuda tarda horas: hay que pensar a largo plazo.",
+ facil:["La evacuación puede tardar horas: hay que proteger del frío, controlar el dolor y vigilar al paciente durante mucho tiempo.",
+  "Planificar comunicación y rutas de evacuación antes de que pase algo.",
+  "A veces hay que tomar decisiones que en la ciudad no se plantean (por ejemplo, cuándo mover al paciente)."],
+ pasos:null,
+ mitos:[["Siempre hay que esperar al rescate sin mover al herido","Depende: a veces moverlo con seguridad es la mejor opción."]]},
+{n:22,t:"Zonas de amenaza (táctico)",ic:"🎯",
+ corto:"Bajo amenaza, la mejor medicina es controlar el peligro; la única técnica en zona caliente es el torniquete.",
+ facil:["<b>Zona caliente</b>: hay amenaza activa. Solo ponerse a cubierto y frenar hemorragias graves con torniquete.",
+  "<b>Zona templada</b>: amenaza indirecta. Evaluación completa, vía aérea, tórax, prevenir hipotermia.",
+  "<b>Zona fría</b>: evacuación y cuidados continuos."],
+ pasos:["Controla la amenaza","Torniquete si hay hemorragia grave","Muévete a cubierto","Evaluación completa en zona templada","Evacuación"],
+ mitos:[["En zona caliente hay que hacer RCP","Falso: no es el momento; primero controlar la amenaza."]]}
+];
+
+// Referencias para consultar en el propio ejemplar (sección del índice de Netter, Anatomía Clínica)
+const ATLAS_REF = {
+ cabeza:["Cap. VIII Cabeza y cuello · Encéfalo: meninges y líquido cefalorraquídeo","Cap. VIII · Encéfalo: senos venosos de la duramadre","Cap. VIII · Encéfalo: irrigación arterial","Cap. VIII · Cráneo: visión superior de la base del cráneo"],
+ cuello:["Cap. VIII · Cuello: cartílagos de la laringe","Cap. VIII · Cuello: arteria carótida","Cap. VIII · Cuello: arteria subclavia","Cap. VIII · Cuello: láminas fasciales"],
+ torax:["Cap. V Tórax · Pleura y pulmones: topografía anterior","Cap. V · Pleura y pulmones: pulmones in situ","Cap. V · Pericardio y corazón: corazón in situ","Cap. V · Mediastino: esófago y aorta torácica"],
+ abdomen:["Cap. VI Abdomen · Vísceras: hígado","Cap. VI · Pared posterior del abdomen: aorta abdominal","Cap. VI · Sección transversal del abdomen (T12 y L3-4)"],
+ pelvis:["Cap. VII Pelvis y periné · Pelvis: huesos de la pelvis y ligamentos","Cap. VII · Cavidad pélvica: arterias pélvicas","Cap. VI · Pared abdominal: región inguinal"],
+ extsup:["Cap. III Miembro superior · Axila: ramas de la arteria axilar","Cap. III · Brazo: arteria braquial y anastomosis","Cap. III · Antebrazo: arterias"],
+ extinf:["Cap. IV Miembro inferior · Muslo: arterias principales","Cap. IV · Muslo: secciones transversales seriadas","Cap. IV · Pierna: secciones transversales (compartimentos)"],
+ columna:["Cap. II Dorso · Columna vertebral","Cap. II · Médula espinal: dermatomas","Cap. II · Meninges espinales"]
 };
 
 // ====== ESTACIONES DE SIMULACIÓN ======
@@ -752,7 +985,7 @@ function goThen(v,fn){pending=fn;if(location.hash!=="#"+v)location.hash=v;else s
 const prog={ch:ST.get("ch",{}),cs:ST.get("cs",{}),qz:ST.get("qz",0)};
 function saveProg(){ST.set("ch",prog.ch);ST.set("cs",prog.cs);ST.set("qz",prog.qz)}
 
-const VIEWS=[["inicio","🏠","Inicio"],["taller","🚑","Taller"],["anatomia","🫀","Anatomía"],["capitulos","📘","Capítulos"],["herramientas","🧮","Herramientas"],["repaso","✅","Repaso"]];
+const VIEWS=[["inicio","🏠","Inicio"],["manual","📗","Manual"],["taller","🚑","Taller"],["anatomia","🫀","Anatomía"],["capitulos","📘","Capítulos"],["herramientas","🧮","Herramientas"],["repaso","✅","Repaso"]];
 function buildNav(){
  $("#tabs").innerHTML=VIEWS.map(([k,,l])=>`<button data-v="${k}">${l}</button>`).join("");
  $("#bnav").innerHTML=VIEWS.map(([k,i,l])=>`<button data-v="${k}"><span>${i}</span>${l}</button>`).join("");
@@ -837,6 +1070,7 @@ R.inicio=()=>{
  <div class="homegal">${[GRAY.torax[1],GRAY.cabeza[0],GRAY.torax[4],GRAY.extinf[0],GRAY.pelvis[0],GRAY.piel[0]].map(x=>`<img src="${x.u}" loading="lazy" alt="${x.c}" onclick="openLB(this.src,'image')">`).join("")}</div></div>
  <div class="spacer"></div>
  <div class="grid g3">
+  <div class="card"><h3>📗 Manual fácil</h3><p class="small mute">Los 22 capítulos explicados para cualquier persona: pasos, mitos y verdades, glosario y lectura en voz alta.</p><button class="btn" onclick="go('manual')">Abrir</button></div>
   <div class="card"><h3>🚑 Taller de simulación</h3><p class="small mute">${CASES.length} estaciones clínicas + triaje START. Cada decisión cambia las constantes y consume tiempo en escena.</p><button class="btn" onclick="go('taller')">Abrir</button></div>
   <div class="card"><h3>🫀 Anatomía aplicada</h3><p class="small mute">Capas de esqueleto, órganos y vasos; zonas de torniquete, puntos de unión y de descompresión. Sube tus fotos y vídeos.</p><button class="btn" onclick="go('anatomia')">Abrir</button></div>
   <div class="card"><h3>🧮 Calculadoras</h3><p class="small mute">GCS, clases de shock, índice de shock, quemados (regla de los 9, Parkland, Brooke, regla de 10), pediatría y cronómetro de torniquete.</p><button class="btn" onclick="go('herramientas')">Abrir</button></div>
@@ -875,11 +1109,57 @@ function pickReg(k,user){
  <div class="sec r"><h4>Lesiones que amenazan la vida</h4><ul class="clean">${r.les.map(x=>`<li>${x}</li>`).join("")}</ul></div>
  <div class="sec a"><h4>Qué buscar</h4><ul class="clean">${r.sig.map(x=>`<li>${x}</li>`).join("")}</ul></div>
  <div class="sec g"><h4>Qué hacer (PHTLS)</h4><ul class="clean">${r.acc.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+ ${ATLAS_REF[k]?`<details class="sec"><summary><b>📚 Consulta en tu atlas (Netter, Anatomía Clínica)</b></summary><ul class="clean small">${ATLAS_REF[k].map(x=>`<li>${x}</li>`).join("")}</ul><div class="small mute">Referencias al índice para quien disponga del ejemplar; las láminas no se reproducen aquí.</div></details>`:""}
  <div class="row"><button class="btn" onclick="openCh(${r.ch})">📘 Cap. ${r.ch}: ${ch.t}</button>${cs.map(c=>`<button class="btn" onclick="startCase('${c.id}')">${c.ic} Simular</button>`).join("")}</div>
  ${mediaBox("reg-"+k,"Ej.: láminas de anatomía, fotos de disección, ecografía, técnica en maniquí.")}`;
  wireMedia($("#regInfo")); wireAtlas($("#regInfo"),[k]);
  if(user&&innerWidth<760) $("#regInfo").scrollIntoView({behavior:"smooth",block:"start"});
 }
+
+
+// ---------- MANUAL ----------
+prog.mn=ST.get("mn",{});
+function glossify(s){return s.replace(/\[\[([^\]]+)\]\]/g,(m,t)=>`<button class="gl" data-t="${t}">${t}</button>`)}
+function wireGlos(root){$$(".gl",root).forEach(b=>b.onclick=e=>{e.stopPropagation();const t=b.dataset.t;let p=$("#glpop");if(!p){p=document.createElement("div");p.id="glpop";document.body.appendChild(p)}
+ p.innerHTML=`<b>${t}</b><div>${GLOS[t]||""}</div>`;const r=b.getBoundingClientRect();p.style.left=Math.max(8,Math.min(innerWidth-292,r.left))+"px";p.style.top=(r.bottom+window.scrollY+6)+"px";p.classList.add("on")})}
+document.addEventListener("click",()=>{const p=$("#glpop");if(p)p.classList.remove("on")});
+function speak(txt,btn){try{const s=window.speechSynthesis;if(!s){btn.textContent="🔇 No disponible";return}
+ if(s.speaking){s.cancel();btn.textContent="🔊 Escuchar";return}const u=new SpeechSynthesisUtterance(txt);u.lang="es-ES";u.rate=0.95;u.onend=()=>btn.textContent="🔊 Escuchar";s.speak(u);btn.textContent="⏹ Parar"}catch(e){btn.textContent="🔇 No disponible"}}
+R.manual=()=>{
+ const done=Object.keys(prog.mn).length;
+ $("#v-manual").innerHTML=`<div class="mhero"><span class="chip">Manual interactivo · lenguaje sencillo</span><h1>PHTLS explicado fácil</h1><p>Para cualquier persona: sin jerga innecesaria, con ejemplos, pasos y tarjetas. Toca las <span class="gl demo">palabras subrayadas</span> para ver qué significan.</p>
+ <div class="prog"><i style="width:${done/22*100}%"></i></div><p class="small mute">${done} de 22 capítulos leídos</p>
+ <div class="row"><button class="btn pri" onclick="openMan(${(MANUAL.find(m=>!prog.mn[m.n])||MANUAL[0]).n})">▶ ${done?"Continuar":"Empezar"}</button><button class="btn" onclick="openGlos()">📖 Glosario (${Object.keys(GLOS).length})</button></div></div>
+ <div class="spacer"></div><div class="mgrid">${MANUAL.map(m=>`<div class="card mcard ${prog.mn[m.n]?"read":""}" onclick="openMan(${m.n})"><div class="mic">${m.ic}</div><div><div class="small mute">Capítulo ${m.n}</div><b>${m.t}</b><div class="small">${m.corto.replace(/\[\[|\]\]/g,"")}</div></div>${prog.mn[m.n]?'<span class="mtick">✓</span>':""}</div>`).join("")}</div>`;
+};
+function openMan(n){goThen("manual",()=>renderMan(n))}
+function renderMan(n){
+ const m=MANUAL.find(x=>x.n===n),i=MANUAL.indexOf(m),prev=MANUAL[i-1],next=MANUAL[i+1],ch=CHAPTERS.find(c=>c.n===n),cs=CASES.filter(k=>k.ch.includes(n));
+ const plain=[m.corto,...m.facil].join(" ").replace(/<[^>]+>/g,"").replace(/\[\[|\]\]/g,"");
+ $("#v-manual").innerHTML=`<div class="row"><button class="btn" onclick="R.manual()">← Índice</button><button class="btn" id="spk">🔊 Escuchar</button><button class="btn" id="fz">A+</button></div><div class="spacer"></div>
+ <article class="card mart" id="mart"><span class="chip">Capítulo ${n} de 22</span><h1>${m.ic} ${m.t}</h1>
+ <div class="corto">💡 ${glossify(m.corto)}</div>
+ <h3>Explicado fácil</h3>${m.facil.map(p=>`<p>${glossify(p)}</p>`).join("")}
+ ${m.pasos?`<h3>Paso a paso <span class="small mute">(toca cada paso cuando lo domines)</span></h3><ol class="steps">${m.pasos.map((p,j)=>`<li data-j="${j}"><span class="sn">${j+1}</span><span>${glossify(p)}</span></li>`).join("")}</ol>`:""}
+ <h3>¿Mito o verdad? <span class="small mute">(toca la tarjeta)</span></h3><div class="flips">${m.mitos.map(([q,a])=>`<div class="flip"><div class="fi"><div class="ff">🤔 <b>“${q}”</b><div class="small mute">¿Mito o verdad?</div></div><div class="fb2">${a}</div></div></div>`).join("")}</div>
+ ${CH_ATLAS[n]?`<h3>Anatomía de este capítulo</h3>${atlasBox(CH_ATLAS[n])}`:""}
+ <h3>Para ir más allá</h3><div class="row"><button class="btn" onclick="openCh(${n})">📘 Resumen técnico y test</button>${cs.map(k=>`<button class="btn" onclick="startCase('${k.id}')">${k.ic} Simular: ${k.t}</button>`).join("")}</div>
+ <div class="spacer"></div><h3>Comprueba lo aprendido</h3><div id="mq"></div>
+ </article><div class="spacer"></div>
+ <div class="row" style="justify-content:space-between">${prev?`<button class="btn" onclick="openMan(${prev.n})">← ${prev.t}</button>`:"<span></span>"}${next?`<button class="btn dark" onclick="openMan(${next.n})">${next.t} →</button>`:`<button class="btn dark" onclick="R.manual()">Terminar ✓</button>`}</div>`;
+ wireGlos($("#v-manual")); if(CH_ATLAS[n]) wireAtlas($("#mart"),CH_ATLAS[n]);
+ $$(".steps li").forEach(li=>li.onclick=()=>li.classList.toggle("ok"));
+ $$(".flip").forEach(f=>f.onclick=()=>f.classList.toggle("on"));
+ $("#spk").onclick=e=>speak(plain,e.currentTarget);
+ $("#fz").onclick=()=>$("#mart").classList.toggle("big");
+ runQuiz($("#mq"),ch.q.slice(0,2),()=>{prog.mn[n]=1;ST.set("mn",prog.mn)});
+ prog.mn[n]=prog.mn[n]||0; window.scrollTo(0,0);
+}
+function openGlos(){goThen("manual",()=>{
+ const ks=Object.keys(GLOS).sort((a,b)=>a.localeCompare(b,"es"));
+ $("#v-manual").innerHTML=`<button class="btn" onclick="R.manual()">← Índice</button><div class="spacer"></div><div class="card"><h2>📖 Glosario</h2><input id="gq" placeholder="Buscar término…" style="width:100%;font:500 16px Inter;padding:10px;border-radius:10px;border:1.5px solid var(--line);background:var(--card);color:var(--ink)"><div id="gl" style="margin-top:10px"></div></div>`;
+ const draw=q=>{$("#gl").innerHTML=ks.filter(k=>!q||(k+GLOS[k]).toLowerCase().includes(q)).map(k=>`<div class="sec b"><h4>${k}</h4><div>${GLOS[k]}</div></div>`).join("")||"<p class='mute'>Sin resultados.</p>"};
+ $("#gq").oninput=e=>draw(e.target.value.toLowerCase());draw("");window.scrollTo(0,0)})}
 
 // ---------- CAPÍTULOS ----------
 R.capitulos=()=>{
