@@ -48,7 +48,8 @@ const CAPITULOS = [
     color: "#ff4d6d", icono: "🏥",
     historia: "El herido llega al box vital: taquicárdico, frío, Glasgow 11. El equipo te mira. Revisión primaria, control de la hemorragia, FAST y decisión: ¿quirófano, radiología o TAC?",
     modulos: [
-      { id: "atls", nombre: "Taller ATLS interactivo", url: "modulos/atls.html", desc: "Revisión primaria y secundaria, shock, 8 casos, 10 estaciones de simulación, atlas anatómico y test." }
+      { id: "atls", nombre: "Taller ATLS interactivo", url: "modulos/atls.html", desc: "Revisión primaria y secundaria, shock, 8 casos, 10 estaciones de simulación, atlas anatómico y test." },
+      { id: "atls_simu", nombre: "🎮 Simuladores de técnicas ATLS", url: "modulos/atls.html#simular", desc: "10 estaciones: torniquete, aguja, faja pélvica, eFAST, cricotiroidotomía, Glasgow, hemoderivados…" }
     ],
     misiones: [
       { id: "atls_open", txt: "Entra en el taller ATLS", xp: 50, auto: s => s.visit("atls") },
